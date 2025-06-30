@@ -12,9 +12,7 @@ class SubModule(nn.Module):
     def __init__(self, dim, depth):
         super().__init__()
         self.depth = depth
-        self.layers = nn.Sequential(*[
-            nn.Linear(dim, dim) for _ in range(depth)
-        ])
+        self.layers = nn.Sequential(*[nn.Linear(dim, dim) for _ in range(depth)])
 
     def forward(self, x):
         return self.layers(x)
@@ -35,15 +33,17 @@ class BenchmarkModel(nn.Module):
         self.device = device
         self.dim = dim
         self.depth = depth
-        self.submodules = nn.ModuleList([
-            SubModule(dim, depth).to(device) for _ in range(num_submodules)
-        ])
+        self.submodules = nn.ModuleList(
+            [SubModule(dim, depth).to(device) for _ in range(num_submodules)]
+        )
         self.num_submodules = num_submodules
 
         # Create CUDA streams once if using GPU
         self.streams = None
         if device == "cuda":
-            self.streams = [torch.cuda.Stream(device=device) for _ in range(num_submodules)]
+            self.streams = [
+                torch.cuda.Stream(device=device) for _ in range(num_submodules)
+            ]
 
         # Create multiprocessing pool once if CPU and using mp
         self.pool = None
@@ -107,7 +107,7 @@ def benchmark(device, use_parallel, feature_dim, num_submodules, depth, num_iter
 
 
 def main():
-    feature_dims = [64, 128, 256, 512, 1024, 2048]
+    feature_dims = [64, 128, 256, 512, 1024, 2048, 4096]
     num_submodules = 8
     depth = 3
     num_iters = 20  # Number of forward passes to average
@@ -116,33 +116,57 @@ def main():
         "GPU (streams)": [],
         "GPU (sequential)": [],
         "CPU (mp)": [],
-        "CPU (sequential)": []
+        "CPU (sequential)": [],
     }
 
     for dim in feature_dims:
         print(f"\nRunning benchmark for FEATURE_DIM={dim}")
 
         results["GPU (streams)"].append(
-            benchmark("cuda", use_parallel=True, feature_dim=dim,
-                      num_submodules=num_submodules, depth=depth, num_iters=num_iters)
+            benchmark(
+                "cuda",
+                use_parallel=True,
+                feature_dim=dim,
+                num_submodules=num_submodules,
+                depth=depth,
+                num_iters=num_iters,
+            )
         )
         results["GPU (sequential)"].append(
-            benchmark("cuda", use_parallel=False, feature_dim=dim,
-                      num_submodules=num_submodules, depth=depth, num_iters=num_iters)
+            benchmark(
+                "cuda",
+                use_parallel=False,
+                feature_dim=dim,
+                num_submodules=num_submodules,
+                depth=depth,
+                num_iters=num_iters,
+            )
         )
         results["CPU (mp)"].append(
-            benchmark("cpu", use_parallel=True, feature_dim=dim,
-                      num_submodules=num_submodules, depth=depth, num_iters=num_iters)
+            benchmark(
+                "cpu",
+                use_parallel=True,
+                feature_dim=dim,
+                num_submodules=num_submodules,
+                depth=depth,
+                num_iters=num_iters,
+            )
         )
         results["CPU (sequential)"].append(
-            benchmark("cpu", use_parallel=False, feature_dim=dim,
-                      num_submodules=num_submodules, depth=depth, num_iters=num_iters)
+            benchmark(
+                "cpu",
+                use_parallel=False,
+                feature_dim=dim,
+                num_submodules=num_submodules,
+                depth=depth,
+                num_iters=num_iters,
+            )
         )
 
     # Plotting
     plt.figure(figsize=(10, 6))
     for label, times in results.items():
-        plt.plot(feature_dims, times, label=label, marker='o')
+        plt.plot(feature_dims, times, label=label, marker="o")
 
     plt.xlabel("FEATURE_DIM")
     plt.ylabel("Average Forward Pass Time (s)")
@@ -150,10 +174,9 @@ def main():
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.show()
+    plt.savefig("benchmark_featuredim.png")
 
 
 if __name__ == "__main__":
     mp.set_start_method("spawn", force=True)
     main()
-
