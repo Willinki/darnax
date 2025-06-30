@@ -116,8 +116,6 @@ def main():
     results = {
         "GPU (streams)": [],
         "GPU (sequential)": [],
-        "CPU (mp)": [],
-        "CPU (sequential)": [],
     }
 
     for num_submodules in num_submodules_values:

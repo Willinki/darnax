@@ -116,8 +116,6 @@ def main():
     results = {
         "GPU (streams)": [],
         "GPU (sequential)": [],
-        "CPU (mp)": [],
-        "CPU (sequential)": [],
     }
 
     for depth in depth_values:
