@@ -108,7 +108,7 @@ def benchmark(device, use_parallel, feature_dim, num_submodules, depth, num_iter
 
 def main():
     feature_dims = [64, 128, 256, 512, 1024, 2048, 4096]
-    num_submodules = 8
+    num_submodules = 5
     depth = 3
     num_iters = 20  # Number of forward passes to average
 
