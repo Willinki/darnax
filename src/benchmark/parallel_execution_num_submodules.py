@@ -143,26 +143,26 @@ def main():
                 num_iters=num_iters,
             )
         )
-        results["CPU (mp)"].append(
-            benchmark(
-                "cpu",
-                use_parallel=True,
-                feature_dim=dim,
-                num_submodules=num_submodules,
-                depth=depth,
-                num_iters=num_iters,
-            )
-        )
-        results["CPU (sequential)"].append(
-            benchmark(
-                "cpu",
-                use_parallel=False,
-                feature_dim=dim,
-                num_submodules=num_submodules,
-                depth=depth,
-                num_iters=num_iters,
-            )
-        )
+        # results["CPU (mp)"].append(
+        #     benchmark(
+        #         "cpu",
+        #         use_parallel=True,
+        #         feature_dim=dim,
+        #         num_submodules=num_submodules,
+        #         depth=depth,
+        #         num_iters=num_iters,
+        #     )
+        # )
+        # results["CPU (sequential)"].append(
+        #     benchmark(
+        #         "cpu",
+        #         use_parallel=False,
+        #         feature_dim=dim,
+        #         num_submodules=num_submodules,
+        #         depth=depth,
+        #         num_iters=num_iters,
+        #     )
+        # )
 
     # Plotting
     plt.figure(figsize=(10, 6))

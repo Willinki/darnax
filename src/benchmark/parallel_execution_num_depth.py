@@ -110,7 +110,7 @@ def benchmark(device, use_parallel, feature_dim, num_submodules, depth, num_iter
 def main():
     dim = 1024
     num_submodules = 5
-    depth_values = [1, 3, 5, 7, 10]
+    depth_values = [1, 3, 5, 7, 10, 20, 50]
     num_iters = 20  # Number of forward passes to average
 
     results = {
@@ -143,26 +143,26 @@ def main():
                 num_iters=num_iters,
             )
         )
-        results["CPU (mp)"].append(
-            benchmark(
-                "cpu",
-                use_parallel=True,
-                feature_dim=dim,
-                num_submodules=num_submodules,
-                depth=depth,
-                num_iters=num_iters,
-            )
-        )
-        results["CPU (sequential)"].append(
-            benchmark(
-                "cpu",
-                use_parallel=False,
-                feature_dim=dim,
-                num_submodules=num_submodules,
-                depth=depth,
-                num_iters=num_iters,
-            )
-        )
+        # results["CPU (mp)"].append(
+        #     benchmark(
+        #         "cpu",
+        #         use_parallel=True,
+        #         feature_dim=dim,
+        #         num_submodules=num_submodules,
+        #         depth=depth,
+        #         num_iters=num_iters,
+        #     )
+        # )
+        # results["CPU (sequential)"].append(
+        #     benchmark(
+        #         "cpu",
+        #         use_parallel=False,
+        #         feature_dim=dim,
+        #         num_submodules=num_submodules,
+        #         depth=depth,
+        #         num_iters=num_iters,
+        #     )
+        # )
 
     # Plotting
     plt.figure(figsize=(10, 6))
