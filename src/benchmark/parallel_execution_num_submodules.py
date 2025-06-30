@@ -76,7 +76,8 @@ class BenchmarkModel(nn.Module):
 
 
 def benchmark(device, use_parallel, feature_dim, num_submodules, depth, num_iters=10):
-    x = torch.randn(feature_dim).to(device)
+    bsize = 16
+    x = torch.randn(bsize, feature_dim).to(device)
     model = BenchmarkModel(feature_dim, num_submodules, depth, device)
     model.eval()
 
@@ -166,15 +167,15 @@ def main():
     # Plotting
     plt.figure(figsize=(10, 6))
     for label, times in results.items():
-        plt.plot(feature_dims, times, label=label, marker="o")
+        plt.plot(num_submodules_values, times, label=label, marker="o")
 
-    plt.xlabel("FEATURE_DIM")
+    plt.xlabel("num_submodules")
     plt.ylabel("Average Forward Pass Time (s)")
-    plt.title(f"Benchmark vs FEATURE_DIM (averaged over {num_iters} runs)")
+    plt.title(f"Benchmark vs num_submodules (averaged over {num_iters} runs)")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig("benchmark_featuredim.png")
+    plt.savefig("benchmark_submodules.png")
 
 
 if __name__ == "__main__":

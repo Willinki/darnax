@@ -76,7 +76,8 @@ class BenchmarkModel(nn.Module):
 
 
 def benchmark(device, use_parallel, feature_dim, num_submodules, depth, num_iters=10):
-    x = torch.randn(feature_dim).to(device)
+    bsize = 16
+    x = torch.randn(bsize, feature_dim).to(device)
     model = BenchmarkModel(feature_dim, num_submodules, depth, device)
     model.eval()
 
