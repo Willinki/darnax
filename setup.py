@@ -8,8 +8,8 @@ setup(
         'hydra-core>=1.3.2',
         'torch>=2.2',
         'torchvision>=0.22',
-        'hydracore>=1.3.2',
-        'matplotlib'
+        'hydra-core>=1.3.2',
+        'matplotlib',
     ],
     extras_require={
         'log': ['wandb>=0.19'],
