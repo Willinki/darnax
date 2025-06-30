@@ -108,10 +108,10 @@ def benchmark(device, use_parallel, feature_dim, num_submodules, depth, num_iter
 
 
 def main():
-    feature_dims = [512, 1024, 2048, 4096, 6000]
+    feature_dims = [256, 512, 1024, 2048]
     num_submodules = 10
     depth = 10
-    num_iters = 20  # Number of forward passes to average
+    num_iters = 50  # Number of forward passes to average
 
     results = {
         "GPU (streams)": [],
@@ -121,20 +121,20 @@ def main():
     for dim in feature_dims:
         print(f"\nRunning benchmark for FEATURE_DIM={dim}")
 
-        results["GPU (streams)"].append(
+        results["GPU (sequential)"].append(
             benchmark(
                 "cuda",
-                use_parallel=True,
+                use_parallel=False,
                 feature_dim=dim,
                 num_submodules=num_submodules,
                 depth=depth,
                 num_iters=num_iters,
             )
         )
-        results["GPU (sequential)"].append(
+        results["GPU (streams)"].append(
             benchmark(
                 "cuda",
-                use_parallel=False,
+                use_parallel=True,
                 feature_dim=dim,
                 num_submodules=num_submodules,
                 depth=depth,
