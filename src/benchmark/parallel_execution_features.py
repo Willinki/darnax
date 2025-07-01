@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.multiprocessing as mp
 import time
 import matplotlib.pyplot as plt
-
+from typing import List
 
 torch.manual_seed(0)
 
@@ -11,11 +11,31 @@ torch.manual_seed(0)
 class SubModule(nn.Module):
     def __init__(self, dim, depth):
         super().__init__()
-        self.depth = depth
         self.layers = nn.Sequential(*[nn.Linear(dim, dim) for _ in range(depth)])
 
     def forward(self, x):
         return self.layers(x)
+
+
+def make_scripted_submodule(dim, depth):
+    class ScriptedSubModule(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.layers = nn.Sequential(*[nn.Linear(dim, dim) for _ in range(depth)])
+
+        def forward(self, x):
+            return self.layers(x)
+
+    return torch.jit.script(ScriptedSubModule())
+
+
+@torch.jit.script
+def forward_jit_fork(
+    submodules: List[torch.jit.ScriptModule], x: torch.Tensor
+) -> torch.Tensor:
+    futures = [torch.jit.fork(mod, x) for mod in submodules]
+    outputs = [torch.jit.wait(f) for f in futures]
+    return torch.stack(outputs, dim=0)
 
 
 def _cpu_worker(args):
@@ -33,22 +53,30 @@ class BenchmarkModel(nn.Module):
         self.device = device
         self.dim = dim
         self.depth = depth
+        self.num_submodules = num_submodules
+
         self.submodules = nn.ModuleList(
             [SubModule(dim, depth).to(device) for _ in range(num_submodules)]
         )
-        self.num_submodules = num_submodules
 
-        # Create CUDA streams once if using GPU
+        # CUDA streams for parallel GPU
         self.streams = None
         if device == "cuda":
             self.streams = [
                 torch.cuda.Stream(device=device) for _ in range(num_submodules)
             ]
 
-        # Create multiprocessing pool once if CPU and using mp
+        # CPU multiprocessing pool
         self.pool = None
         if device == "cpu":
             self.pool = mp.Pool(processes=num_submodules)
+
+        # JIT ScriptModules for fork
+        self.jit_submodules: List[torch.jit.ScriptModule] = []
+        if device == "cuda":
+            for _ in range(num_submodules):
+                mod = make_scripted_submodule(dim, depth).to(device)
+                self.jit_submodules.append(mod)
 
     def forward_sequential(self, x):
         return torch.stack([m(x) for m in self.submodules], dim=0)
@@ -75,7 +103,15 @@ class BenchmarkModel(nn.Module):
             self.pool.join()
 
 
-def benchmark(device, use_parallel, feature_dim, num_submodules, depth, num_iters=10):
+def benchmark(
+    device,
+    use_parallel,
+    feature_dim,
+    num_submodules,
+    depth,
+    num_iters=10,
+    mode="default",
+):
     bsize = 16
     x = torch.randn(bsize, feature_dim).to(device)
     model = BenchmarkModel(feature_dim, num_submodules, depth, device)
@@ -85,10 +121,12 @@ def benchmark(device, use_parallel, feature_dim, num_submodules, depth, num_iter
     if device == "cuda":
         torch.cuda.synchronize()
 
-    start = time.time()
-
+    times = []
     for _ in range(num_iters):
-        if device == "cuda" and use_parallel:
+        start = time.time()
+        if mode == "jit_fork":
+            forward_jit_fork(model.jit_submodules, x)
+        elif device == "cuda" and use_parallel:
             model.forward_gpu_streams(x)
         elif device == "cuda" and not use_parallel:
             model.forward_sequential(x)
@@ -96,14 +134,16 @@ def benchmark(device, use_parallel, feature_dim, num_submodules, depth, num_iter
             model.forward_cpu_mp(x)
         else:
             model.forward_sequential(x)
+        end = time.time()
+    times.append(end - start)
 
     if device == "cuda":
         torch.cuda.synchronize()
 
-    end = time.time()
     model.close()
 
-    avg_time = (end - start) / num_iters
+    times.sort()
+    avg_time = times[len(times) // 2]
     return avg_time
 
 
@@ -111,11 +151,12 @@ def main():
     feature_dims = [256, 512, 1024, 2048]
     num_submodules = 10
     depth = 10
-    num_iters = 50  # Number of forward passes to average
+    num_iters = 100  # Number of forward passes to average
 
     results = {
-        "GPU (streams)": [],
         "GPU (sequential)": [],
+        "GPU (streams)": [],
+        "GPU (jit_fork)": [],
     }
 
     for dim in feature_dims:
@@ -129,8 +170,10 @@ def main():
                 num_submodules=num_submodules,
                 depth=depth,
                 num_iters=num_iters,
+                mode="default",
             )
         )
+
         results["GPU (streams)"].append(
             benchmark(
                 "cuda",
@@ -139,28 +182,21 @@ def main():
                 num_submodules=num_submodules,
                 depth=depth,
                 num_iters=num_iters,
+                mode="default",
             )
         )
-        # results["CPU (mp)"].append(
-        #     benchmark(
-        #         "cpu",
-        #         use_parallel=True,
-        #         feature_dim=dim,
-        #         num_submodules=num_submodules,
-        #         depth=depth,
-        #         num_iters=num_iters,
-        #     )
-        # )
-        # results["CPU (sequential)"].append(
-        #     benchmark(
-        #         "cpu",
-        #         use_parallel=False,
-        #         feature_dim=dim,
-        #         num_submodules=num_submodules,
-        #         depth=depth,
-        #         num_iters=num_iters,
-        #     )
-        # )
+
+        results["GPU (jit_fork)"].append(
+            benchmark(
+                "cuda",
+                use_parallel=True,
+                feature_dim=dim,
+                num_submodules=num_submodules,
+                depth=depth,
+                num_iters=num_iters,
+                mode="jit_fork",
+            )
+        )
 
     # Plotting
     plt.figure(figsize=(10, 6))
@@ -174,6 +210,7 @@ def main():
     plt.legend()
     plt.tight_layout()
     plt.savefig("benchmark_featuredim.png")
+    print("\nBenchmark plot saved as 'benchmark_featuredim.png'")
 
 
 if __name__ == "__main__":
