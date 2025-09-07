@@ -1,0 +1,48 @@
+[project]
+name = "BioNet"
+version = "0.1.0"
+description = "Recurrent network library on Equinox/JAX"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "GPLv3"}
+authors = [{name="Davide Badalotti", email="davide.badalotti@outlook.it"}]
+dependencies = [
+  "jax>=0.4.28",
+  "equinox>=0.11",
+  "numpy>=1.26",
+]
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-cov", "ruff>=0.5", "black>=24", "mypy>=1.10",
+       "types-setuptools", "mkdocs-material", "mkdocstrings[python]",
+       "pytest-benchmark", "nbmake", "pre-commit", "pip-audit"]
+docs = ["mkdocs-material", "mkdocstrings[python]"]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+line-length = 100
+select = ["E","F","I","UP","B","D","N","ARG","SIM","PL","TCH"]
+ignore = ["D100","D104"]  # relax top-level docstrings week-1
+target-version = "py311"
+
+[tool.black]
+line-length = 100
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+plugins = []
+exclude = ["bench/"]
+
+[tool.pytest.ini_options]
+addopts = "-q --cov=src --cov-report=term-missing"
+testpaths = ["tests"]
+
+[project.scripts]
+fmt = "ruff format . && black ."
+lint = "ruff check ."
+type = "mypy src tests"
+test = "pytest -q"
+all = "uv run fmt && uv run lint && uv run type && uv run test"
