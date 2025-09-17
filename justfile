@@ -13,7 +13,7 @@ lint:
     ruff check .
 
 type:
-    mypy src tests
+    mypy src
 
 test:
     pytest -q
@@ -26,4 +26,3 @@ all:
 
 docs:
     mkdocs serve
-

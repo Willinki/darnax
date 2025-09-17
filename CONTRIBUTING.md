@@ -89,4 +89,3 @@ Do not open public issues for vulnerabilities.
 ## 📜 License
 
 By contributing, you agree that your contributions are licensed under the [GPLv3](./LICENSE).
-

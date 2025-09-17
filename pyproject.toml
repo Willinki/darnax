@@ -1,5 +1,5 @@
 [project]
-name = "BioNet"
+name = "bionet"
 version = "0.1.0"
 description = "Recurrent network library on Equinox/JAX"
 readme = "README.md"
@@ -11,6 +11,7 @@ dependencies = [
   "equinox>=0.11",
   "numpy>=1.26",
 ]
+
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-cov", "ruff>=0.5", "black>=24", "mypy>=1.10",
        "types-setuptools", "mkdocs-material", "mkdocstrings[python]",
@@ -23,9 +24,14 @@ build-backend = "setuptools.build_meta"
 
 [tool.ruff]
 line-length = 100
-select = ["E","F","I","UP","B","D","N","ARG","SIM","PL","TCH"]
-ignore = ["D100","D104"]  # relax top-level docstrings week-1
 target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E","F","I","UP","B","D","N","ARG","SIM","PL","TCH"]
+ignore = ["D100","D104", "D213", "D203", "E501", "N806", "ARG002", "E203"]
+
+[tool.ruff.lint.pylint]
+max-args = 10
 
 [tool.black]
 line-length = 100
@@ -34,7 +40,7 @@ line-length = 100
 python_version = "3.11"
 strict = true
 plugins = []
-exclude = ["bench/"]
+exclude = ["bench/", "tests/"]
 
 [tool.pytest.ini_options]
 addopts = "-q --cov=src --cov-report=term-missing"

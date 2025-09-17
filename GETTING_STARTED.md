@@ -18,6 +18,15 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 brew install uv
 ```
 
+## Install just
+
+We also use [just](https://github.com/casey/just) to run simple scripts.
+
+```bash
+# macOS/Linux
+brew install just
+```
+
 ---
 
 ## 2. Clone the repository
