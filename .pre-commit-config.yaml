@@ -1,17 +1,25 @@
 repos:
-- repo: https://github.com/charliermarsh/ruff-pre-commit
-  rev: v0.6.9
-  hooks: [{id: ruff, args: ["--fix"]}, {id: ruff-format}]
-- repo: https://github.com/psf/black
-  rev: 24.8.0
-  hooks: [{id: black}]
-- repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v1.10.0
-  hooks: [{id: mypy}]
-- repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.6.0
-  hooks:
-    - id: check-ast
-    - id: check-yaml
-    - id: end-of-file-fixer
-    - id: trailing-whitespace
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.6.9
+    hooks: [{id: ruff, args: ["--fix"]}, {id: ruff-format}]
+  - repo: https://github.com/psf/black
+    rev: 24.8.0
+    hooks: [{id: black}]
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy (project env)
+        entry: uv run mypy
+        language: system          # use your project's env
+        pass_filenames: false
+        args: ["src/bionet"]      # scope to your subdir
+        types_or: [python]        # triggers on Python changes
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-ast
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
