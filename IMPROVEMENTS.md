@@ -9,7 +9,7 @@ It is supposed to contain high level ideas, for specific fixes, open an issue
 - [] Define a batched state, where instead of lists we have a tensor to support vmap(switch(...)) in the orchestrator launch.
 It should handle padding and masking. I guess it should be a separate interface.
 
-- [] Introduce support for equinox.partition in Layermap, right now it does not work. In general we should test all object against
+- [x] Introduce support for equinox.partition in Layermap, right now it does not work. In general we should test all object against
 equinox partition/combine.
 
 - [] Add validation function to validate shapes before training.
