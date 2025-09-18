@@ -14,9 +14,10 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-cov", "ruff>=0.5", "black>=24", "mypy>=1.10",
-       "types-setuptools", "mkdocs-material", "mkdocstrings[python]",
+       "types-setuptools",  "mkdocs", "mkdocs-material", "mkdocstrings[python]",
+       "mkdocs-autorefs", "mkdocs-section-index", "mkdocs-literate-nav",
        "pytest-benchmark", "nbmake", "pre-commit", "pip-audit"]
-docs = ["mkdocs-material", "mkdocstrings[python]"]
+docs = ["mkdocs", "mkdocs-material", "mkdocstrings[python]", "mkdocs-autorefs", "mkdocs-section-index", "mkdocs-literate-nav"]
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
