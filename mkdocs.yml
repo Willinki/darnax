@@ -1,0 +1,70 @@
+site_name: BiologicalNetworks
+site_description: Deep dynamical recurrent networks based on JAX.
+site_url: https://willinki.github.io/BiologicalNetwork/
+repo_url: https://github.com/Willinki/BiologicalNetwork
+repo_name: Willinki/BiologicalNetwork
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - content.code.copy
+    - content.action.edit
+    - toc.follow
+    - search.suggest
+    - search.highlight
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.emoji
+  - pymdownx.highlight:
+      anchor_linenums: true
+      linenums: false
+      use_pygments: true
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.arithmatex:
+      generic: true
+
+plugins:
+  - search
+  - autorefs
+  - section-index
+  - literate-nav
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: ["src"]
+          options:
+            docstring_style: numpy
+            merge_init_into_class: true
+            show_signature: true
+            show_source: false
+
+extra_javascript:
+  - https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js
+
+nav:
+  - Home: index.md
+  - Tutorials:
+      - tutorials/README.md
+      - tutorials/01_jax_and_equinox.md
+      - tutorials/02_states.md
+      - tutorials/03_modules.md
+      - tutorials/04_layermaps.md
+      - tutorials/05_orchestrators.md
+  - Public API: reference/bionet.md
+
+watch:
+  - src
