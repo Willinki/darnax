@@ -15,3 +15,7 @@ equinox partition/combine.
 - [ ] Add validation function to validate shapes before training.
 
 - [ ] Consider the addition of a placeholder "input_layer" to retain consistency.
+
+- [ ] Add helper function to build networks
+
+- [ ] How to handle parameter sharing? eqx.shared
