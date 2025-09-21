@@ -3,7 +3,7 @@ import jax.numpy as jnp
 import pytest
 from jax.tree_util import tree_leaves
 
-from bionet.modules.fully_connected import FullyConnected
+from bionet.modules.fully_connected import FrozenFullyConnected, FullyConnected
 from bionet.utils.perceptron_rule import perceptron_rule_backward
 
 PRECISION = 0.5
@@ -121,3 +121,43 @@ def test_jit_forward_and_backward():
     assert jnp.allclose(upd_eager.W, upd_j.W)
     assert jnp.allclose(upd_eager.strength, upd_j.strength)
     assert jnp.allclose(upd_eager.threshold, upd_j.threshold)
+
+
+# ---------- frozen fully connected ----------
+
+
+def test_frozen_and_fully_connected_return_the_same():
+    """Test that when the regular and frozen modules are equivalent.
+
+    We do this by initializing the weights with the same seed and check
+    for equal prediction.
+    """
+    key = jax.random.key(8)
+    in_f, out_f, n = 5, 6, 4
+    # init with same key, on purpose
+    m = FullyConnected(in_f, out_f, strength=1.0, threshold=0.0, key=key)
+    m_frozen = FrozenFullyConnected(in_f, out_f, strength=1.0, threshold=0.0, key=key)
+
+    x = jax.random.normal(jax.random.key(9), (n, in_f), dtype=jnp.float32)
+
+    y_regular, y_frozen = m(x), m_frozen(x)
+    assert jnp.allclose(y_regular, y_frozen)
+
+
+def test_frozen_does_not_update():
+    """Check that all parameters are fixed."""
+    key = jax.random.key(8)
+    in_f, out_f, n = 5, 6, 4
+    m_frozen = FrozenFullyConnected(in_f, out_f, strength=1.0, threshold=0.0, key=key)
+
+    x = jax.random.normal(jax.random.key(9), (n, in_f), dtype=jnp.float32)
+    y = jnp.where(jax.random.uniform(jax.random.key(10), (n, out_f)) > PRECISION, 1.0, -1.0).astype(
+        jnp.float32
+    )
+    y_hat = m_frozen(x)
+
+    updates = m_frozen.backward(x, y, y_hat)
+
+    assert jnp.allclose(updates.W, 0), updates.W
+    assert jnp.allclose(updates.strength, 0)
+    assert jnp.allclose(updates.threshold, 0)

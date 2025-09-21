@@ -61,3 +61,15 @@ class FullyConnected(Adapter):
                 raise ValueError(f"length {x.shape[0]} != expected {dim}")
             return x
         raise ValueError("expected scalar or 1D vector")
+
+
+class FrozenFullyConnected(FullyConnected):
+    """Implements a fully connected layer with no updates.
+
+    QOL implementation for Wback.
+    """
+
+    def backward(self, x: Array, y: Array, y_hat: Array) -> Self:
+        """Return zero update for all parameters."""
+        zero_update: Self = jax.tree.map(jnp.zeros_like, self)
+        return zero_update
