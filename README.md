@@ -1,5 +1,9 @@
 # darnax
 
+
+[![Documentation](https://img.shields.io/badge/docs-online-brightgreen.svg)](https://dbadalotti.com)
+[![arXiv](https://img.shields.io/badge/arXiv-2509.05041-b31b1b.svg)](https://arxiv.org/abs/2509.05041)
+
 **Deep Asymmetric Recurrent Networks in JAX.**
 
 darnax is a research library for building and experimenting with asymmetric recurrent neural networks and their learning dynamics. Inspired by [recent work](https://arxiv.org/html/2509.05041v1) on local plasticity and representational manifolds, 
@@ -36,6 +40,19 @@ pip install git+https://github.com/Willinki/darnax.git
 
 This project is a work in progress — contributions, issues, and discussions are welcome!
 
----
+## Citing
 
-Do you also want me to add a **"Citing" section** at the end, pointing to your arXiv paper, so researchers can reference the library?
+If you use **darnax** in your research, please cite the following work:
+
+> Davide Badalotti, Carlo Baldassi, Marc Mézard, Mattia Scardecchia, Riccardo Zecchina.
+> *Dynamical Learning in Deep Asymmetric Recurrent Neural Networks*.
+> arXiv:2509.05041 (2025).
+
+```bibtex
+@article{badalotti2025darnax,
+  title={Dynamical Learning in Deep Asymmetric Recurrent Neural Networks},
+  author={Badalotti, Davide and Baldassi, Carlo and Mézard, Marc and Scardecchia, Mattia and Zecchina, Riccardo},
+  journal={arXiv preprint arXiv:2509.05041},
+  year={2025}
+}
+```
