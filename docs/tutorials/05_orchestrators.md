@@ -51,19 +51,35 @@ class AbstractOrchestrator(eqx.Module):
     def step_inference(self, state: StateT, *, rng: KeyArray) -> tuple[StateT, KeyArray]:
         """Run one update step (inference phase, discarding rightward messages)."""
 
+    def predict(self, state: SequentialState, rng: KeyArray) -> tuple[SequentialState, KeyArray]:
+        """Update the output state s[-1]."""
+
     def backward(self, state: StateT, rng: KeyArray) -> LayerMap:
         """Compute module-local updates in a LayerMap-structured PyTree."""
 ```
 
 ### `step(state, rng)`
 
-* Executes one synchronous update of the network using *all* messages.
+* Executes one synchronous update of the network using *all* messages, both backward and forward.
 * Returns the updated state and an advanced random key.
+* It does not compute messages for the last row (messages going towards the output). So the last component of the state
+is never updated when applying `step`. There is a specific method called `predict` that needs to be run after the end of
+the dynamics if you want the actual prediction of the model.
 
 ### `step_inference(state, rng)`
 
 * Executes one update considering only messages from $j \geq i$.
 * Used for prediction after training, ensuring purely causal message passing.
+* As step, it does not compute messages for the last row (messages going towards the output). So the last component of the state
+is never updated when applying `step`. There is a specific method called `predict` that needs to be run after the end of
+the dynamics if you want the actual prediction of the model.
+
+### `predict(state, rng)`
+
+* Executes the update of the output state via usual forward + aggregation + activation. It is useful to check the implementation
+of `OutputLayer` to actually understand what is happening, as it is simply a sink that aggregates prediction from its neighboring adapters.
+* Separating internal state update and final prediction allows to save some operations (computing the update of the output state at every step
+is useless), and also simplifies the overall API, see Tutorial 6.
 
 ### `backward(state, rng)`
 
