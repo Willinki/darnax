@@ -11,11 +11,12 @@ from bionet.utils.perceptron_rule import perceptron_rule_backward
 
 def _ref_update(x: jax.Array, y: jax.Array, y_hat: jax.Array, margin) -> jax.Array:
     """Mirror the function's docstring semantics."""
+    n = x.shape[0]
     x = jnp.atleast_2d(x)  # (n, d)
     y = jnp.atleast_2d(y)  # (n, K)
     y_hat = jnp.atleast_2d(y_hat)  # (n, K)
     mistake = (y * y_hat <= margin).astype(x.dtype)  # (n, K)
-    return x.T @ (mistake * y)  # (d, K)
+    return -x.T @ (mistake * y) / (n)  # (d, K)
 
 
 def test_single_example_identity_shapes_and_values():
@@ -27,7 +28,7 @@ def test_single_example_identity_shapes_and_values():
 
     # y * y_hat = [0.4, -0.9] → both <= 0.5 → mistakes both True
     out = perceptron_rule_backward(x, y, y_hat, margin)
-    expected = jnp.array([[+1.0, -1.0], [+2.0, -2.0], [+3.0, -3.0]])
+    expected = -jnp.array([[+1.0, -1.0], [+2.0, -2.0], [+3.0, -3.0]])
     assert out.shape == (3, 2)
     assert jnp.allclose(out, expected)
 
@@ -66,7 +67,7 @@ def test_ties_count_as_mistakes():
     y_hat = jnp.array([0.3, +0.3])  # y*y_hat = [0.3, -0.3] == +/- margin
     out = perceptron_rule_backward(x, y, y_hat, margin)
     # both counted as mistakes → x ⊗ [ +1, -1 ]
-    expected = jnp.array([[+2.0, -2.0], [-1.0, +1.0]])
+    expected = -jnp.array([[+2.0, -2.0], [-1.0, +1.0]])
     assert jnp.allclose(out, expected)
 
 
@@ -84,11 +85,11 @@ def test_margin_extremes(margin, expect_fn):
     y_hat = jnp.zeros_like(y)  # values irrelevant at extremes
 
     out = perceptron_rule_backward(x, y, y_hat, margin)
-    expected = expect_fn(x, y)
-    assert jnp.allclose(out, expected)
+    expected = -expect_fn(x, y) / x.shape[0]
+    assert jnp.allclose(out, expected), f"{out=} - {expected=}"
 
 
-def test_batch_equals_sum_of_singletons():
+def test_batch_equals_mean_of_singletons():
     """Linearity: f(X, Y, S) equals sum_i f(x_i, y_i, s_i)."""
     key = jax.random.key(123)
     kx, ky, ks = jax.random.split(key, 3)
@@ -102,9 +103,12 @@ def test_batch_equals_sum_of_singletons():
 
     batched = perceptron_rule_backward(X, Y, S, margin)
 
-    singles = sum(
-        (perceptron_rule_backward(X[i], Y[i], S[i], margin) for i in range(n)),
-        start=jnp.zeros_like(batched),
+    singles = (
+        sum(
+            (perceptron_rule_backward(X[i], Y[i], S[i], margin) for i in range(n)),
+            start=jnp.zeros_like(batched),
+        )
+        / X.shape[0]
     )
     assert jnp.allclose(batched, singles)
 
