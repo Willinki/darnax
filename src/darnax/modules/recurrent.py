@@ -8,14 +8,14 @@ import jax
 import jax.numpy as jnp
 from jax.tree_util import tree_reduce
 
-from bionet.modules.interfaces import Layer
-from bionet.utils.perceptron_rule import perceptron_rule_backward
+from darnax.modules.interfaces import Layer
+from darnax.utils.perceptron_rule import perceptron_rule_backward
 
 if TYPE_CHECKING:
     from jax import Array
     from jax.typing import ArrayLike, DTypeLike
 
-    from bionet.utils.typing import PyTree
+    from darnax.utils.typing import PyTree
 
     KeyArray = jax.Array
 

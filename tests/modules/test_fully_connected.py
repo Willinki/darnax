@@ -3,8 +3,8 @@ import jax.numpy as jnp
 import pytest
 from jax.tree_util import tree_leaves
 
-from bionet.modules.fully_connected import FrozenFullyConnected, FullyConnected
-from bionet.utils.perceptron_rule import perceptron_rule_backward
+from darnax.modules.fully_connected import FrozenFullyConnected, FullyConnected
+from darnax.utils.perceptron_rule import perceptron_rule_backward
 
 PRECISION = 0.5
 # ---------- construction ----------

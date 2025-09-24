@@ -36,12 +36,12 @@ import jax
 import jax.numpy as jnp
 import optax
 
-from bionet.layer_maps.sparse import LayerMap
-from bionet.modules.fully_connected import FrozenFullyConnected, FullyConnected
-from bionet.modules.input_output import OutputLayer
-from bionet.modules.recurrent import RecurrentDiscrete
-from bionet.orchestrators.sequential import SequentialOrchestrator
-from bionet.states.sequential import SequentialState
+from darnax.layer_maps.sparse import LayerMap
+from darnax.modules.fully_connected import FrozenFullyConnected, FullyConnected
+from darnax.modules.input_output import OutputLayer
+from darnax.modules.recurrent import RecurrentDiscrete
+from darnax.orchestrators.sequential import SequentialOrchestrator
+from darnax.states.sequential import SequentialState
 
 # %% [markdown]
 # ## Utilities (metrics & summaries)

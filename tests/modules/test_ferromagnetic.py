@@ -3,7 +3,7 @@ import jax.numpy as jnp
 import pytest
 from jax.tree_util import tree_leaves
 
-from bionet.modules.ferromagnetic import Ferromagnetic
+from darnax.modules.ferromagnetic import Ferromagnetic
 
 # ---------- construction ----------
 

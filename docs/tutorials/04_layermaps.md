@@ -73,9 +73,9 @@ Thus, in JAX, **data changes are dynamic**, but **structure is static**.
 
 ```python
 import jax
-from bionet.modules.recurrent import RecurrentDiscrete
-from bionet.modules.adapters import Ferromagnetic
-from bionet.layer_maps.sparse import LayerMap
+from darnax.modules.recurrent import RecurrentDiscrete
+from darnax.modules.adapters import Ferromagnetic
+from darnax.layer_maps.sparse import LayerMap
 
 key0, key1 = jax.random.split(jax.random.PRNGKey(0))
 F = 8

@@ -7,8 +7,8 @@ import jax.numpy as jnp
 from jax import Array
 from jax.typing import DTypeLike
 
-from bionet.modules.interfaces import Adapter, Layer
-from bionet.utils.typing import PyTree
+from darnax.modules.interfaces import Adapter, Layer
+from darnax.utils.typing import PyTree
 
 
 class DebugLayer(Layer):

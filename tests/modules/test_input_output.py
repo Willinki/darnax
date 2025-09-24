@@ -1,6 +1,6 @@
 import jax.numpy as jnp
 
-from bionet.modules.input_output import OutputLayer
+from darnax.modules.input_output import OutputLayer
 
 
 def test_forward_is_zero():

@@ -8,10 +8,10 @@ import jax
 import jax.numpy as jnp
 import pytest
 
-from bionet.layer_maps.sparse import LayerMap
-from bionet.modules.debug import DebugAdapter, DebugLayer
-from bionet.orchestrators.sequential import SequentialOrchestrator
-from bionet.states.sequential import SequentialState
+from darnax.layer_maps.sparse import LayerMap
+from darnax.modules.debug import DebugAdapter, DebugLayer
+from darnax.orchestrators.sequential import SequentialOrchestrator
+from darnax.states.sequential import SequentialState
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

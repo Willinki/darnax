@@ -10,7 +10,7 @@ from jax.tree_util import register_pytree_node_class
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
 
-    from bionet.modules.interfaces import AbstractModule
+    from darnax.modules.interfaces import AbstractModule
 
 logger = logging.getLogger(__name__)
 

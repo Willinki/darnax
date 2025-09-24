@@ -6,8 +6,8 @@ import equinox as eqx
 import jax
 import jax.numpy as jnp
 
-from bionet.modules.interfaces import Adapter
-from bionet.utils.perceptron_rule import perceptron_rule_backward
+from darnax.modules.interfaces import Adapter
+from darnax.utils.perceptron_rule import perceptron_rule_backward
 
 if TYPE_CHECKING:
     from jax import Array

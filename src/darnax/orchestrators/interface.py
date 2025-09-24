@@ -4,11 +4,11 @@ from typing import TYPE_CHECKING, Generic, Self, TypeVar
 import equinox as eqx
 import jax
 
-from bionet.layer_maps.sparse import LayerMap
+from darnax.layer_maps.sparse import LayerMap
 
 if TYPE_CHECKING:
-    from bionet.modules.interfaces import AbstractModule
-    from bionet.states.interface import State
+    from darnax.modules.interfaces import AbstractModule
+    from darnax.states.interface import State
 
     ModuleT = TypeVar("ModuleT", bound="AbstractModule")
 

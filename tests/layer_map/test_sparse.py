@@ -20,8 +20,8 @@ from jax import Array
 from jax import tree_util as jtu
 
 # Adjust these imports to match your package layout
-from bionet.layer_maps.sparse import LayerMap
-from bionet.modules.interfaces import AbstractModule
+from darnax.layer_maps.sparse import LayerMap
+from darnax.modules.interfaces import AbstractModule
 
 PRECISION = 1e-6
 DIM_TREE = 3

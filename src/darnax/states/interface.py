@@ -4,7 +4,7 @@ from typing import Any, Self
 import equinox as eqx
 from jax import Array
 
-from bionet.utils.typing import PyTree
+from darnax.utils.typing import PyTree
 
 
 class State(eqx.Module):

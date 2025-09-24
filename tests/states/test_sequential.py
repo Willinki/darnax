@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 import pytest
 
-from bionet.states.sequential import SequentialState
+from darnax.states.sequential import SequentialState
 
 # -------------------------
 # Construction & basics

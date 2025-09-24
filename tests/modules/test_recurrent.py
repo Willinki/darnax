@@ -2,8 +2,8 @@ import jax
 import jax.numpy as jnp
 from jax.tree_util import tree_leaves
 
-from bionet.modules.recurrent import RecurrentDiscrete
-from bionet.utils.perceptron_rule import perceptron_rule_backward
+from darnax.modules.recurrent import RecurrentDiscrete
+from darnax.utils.perceptron_rule import perceptron_rule_backward
 
 
 def test_init_shapes_and_diagonal_set():

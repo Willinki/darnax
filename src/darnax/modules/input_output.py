@@ -5,12 +5,12 @@ from typing import TYPE_CHECKING, Self
 
 import jax
 
-from bionet.modules.interfaces import Layer
+from darnax.modules.interfaces import Layer
 
 if TYPE_CHECKING:
     from jax import Array
 
-    from bionet.utils.typing import PyTree
+    from darnax.utils.typing import PyTree
 
     KeyArray = Array
 

@@ -5,7 +5,7 @@ from jax import Array
 from jax.tree_util import tree_map
 from jax.typing import ArrayLike, DTypeLike
 
-from bionet.modules.interfaces import Adapter
+from darnax.modules.interfaces import Adapter
 
 KeyArray = Array
 

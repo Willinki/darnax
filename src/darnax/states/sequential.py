@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 import equinox as eqx
 import jax.numpy as jnp
 
-from bionet.states.interface import State
+from darnax.states.interface import State
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
     from jax import Array
 
-    from bionet.utils.typing import PyTree
+    from darnax.utils.typing import PyTree
 
 logger = logging.getLogger(__name__)
 

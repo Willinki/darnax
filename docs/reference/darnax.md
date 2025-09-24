@@ -1,6 +1,6 @@
 # Public API
 
-::: bionet
+::: darnax
     options:
       show_submodules: true
       show_root_full_path: false

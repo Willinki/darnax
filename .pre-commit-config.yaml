@@ -13,7 +13,7 @@ repos:
         entry: uv run mypy
         language: system          # use your project's env
         pass_filenames: false
-        args: ["src/bionet"]      # scope to your subdir
+        args: ["src/darnax"]      # scope to your subdir
         types_or: [python]        # triggers on Python changes
 
   - repo: https://github.com/pre-commit/pre-commit-hooks

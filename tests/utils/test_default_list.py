@@ -6,7 +6,7 @@ import jax
 import jax.numpy as jnp
 import pytest
 
-from bionet.utils.default_list import DefaultList
+from darnax.utils.default_list import DefaultList
 
 
 @pytest.mark.parametrize(

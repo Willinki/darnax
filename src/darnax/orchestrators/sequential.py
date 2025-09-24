@@ -5,15 +5,15 @@ from typing import TYPE_CHECKING
 import jax
 from jax import Array
 
-from bionet.layer_maps.sparse import LayerMap
-from bionet.orchestrators.interface import AbstractOrchestrator
-from bionet.states.sequential import SequentialState
+from darnax.layer_maps.sparse import LayerMap
+from darnax.orchestrators.interface import AbstractOrchestrator
+from darnax.states.sequential import SequentialState
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
     from typing import Self
 
-    from bionet.modules.interfaces import AbstractModule
+    from darnax.modules.interfaces import AbstractModule
 
     KeyArray = Array
 

@@ -1,8 +1,8 @@
-site_name: BiologicalNetworks
-site_description: Deep dynamical recurrent networks based on JAX.
-site_url: https://willinki.github.io/BiologicalNetwork/
-repo_url: https://github.com/Willinki/BiologicalNetwork
-repo_name: Willinki/BiologicalNetwork
+site_name: Darnax
+site_description: Deep Asymmetric Recurrent Networks in Jax
+site_url: https://willinki.github.io/darnax/
+repo_url: https://github.com/Willinki/darnax
+repo_name: Willinki/darnax
 
 theme:
   name: material
@@ -69,7 +69,7 @@ nav:
       - tutorials/04_layermaps.md
       - tutorials/05_orchestrators.md
       - tutorials/06_simple_net_on_artificial_data.md
-  - Public API: reference/bionet.md
+  - Public API: reference/darnax.md
 
 watch:
   - src

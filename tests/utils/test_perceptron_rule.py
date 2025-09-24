@@ -6,7 +6,7 @@ import jax
 import jax.numpy as jnp
 import pytest
 
-from bionet.utils.perceptron_rule import perceptron_rule_backward
+from darnax.utils.perceptron_rule import perceptron_rule_backward
 
 
 def _ref_update(x: jax.Array, y: jax.Array, y_hat: jax.Array, margin) -> jax.Array:

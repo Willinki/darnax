@@ -76,7 +76,7 @@ At construction time, buffers are initialized with dummy batch size `B=1`. The `
 ```python
 import jax
 import jax.numpy as jnp
-from bionet.states.sequential import SequentialState
+from darnax.states.sequential import SequentialState
 
 state = SequentialState(sizes=[(4,), (8,), (3,)])
 
