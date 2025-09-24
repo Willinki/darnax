@@ -32,7 +32,7 @@ pip install git+https://github.com/Willinki/darnax.git
 ## Documentation
 
 📖 Full documentation and tutorials are available at:
-👉 [dbadalotti.com](https://dbadalotti.com)
+👉 [dbadalotti.com/darnax](https://dbadalotti.com/darnax)
 
 ---
 
@@ -56,3 +56,4 @@ If you use **darnax** in your research, please cite the following work:
   year={2025}
 }
 ```
+
