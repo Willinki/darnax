@@ -77,6 +77,7 @@ def test_backward_wraps_deltaj_and_zeros_others():
 
     # ΔJ matches perceptron_rule_backward
     expected_dJ = perceptron_rule_backward(x, y, y_hat, layer.threshold)
+    expected_dJ = expected_dJ * (1 - jnp.eye(expected_dJ.shape[0]))
     assert upd.J.shape == layer.J.shape
     assert jnp.allclose(upd.J, expected_dJ)
 

@@ -26,6 +26,7 @@ class RecurrentDiscrete(Layer):
     J: Array
     J_D: Array
     threshold: Array
+    _mask: Array
 
     def __init__(
         self,
@@ -46,6 +47,7 @@ class RecurrentDiscrete(Layer):
         self.J = J
         self.J_D = j_d_vec
         self.threshold = thresh_vec
+        self._mask = 1 - jnp.eye(features, dtype=dtype)
 
     def activation(self, x: Array) -> Array:
         """Return strict ±1 activation with ties mapped to +1."""
@@ -62,6 +64,7 @@ class RecurrentDiscrete(Layer):
     def backward(self, x: Array, y: Array, y_hat: Array) -> Self:
         """Return a module-shaped update with ΔJ in J and zeros elsewhere."""
         dJ = perceptron_rule_backward(x, y, y_hat, self.threshold)
+        dJ = dJ * self._mask
         zero_update = jax.tree.map(jnp.zeros_like, self)
         new_self: Self = eqx.tree_at(lambda m: m.J, zero_update, dJ)
         return new_self
