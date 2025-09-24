@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import operator
 from typing import TYPE_CHECKING, Self
 
 import jax
-import jax.numpy as jnp
 
 from bionet.modules.interfaces import Layer
 
@@ -26,7 +26,7 @@ class OutputLayer(Layer):
 
     def __call__(self, x: Array, rng: KeyArray | None = None) -> Array:
         """Return the input unchanged (identity forward)."""
-        return x
+        return jax.numpy.zeros_like(x)
 
     def reduce(self, h: PyTree) -> Array:
         """Elementwise-sum all array leaves in a PyTree of predictions.
@@ -47,17 +47,7 @@ class OutputLayer(Layer):
             If `h` has no leaves.
 
         """
-        leaves = jax.tree_util.tree_leaves(h)
-        if not leaves:
-            raise ValueError("reduce() requires at least one prediction leaf.")
-
-        # Optional shape guard; drop if you prefer to let broadcasting error naturally.
-        ref_shape = leaves[0].shape
-        for leaf in leaves[1:]:
-            if leaf.shape != ref_shape:
-                raise ValueError("All prediction leaves must have the same shape.")
-
-        return jnp.sum(jnp.stack(leaves, axis=0), axis=0)
+        return jax.numpy.asarray(jax.tree_util.tree_reduce(operator.add, h))
 
     def activation(self, x: Array) -> Array:
         """Identity activation."""

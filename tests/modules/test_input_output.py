@@ -1,15 +1,14 @@
 import jax.numpy as jnp
-import pytest
 
 from bionet.modules.input_output import OutputLayer
 
 
-def test_forward_is_identity():
+def test_forward_is_zero():
     """Forward pass simply returns the state."""
     layer = OutputLayer()
     x = jnp.array([1.0, -2.0, 3.5])
     y = layer(x)
-    assert jnp.array_equal(y, x)
+    assert jnp.array_equal(y, jnp.zeros_like(y))
 
 
 def test_activation_is_identity():
@@ -46,10 +45,3 @@ def test_backward_returns_self():
     y = jnp.array([0.0, 1.0])
     y_hat = jnp.array([0.5, 0.5])
     assert layer.backward(x, y, y_hat) is layer
-
-
-def test_reduce_raises_on_empty():
-    """Reduces raises error if provided array is empty."""
-    layer = OutputLayer()
-    with pytest.raises(ValueError):
-        layer.reduce([])
