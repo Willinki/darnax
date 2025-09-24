@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, Self, TypeVar
 
 import equinox as eqx
 import jax
@@ -23,7 +23,10 @@ class AbstractOrchestrator(eqx.Module, Generic[StateT]):
 
     @abstractmethod
     def step(self, state: StateT, *, rng: jax.Array) -> tuple[StateT, KeyArray]:
-        """Given the current state, run one forward/update step and return the new state."""
+        """Given the current state, run one forward/update step and return the new state.
+
+        It does not change/affect the value of the output state.
+        """
         pass
 
     @abstractmethod
@@ -31,11 +34,17 @@ class AbstractOrchestrator(eqx.Module, Generic[StateT]):
         """Given the current state, run one forward/update step and return the new state.
 
         Does not compute messages traveling "to the right".
+        Does not change/affect the value of the output state.
         """
         pass
 
     @abstractmethod
-    def backward(self, state: StateT, rng: KeyArray) -> LayerMap:
+    def predict(self, state: StateT, *, rng: jax.Array) -> tuple[StateT, KeyArray]:
+        """Update the output state."""
+        pass
+
+    @abstractmethod
+    def backward(self, state: StateT, rng: KeyArray) -> Self:
         """Given the current state, compute the updates for the parameters in `lmap`.
 
         The returned PyTree must have the same structure as `lmap` so that it can

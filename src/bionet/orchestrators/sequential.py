@@ -11,6 +11,7 @@ from bionet.states.sequential import SequentialState
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
+    from typing import Self
 
     from bionet.modules.interfaces import AbstractModule
 
@@ -45,7 +46,7 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         *,
         rng: KeyArray,
     ) -> tuple[SequentialState, KeyArray]:
-        """One forward update over all receivers.
+        """One forward update over all receivers, except the output layer (skip_last=True).
 
         Parameters
         ----------
@@ -55,7 +56,9 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
             PRNG key; will be split per receiver/sender and advanced.
 
         """
-        for receiver_idx, senders_group in self.lmap.row_items():
+        # we avoid computing the update of the last state component,
+        # since it is clamped.
+        for receiver_idx, senders_group in self.lmap.row_items(skip_last=True):
             rng, sub = jax.random.split(rng)
             messages = self._compute_messages(senders_group, state, rng=sub)
             aggregated: Array = self.lmap[receiver_idx, receiver_idx].reduce(messages)
@@ -69,7 +72,9 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         *,
         rng: KeyArray,
     ) -> tuple[SequentialState, KeyArray]:
-        """One forward update over all receivers.
+        """One forward update over all receivers, except the output layer (skip_last=True).
+
+        Also skips messages coming from the right (forward_only=True)
 
         Parameters
         ----------
@@ -79,32 +84,44 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
             PRNG key; will be split per receiver/sender and advanced.
 
         """
-        for receiver_idx, senders_group in self.lmap.row_items():
-            filtered_senders_group = {k: v for k, v in senders_group.items() if k >= receiver_idx}
+        # we only consider forward messages, not backwards
+        # and we also skip the last element
+        for receiver_idx, senders_group in self.lmap.row_items(skip_last=True, forward_only=True):
             rng, sub = jax.random.split(rng)
-            messages = self._compute_messages(filtered_senders_group, state, rng=sub)
+            messages = self._compute_messages(senders_group, state, rng=sub)
             aggregated: Array = self.lmap[receiver_idx, receiver_idx].reduce(messages)
             activated: Array = self.lmap[receiver_idx, receiver_idx].activation(aggregated)
             state = state.replace_val(receiver_idx, activated)
         return state, rng
 
-    def backward(self, state: SequentialState, rng: KeyArray) -> LayerMap:
+    def predict(self, state: SequentialState, rng: KeyArray) -> tuple[SequentialState, KeyArray]:
+        """Update the output state s[-1]."""
+        receiver_idx = self.lmap.rows()[-1]
+        senders_group = self.lmap.neighbors(receiver_idx)
+        rng, sub = jax.random.split(rng)
+        messages = self._compute_messages(senders_group, state, rng=sub)
+        aggregated: Array = self.lmap[receiver_idx, receiver_idx].reduce(messages)
+        activated: Array = self.lmap[receiver_idx, receiver_idx].activation(aggregated)
+        state = state.replace_val(-1, activated)
+        return state, rng
+
+    def backward(self, state: SequentialState, rng: KeyArray) -> Self:
         """Compute per-edge updates for all modules.
 
         Returns a LayerMap-structured pytree of updates (same PyTree type as modules).
         """
-        # First pass: per-receiver messages and aggregated activation kept under key `i`.
         activations: dict[int, dict[int, Array]] = {}
+        # here we compute all activations (back, forth, and last)
         for receiver_idx, senders_group in self.lmap.row_items():
             rng, sub = jax.random.split(rng)
             msgs = self._compute_messages(senders_group, state, rng=sub)
             # Add the receiver's aggregated activation under its own key.
             msgs[receiver_idx] = self.lmap[receiver_idx, receiver_idx].reduce(
                 {k: v for k, v in msgs.items() if k <= receiver_idx}
-            )  # IMPORTANT: in the backward we dont consider messages from the right
+            )  # IMPORTANT: in the backward we dont consider backward messages when aggregating
             activations[receiver_idx] = msgs
         # Second pass: ask each module for its update.
-        return self._backward_direct(state, activations)
+        return type(self)(layers=self._backward_direct(state, activations))
 
     # ---------------------------- internals ----------------------------
 

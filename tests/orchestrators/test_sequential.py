@@ -64,17 +64,28 @@ def tiny_graph(key: KeyArray) -> tuple[SequentialOrchestrator, SequentialState, 
     """
     diag0 = DebugLayer()
     diag1 = DebugLayer()
+    diag2 = DebugLayer()
+    diag3 = DebugLayer()
+    e01 = DebugAdapter()
+    e02 = DebugAdapter()
     e10 = DebugAdapter()
     e12 = DebugAdapter()
     e20 = DebugAdapter()
+    e21 = DebugAdapter()
     e12 = DebugAdapter()
+    e23 = DebugAdapter()
+    e32 = DebugAdapter()
+    e31 = DebugAdapter()
+    e30 = DebugAdapter()
 
     lmap_dict = {
-        1: {0: e10, 1: diag0, 2: e12},
-        2: {0: e20, 1: e12, 2: diag1},
+        0: {0: diag0, 1: e01, 2: e02},
+        1: {0: e10, 1: diag1, 2: e12},
+        2: {0: e20, 1: e21, 2: diag2, 3: e23},
+        3: {0: e30, 1: e31, 2: e32, 3: diag3},
     }
     lmap = LayerMap.from_dict(lmap_dict, require_diagonal=True)
-    state = SequentialState(sizes=(3, 3, 3))  # batch/shape handled by your implementation
+    state = SequentialState(sizes=(3, 3, 3, 3))  # batch/shape handled by your implementation
     orch = SequentialOrchestrator(layers=lmap)
     return orch, state, key
 
@@ -165,8 +176,8 @@ def test_step_inference_filters_right_messages_if_present(
     orch, state, key = tiny_graph
     # Force visible effect of filtering by making sender 0 quite different.
     s0 = jnp.full_like(state[0], 3.0)
-    s1 = jnp.full_like(state[1], -2.0)
-    state = state.replace_val(0, s0).replace_val(1, s1)
+    s1 = jnp.full_like(state[-1], -2.0)
+    state = state.replace_val(0, s0).replace_val(-1, s1)
     out_step, _ = orch.step(state, rng=key)
     out_inf, _ = orch.step_inference(state, rng=key)
     # Expect at least one receiver to change due to dropped edges.
@@ -180,11 +191,11 @@ def test_backward_structure_and_partitionability(
     """Updates must mirror LayerMap structure and be partitionable for Optax."""
     orch, state, key = tiny_graph
     updates = orch.backward(state, rng=key)
-    assert isinstance(updates, LayerMap)
+    assert isinstance(updates, SequentialOrchestrator)
 
     # Structural keys mirror lmap
     lm = orch.lmap.to_dict()
-    up = updates.to_dict()
+    up = updates.lmap.to_dict()
     assert set(lm.keys()) == set(up.keys())
     for i in lm:
         assert set(lm[i].keys()) == set(up[i].keys())
@@ -194,7 +205,7 @@ def test_backward_structure_and_partitionability(
 
     # Arrays-only partition succeeds and matches tree structure
     upd_arrays, _ = eqx.partition(updates, eqx.is_inexact_array)
-    params_arrays, _ = eqx.partition(orch.lmap, eqx.is_inexact_array)
+    params_arrays, _ = eqx.partition(orch, eqx.is_inexact_array)
     _assert_same_treedef(upd_arrays, params_arrays)
 
 
