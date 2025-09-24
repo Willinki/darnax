@@ -1,0 +1,6493 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Deep Asymmetric Recurrent Networks in Jax">
+      
+      
+      
+        <link rel="canonical" href="https://willinki.github.io/darnax/reference/darnax/">
+      
+      
+        <link rel="prev" href="../../tutorials/06_simple_net_on_artificial_data/">
+      
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.18">
+    
+    
+      
+        <title>Public API - Darnax</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7e37652d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#public-api" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Darnax" class="md-header__button md-logo" aria-label="Darnax" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Darnax
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Public API
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-hidden="true"  type="radio" name="__palette" id="__palette_0">
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Willinki/darnax" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Willinki/darnax
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../tutorials/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Tutorials
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Public API
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Darnax" class="md-nav__button md-logo" aria-label="Darnax" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Darnax
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Willinki/darnax" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Willinki/darnax
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../tutorials/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Tutorials
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/01_jax_and_equinox/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    01 — JAX, Equinox, and Pytrees
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/02_states/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    02 — States
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/03_modules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    03 — Modules (Layers and Adapters)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/04_layermaps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    04 — LayerMaps
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/05_orchestrators/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    05 — Orchestrators
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/06_simple_net_on_artificial_data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    06 — Simple Training Tutorial
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Public API
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Public API
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#darnax" class="md-nav__link">
+    <span class="md-ellipsis">
+      darnax
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#darnax.layer_maps" class="md-nav__link">
+    <span class="md-ellipsis">
+      layer_maps
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="layer_maps">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse" class="md-nav__link">
+    <span class="md-ellipsis">
+      sparse
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="sparse">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap" class="md-nav__link">
+    <span class="md-ellipsis">
+      LayerMap
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LayerMap">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.from_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      from_dict
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.tree_flatten" class="md-nav__link">
+    <span class="md-ellipsis">
+      tree_flatten
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.tree_unflatten" class="md-nav__link">
+    <span class="md-ellipsis">
+      tree_unflatten
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.__getitem__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __getitem__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.__contains__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __contains__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.rows" class="md-nav__link">
+    <span class="md-ellipsis">
+      rows
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.cols_of" class="md-nav__link">
+    <span class="md-ellipsis">
+      cols_of
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.neighbors" class="md-nav__link">
+    <span class="md-ellipsis">
+      neighbors
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.row_items" class="md-nav__link">
+    <span class="md-ellipsis">
+      row_items
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.edge_items" class="md-nav__link">
+    <span class="md-ellipsis">
+      edge_items
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.to_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      to_dict
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#darnax.modules" class="md-nav__link">
+    <span class="md-ellipsis">
+      modules
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="modules">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.debug" class="md-nav__link">
+    <span class="md-ellipsis">
+      debug
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="debug">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.debug.DebugLayer" class="md-nav__link">
+    <span class="md-ellipsis">
+      DebugLayer
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DebugLayer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.debug.DebugLayer.__call__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __call__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.debug.DebugLayer.activation" class="md-nav__link">
+    <span class="md-ellipsis">
+      activation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.debug.DebugLayer.reduce" class="md-nav__link">
+    <span class="md-ellipsis">
+      reduce
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.debug.DebugLayer.backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.debug.DebugAdapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      DebugAdapter
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DebugAdapter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.debug.DebugAdapter.__call__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __call__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.debug.DebugAdapter.backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.ferromagnetic" class="md-nav__link">
+    <span class="md-ellipsis">
+      ferromagnetic
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ferromagnetic">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.ferromagnetic.Ferromagnetic" class="md-nav__link">
+    <span class="md-ellipsis">
+      Ferromagnetic
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ferromagnetic">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.ferromagnetic.Ferromagnetic.__call__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __call__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.ferromagnetic.Ferromagnetic.backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.fully_connected" class="md-nav__link">
+    <span class="md-ellipsis">
+      fully_connected
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="fully_connected">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.fully_connected.FullyConnected" class="md-nav__link">
+    <span class="md-ellipsis">
+      FullyConnected
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="FullyConnected">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.fully_connected.FullyConnected.__call__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __call__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.fully_connected.FullyConnected.backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.fully_connected.FrozenFullyConnected" class="md-nav__link">
+    <span class="md-ellipsis">
+      FrozenFullyConnected
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="FrozenFullyConnected">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.fully_connected.FrozenFullyConnected.backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.input_output" class="md-nav__link">
+    <span class="md-ellipsis">
+      input_output
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="input_output">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.input_output.OutputLayer" class="md-nav__link">
+    <span class="md-ellipsis">
+      OutputLayer
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="OutputLayer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.input_output.OutputLayer.__call__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __call__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.input_output.OutputLayer.reduce" class="md-nav__link">
+    <span class="md-ellipsis">
+      reduce
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.input_output.OutputLayer.activation" class="md-nav__link">
+    <span class="md-ellipsis">
+      activation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.input_output.OutputLayer.backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      interfaces
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="interfaces">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces.AbstractModule" class="md-nav__link">
+    <span class="md-ellipsis">
+      AbstractModule
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="AbstractModule">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces.AbstractModule.has_state" class="md-nav__link">
+    <span class="md-ellipsis">
+      has_state
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces.AbstractModule.__call__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __call__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces.AbstractModule.backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces.Layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Layer
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces.Layer.has_state" class="md-nav__link">
+    <span class="md-ellipsis">
+      has_state
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces.Layer.activation" class="md-nav__link">
+    <span class="md-ellipsis">
+      activation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces.Layer.reduce" class="md-nav__link">
+    <span class="md-ellipsis">
+      reduce
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces.Adapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adapter
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Adapter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces.Adapter.has_state" class="md-nav__link">
+    <span class="md-ellipsis">
+      has_state
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.recurrent" class="md-nav__link">
+    <span class="md-ellipsis">
+      recurrent
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="recurrent">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.recurrent.RecurrentDiscrete" class="md-nav__link">
+    <span class="md-ellipsis">
+      RecurrentDiscrete
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="RecurrentDiscrete">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.recurrent.RecurrentDiscrete.activation" class="md-nav__link">
+    <span class="md-ellipsis">
+      activation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.recurrent.RecurrentDiscrete.__call__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __call__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.recurrent.RecurrentDiscrete.reduce" class="md-nav__link">
+    <span class="md-ellipsis">
+      reduce
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.recurrent.RecurrentDiscrete.backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#darnax.orchestrators" class="md-nav__link">
+    <span class="md-ellipsis">
+      orchestrators
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="orchestrators">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      interface
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="interface">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.interface.AbstractOrchestrator" class="md-nav__link">
+    <span class="md-ellipsis">
+      AbstractOrchestrator
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="AbstractOrchestrator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.interface.AbstractOrchestrator.step" class="md-nav__link">
+    <span class="md-ellipsis">
+      step
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.interface.AbstractOrchestrator.step_inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      step_inference
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.interface.AbstractOrchestrator.predict" class="md-nav__link">
+    <span class="md-ellipsis">
+      predict
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.interface.AbstractOrchestrator.backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.sequential" class="md-nav__link">
+    <span class="md-ellipsis">
+      sequential
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="sequential">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator" class="md-nav__link">
+    <span class="md-ellipsis">
+      SequentialOrchestrator
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SequentialOrchestrator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.step" class="md-nav__link">
+    <span class="md-ellipsis">
+      step
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.step_inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      step_inference
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.predict" class="md-nav__link">
+    <span class="md-ellipsis">
+      predict
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#darnax.states" class="md-nav__link">
+    <span class="md-ellipsis">
+      states
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="states">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      interface
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="interface">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.interface.State" class="md-nav__link">
+    <span class="md-ellipsis">
+      State
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="State">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.interface.State.__getitem__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __getitem__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.interface.State.init" class="md-nav__link">
+    <span class="md-ellipsis">
+      init
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.interface.State.replace" class="md-nav__link">
+    <span class="md-ellipsis">
+      replace
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.interface.State.replace_val" class="md-nav__link">
+    <span class="md-ellipsis">
+      replace_val
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.sequential" class="md-nav__link">
+    <span class="md-ellipsis">
+      sequential
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="sequential">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.sequential.SequentialState" class="md-nav__link">
+    <span class="md-ellipsis">
+      SequentialState
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SequentialState">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.sequential.SequentialState.__len__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __len__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.sequential.SequentialState.__getitem__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __getitem__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.sequential.SequentialState.replace" class="md-nav__link">
+    <span class="md-ellipsis">
+      replace
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.sequential.SequentialState.replace_val" class="md-nav__link">
+    <span class="md-ellipsis">
+      replace_val
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.sequential.SequentialState.init" class="md-nav__link">
+    <span class="md-ellipsis">
+      init
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#darnax.utils" class="md-nav__link">
+    <span class="md-ellipsis">
+      utils
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="utils">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list" class="md-nav__link">
+    <span class="md-ellipsis">
+      default_list
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="default_list">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList" class="md-nav__link">
+    <span class="md-ellipsis">
+      DefaultList
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DefaultList">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.tree_flatten" class="md-nav__link">
+    <span class="md-ellipsis">
+      tree_flatten
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.tree_unflatten" class="md-nav__link">
+    <span class="md-ellipsis">
+      tree_unflatten
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.__len__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __len__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.__iter__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __iter__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.__getitem__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __getitem__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.__setitem__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __setitem__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.__delitem__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __delitem__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.insert" class="md-nav__link">
+    <span class="md-ellipsis">
+      insert
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.append" class="md-nav__link">
+    <span class="md-ellipsis">
+      append
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.extend" class="md-nav__link">
+    <span class="md-ellipsis">
+      extend
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.to_list" class="md-nav__link">
+    <span class="md-ellipsis">
+      to_list
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.__repr__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __repr__
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.perceptron_rule" class="md-nav__link">
+    <span class="md-ellipsis">
+      perceptron_rule
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="perceptron_rule">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.perceptron_rule.perceptron_rule_backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      perceptron_rule_backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#darnax" class="md-nav__link">
+    <span class="md-ellipsis">
+      darnax
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#darnax.layer_maps" class="md-nav__link">
+    <span class="md-ellipsis">
+      layer_maps
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="layer_maps">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse" class="md-nav__link">
+    <span class="md-ellipsis">
+      sparse
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="sparse">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap" class="md-nav__link">
+    <span class="md-ellipsis">
+      LayerMap
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LayerMap">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.from_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      from_dict
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.tree_flatten" class="md-nav__link">
+    <span class="md-ellipsis">
+      tree_flatten
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.tree_unflatten" class="md-nav__link">
+    <span class="md-ellipsis">
+      tree_unflatten
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.__getitem__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __getitem__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.__contains__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __contains__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.rows" class="md-nav__link">
+    <span class="md-ellipsis">
+      rows
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.cols_of" class="md-nav__link">
+    <span class="md-ellipsis">
+      cols_of
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.neighbors" class="md-nav__link">
+    <span class="md-ellipsis">
+      neighbors
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.row_items" class="md-nav__link">
+    <span class="md-ellipsis">
+      row_items
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.edge_items" class="md-nav__link">
+    <span class="md-ellipsis">
+      edge_items
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.layer_maps.sparse.LayerMap.to_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      to_dict
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#darnax.modules" class="md-nav__link">
+    <span class="md-ellipsis">
+      modules
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="modules">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.debug" class="md-nav__link">
+    <span class="md-ellipsis">
+      debug
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="debug">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.debug.DebugLayer" class="md-nav__link">
+    <span class="md-ellipsis">
+      DebugLayer
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DebugLayer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.debug.DebugLayer.__call__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __call__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.debug.DebugLayer.activation" class="md-nav__link">
+    <span class="md-ellipsis">
+      activation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.debug.DebugLayer.reduce" class="md-nav__link">
+    <span class="md-ellipsis">
+      reduce
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.debug.DebugLayer.backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.debug.DebugAdapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      DebugAdapter
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DebugAdapter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.debug.DebugAdapter.__call__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __call__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.debug.DebugAdapter.backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.ferromagnetic" class="md-nav__link">
+    <span class="md-ellipsis">
+      ferromagnetic
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ferromagnetic">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.ferromagnetic.Ferromagnetic" class="md-nav__link">
+    <span class="md-ellipsis">
+      Ferromagnetic
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ferromagnetic">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.ferromagnetic.Ferromagnetic.__call__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __call__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.ferromagnetic.Ferromagnetic.backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.fully_connected" class="md-nav__link">
+    <span class="md-ellipsis">
+      fully_connected
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="fully_connected">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.fully_connected.FullyConnected" class="md-nav__link">
+    <span class="md-ellipsis">
+      FullyConnected
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="FullyConnected">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.fully_connected.FullyConnected.__call__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __call__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.fully_connected.FullyConnected.backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.fully_connected.FrozenFullyConnected" class="md-nav__link">
+    <span class="md-ellipsis">
+      FrozenFullyConnected
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="FrozenFullyConnected">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.fully_connected.FrozenFullyConnected.backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.input_output" class="md-nav__link">
+    <span class="md-ellipsis">
+      input_output
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="input_output">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.input_output.OutputLayer" class="md-nav__link">
+    <span class="md-ellipsis">
+      OutputLayer
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="OutputLayer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.input_output.OutputLayer.__call__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __call__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.input_output.OutputLayer.reduce" class="md-nav__link">
+    <span class="md-ellipsis">
+      reduce
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.input_output.OutputLayer.activation" class="md-nav__link">
+    <span class="md-ellipsis">
+      activation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.input_output.OutputLayer.backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      interfaces
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="interfaces">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces.AbstractModule" class="md-nav__link">
+    <span class="md-ellipsis">
+      AbstractModule
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="AbstractModule">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces.AbstractModule.has_state" class="md-nav__link">
+    <span class="md-ellipsis">
+      has_state
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces.AbstractModule.__call__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __call__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces.AbstractModule.backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces.Layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Layer
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces.Layer.has_state" class="md-nav__link">
+    <span class="md-ellipsis">
+      has_state
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces.Layer.activation" class="md-nav__link">
+    <span class="md-ellipsis">
+      activation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces.Layer.reduce" class="md-nav__link">
+    <span class="md-ellipsis">
+      reduce
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces.Adapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adapter
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Adapter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.interfaces.Adapter.has_state" class="md-nav__link">
+    <span class="md-ellipsis">
+      has_state
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.recurrent" class="md-nav__link">
+    <span class="md-ellipsis">
+      recurrent
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="recurrent">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.recurrent.RecurrentDiscrete" class="md-nav__link">
+    <span class="md-ellipsis">
+      RecurrentDiscrete
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="RecurrentDiscrete">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.recurrent.RecurrentDiscrete.activation" class="md-nav__link">
+    <span class="md-ellipsis">
+      activation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.recurrent.RecurrentDiscrete.__call__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __call__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.recurrent.RecurrentDiscrete.reduce" class="md-nav__link">
+    <span class="md-ellipsis">
+      reduce
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.recurrent.RecurrentDiscrete.backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#darnax.orchestrators" class="md-nav__link">
+    <span class="md-ellipsis">
+      orchestrators
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="orchestrators">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      interface
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="interface">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.interface.AbstractOrchestrator" class="md-nav__link">
+    <span class="md-ellipsis">
+      AbstractOrchestrator
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="AbstractOrchestrator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.interface.AbstractOrchestrator.step" class="md-nav__link">
+    <span class="md-ellipsis">
+      step
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.interface.AbstractOrchestrator.step_inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      step_inference
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.interface.AbstractOrchestrator.predict" class="md-nav__link">
+    <span class="md-ellipsis">
+      predict
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.interface.AbstractOrchestrator.backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.sequential" class="md-nav__link">
+    <span class="md-ellipsis">
+      sequential
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="sequential">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator" class="md-nav__link">
+    <span class="md-ellipsis">
+      SequentialOrchestrator
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SequentialOrchestrator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.step" class="md-nav__link">
+    <span class="md-ellipsis">
+      step
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.step_inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      step_inference
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.predict" class="md-nav__link">
+    <span class="md-ellipsis">
+      predict
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#darnax.states" class="md-nav__link">
+    <span class="md-ellipsis">
+      states
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="states">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      interface
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="interface">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.interface.State" class="md-nav__link">
+    <span class="md-ellipsis">
+      State
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="State">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.interface.State.__getitem__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __getitem__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.interface.State.init" class="md-nav__link">
+    <span class="md-ellipsis">
+      init
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.interface.State.replace" class="md-nav__link">
+    <span class="md-ellipsis">
+      replace
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.interface.State.replace_val" class="md-nav__link">
+    <span class="md-ellipsis">
+      replace_val
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.sequential" class="md-nav__link">
+    <span class="md-ellipsis">
+      sequential
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="sequential">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.sequential.SequentialState" class="md-nav__link">
+    <span class="md-ellipsis">
+      SequentialState
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SequentialState">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.sequential.SequentialState.__len__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __len__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.sequential.SequentialState.__getitem__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __getitem__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.sequential.SequentialState.replace" class="md-nav__link">
+    <span class="md-ellipsis">
+      replace
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.sequential.SequentialState.replace_val" class="md-nav__link">
+    <span class="md-ellipsis">
+      replace_val
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.states.sequential.SequentialState.init" class="md-nav__link">
+    <span class="md-ellipsis">
+      init
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#darnax.utils" class="md-nav__link">
+    <span class="md-ellipsis">
+      utils
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="utils">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list" class="md-nav__link">
+    <span class="md-ellipsis">
+      default_list
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="default_list">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList" class="md-nav__link">
+    <span class="md-ellipsis">
+      DefaultList
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DefaultList">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.tree_flatten" class="md-nav__link">
+    <span class="md-ellipsis">
+      tree_flatten
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.tree_unflatten" class="md-nav__link">
+    <span class="md-ellipsis">
+      tree_unflatten
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.__len__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __len__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.__iter__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __iter__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.__getitem__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __getitem__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.__setitem__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __setitem__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.__delitem__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __delitem__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.insert" class="md-nav__link">
+    <span class="md-ellipsis">
+      insert
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.append" class="md-nav__link">
+    <span class="md-ellipsis">
+      append
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.extend" class="md-nav__link">
+    <span class="md-ellipsis">
+      extend
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.to_list" class="md-nav__link">
+    <span class="md-ellipsis">
+      to_list
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.default_list.DefaultList.__repr__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __repr__
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.perceptron_rule" class="md-nav__link">
+    <span class="md-ellipsis">
+      perceptron_rule
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="perceptron_rule">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.utils.perceptron_rule.perceptron_rule_backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      perceptron_rule_backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/Willinki/darnax/edit/master/docs/reference/darnax.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="public-api">Public API<a class="headerlink" href="#public-api" title="Permanent link">&para;</a></h1>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<a id="darnax"></a>
+    <div class="doc doc-contents first">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="darnax.layer_maps" class="doc doc-heading">
+            <code>layer_maps</code>
+
+
+<a href="#darnax.layer_maps" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h3 id="darnax.layer_maps.sparse" class="doc doc-heading">
+            <code>sparse</code>
+
+
+<a href="#darnax.layer_maps.sparse" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="darnax.layer_maps.sparse.LayerMap" class="doc doc-heading">
+              <code class="highlight language-python"><span class="n">LayerMap</span><span class="p">(</span><span class="n">_data</span><span class="p">,</span> <span class="n">_rows</span><span class="p">,</span> <span class="n">_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#darnax.layer_maps.sparse.LayerMap" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+
+        <p>PyTree wrapper around a dict-of-dicts with static keys and <em>non-static</em> values.</p>
+
+
+<details class="design-goals" open>
+  <summary>Design goals</summary>
+  <ul>
+<li>Maintain the clarity of a nested dict-of-dicts API.</li>
+<li>Keep the <em>structure</em> (row/column keys and their order) static for JIT stability.</li>
+<li><strong>Flatten through modules</strong> so that arrays inside Equinox modules are visible to
+  JAX/Optax (parameters get gradients and updates).</li>
+<li>Prevent structural mutation after construction.</li>
+</ul>
+</details>
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <ul>
+<li>Row keys are sorted once at initialization.</li>
+<li>Column keys for each row are also sorted at initialization.</li>
+<li>Keys are part of the treedef (static). Module <em>parameters</em> are leaves.</li>
+<li>Public dict-like accessors return read-only mappings to avoid accidental
+  structural mutation. Use <code>to_dict()</code> if you need a deep copy for external use.</li>
+</ul>
+</details>
+
+<details class="public-type" open>
+  <summary>Public type</summary>
+  <p>Values are typed as <code>AbstractModule</code> so that any subclass can be stored.</p>
+</details>
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.layer_maps.sparse.LayerMap.from_dict" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">from_dict</span><span class="p">(</span><span class="n">mapping</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">require_diagonal</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+  </span>
+
+<a href="#darnax.layer_maps.sparse.LayerMap.from_dict" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Construct a LayerMap from a nested mapping.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>mapping</code>
+            </td>
+            <td>
+                  <code><span title="collections.abc.Mapping">Mapping</span>[<span title="int">int</span>, <span title="collections.abc.Mapping">Mapping</span>[<span title="int">int</span>, <a class="autorefs autorefs-internal" title="AbstractModule (darnax.modules.interfaces.AbstractModule)" href="#darnax.modules.interfaces.AbstractModule">AbstractModule</a>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Nested mapping from row -&gt; (col -&gt; module).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>require_diagonal</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Enforce that (i, i) exists for any i present as either a row or a column.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.layer_maps.sparse.LayerMap.tree_flatten" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">tree_flatten</span><span class="p">()</span></code>
+
+<a href="#darnax.layer_maps.sparse.LayerMap.tree_flatten" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Deconstruct the tree. Does NOT flatten through modules.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.layer_maps.sparse.LayerMap.tree_unflatten" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">tree_unflatten</span><span class="p">(</span><span class="n">aux</span><span class="p">,</span> <span class="n">children</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#darnax.layer_maps.sparse.LayerMap.tree_unflatten" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Reconstruct the tree based on aux and children provided by tree_flatten.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.layer_maps.sparse.LayerMap.__getitem__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span></code>
+
+<a href="#darnax.layer_maps.sparse.LayerMap.__getitem__" class="headerlink" title="Permanent link">&para;</a></h5>
+          <div class="doc-overloads">
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">__getitem__</span><span class="p">(</span><span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">AbstractModule</span><span class="p">]</span>
+</code></pre></div><div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">__getitem__</span><span class="p">(</span><span class="n">ij</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">AbstractModule</span>
+</code></pre></div>          </div>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Access row mapping or individual module.</p>
+<ul>
+<li><code>lm[i]</code> returns a read-only mapping of neighbors for row <code>i</code>.</li>
+<li><code>lm[i, j]</code> returns the module at edge <code>(i, j)</code>.</li>
+</ul>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.layer_maps.sparse.LayerMap.__contains__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__contains__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span></code>
+
+<a href="#darnax.layer_maps.sparse.LayerMap.__contains__" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return True if the module key[1] -&gt; key[0] is present.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.layer_maps.sparse.LayerMap.rows" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">rows</span><span class="p">()</span></code>
+
+<a href="#darnax.layer_maps.sparse.LayerMap.rows" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>All row indices in sorted order (static).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.layer_maps.sparse.LayerMap.cols_of" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">cols_of</span><span class="p">(</span><span class="n">i</span><span class="p">)</span></code>
+
+<a href="#darnax.layer_maps.sparse.LayerMap.cols_of" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>All column indices of row <code>i</code> in sorted order (static for a given map).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.layer_maps.sparse.LayerMap.neighbors" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">neighbors</span><span class="p">(</span><span class="n">i</span><span class="p">)</span></code>
+
+<a href="#darnax.layer_maps.sparse.LayerMap.neighbors" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Read-only mapping of neighbors (col → module) for row <code>i</code>.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.layer_maps.sparse.LayerMap.row_items" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">row_items</span><span class="p">(</span><span class="n">skip_last</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">forward_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+
+<a href="#darnax.layer_maps.sparse.LayerMap.row_items" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Iterate <code>(row, neighbors)</code> with deterministic ordering and read-only views.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>skip_last</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True, the last receiver row is omitted.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>forward_only</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True, only modules that send messages "forward" are computed.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.layer_maps.sparse.LayerMap.edge_items" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">edge_items</span><span class="p">()</span></code>
+
+<a href="#darnax.layer_maps.sparse.LayerMap.edge_items" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Iterate over <code>((i, j), module)</code> in deterministic row-major order.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.layer_maps.sparse.LayerMap.to_dict" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">to_dict</span><span class="p">()</span></code>
+
+<a href="#darnax.layer_maps.sparse.LayerMap.to_dict" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Deep copy as a plain dict-of-dicts (mutable, not tied to this object).</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="darnax.modules" class="doc doc-heading">
+            <code>modules</code>
+
+
+<a href="#darnax.modules" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h3 id="darnax.modules.debug" class="doc doc-heading">
+            <code>debug</code>
+
+
+<a href="#darnax.modules.debug" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="darnax.modules.debug.DebugLayer" class="doc doc-heading">
+              <code class="highlight language-python"><span class="n">DebugLayer</span><span class="p">()</span></code>
+
+<a href="#darnax.modules.debug.DebugLayer" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="Layer (darnax.modules.interfaces.Layer)" href="#darnax.modules.interfaces.Layer">Layer</a></code></p>
+
+
+        <p>A simple trainable layer for testing and debugging.</p>
+
+        <p>Initialize the weight equal to 1.0.</p>
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.debug.DebugLayer.__call__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.debug.DebugLayer.__call__" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return elementwise multiplication.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.debug.DebugLayer.activation" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">activation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.debug.DebugLayer.activation" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Apply the layer’s activation function.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.debug.DebugLayer.reduce" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">reduce</span><span class="p">(</span><span class="n">h</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.debug.DebugLayer.reduce" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Aggregate incoming messages into a single tensor.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.debug.DebugLayer.backward" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">backward</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.debug.DebugLayer.backward" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return the update is the itself.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="darnax.modules.debug.DebugAdapter" class="doc doc-heading">
+              <code class="highlight language-python"><span class="n">DebugAdapter</span><span class="p">()</span></code>
+
+<a href="#darnax.modules.debug.DebugAdapter" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="Adapter (darnax.modules.interfaces.Adapter)" href="#darnax.modules.interfaces.Adapter">Adapter</a></code></p>
+
+
+        <p>A stateless mapping between layers.</p>
+
+        <p>Initialize the weight equal to 1.0.</p>
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.debug.DebugAdapter.__call__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.debug.DebugAdapter.__call__" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return elementwise multiplication.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.debug.DebugAdapter.backward" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">backward</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.debug.DebugAdapter.backward" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return the update is the itself.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h3 id="darnax.modules.ferromagnetic" class="doc doc-heading">
+            <code>ferromagnetic</code>
+
+
+<a href="#darnax.modules.ferromagnetic" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="darnax.modules.ferromagnetic.Ferromagnetic" class="doc doc-heading">
+              <code class="highlight language-python"><span class="n">Ferromagnetic</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">strength</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.ferromagnetic.Ferromagnetic" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="Adapter (darnax.modules.interfaces.Adapter)" href="#darnax.modules.interfaces.Adapter">Adapter</a></code></p>
+
+
+        <p>Elementwise scaling adapter with fixed coupling strength.</p>
+
+        <p>Initialize the adapter with scalar or per-feature strength.</p>
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.ferromagnetic.Ferromagnetic.__call__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.ferromagnetic.Ferromagnetic.__call__" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Scale inputs elementwise by the coupling strength.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.ferromagnetic.Ferromagnetic.backward" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">backward</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.ferromagnetic.Ferromagnetic.backward" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return a zero update to indicate non-trainability.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h3 id="darnax.modules.fully_connected" class="doc doc-heading">
+            <code>fully_connected</code>
+
+
+<a href="#darnax.modules.fully_connected" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="darnax.modules.fully_connected.FullyConnected" class="doc doc-heading">
+              <code class="highlight language-python"><span class="n">FullyConnected</span><span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span> <span class="n">strength</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.fully_connected.FullyConnected" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="Adapter (darnax.modules.interfaces.Adapter)" href="#darnax.modules.interfaces.Adapter">Adapter</a></code></p>
+
+
+        <p>Fully-connected trainable adapter (x @ W, per-output scaling).</p>
+
+        <p>Initialize weights and per-output strength/threshold.</p>
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.fully_connected.FullyConnected.__call__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.fully_connected.FullyConnected.__call__" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Compute y = (x @ W) * strength (broadcast on last dim).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.fully_connected.FullyConnected.backward" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">backward</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.fully_connected.FullyConnected.backward" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return a module-shaped update: ΔW set; strength/threshold zero.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="darnax.modules.fully_connected.FrozenFullyConnected" class="doc doc-heading">
+              <code class="highlight language-python"><span class="n">FrozenFullyConnected</span><span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span> <span class="n">strength</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.fully_connected.FrozenFullyConnected" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="FullyConnected(in_features, out_features, strength, threshold, key, dtype=jnp.float32) (darnax.modules.fully_connected.FullyConnected)" href="#darnax.modules.fully_connected.FullyConnected">FullyConnected</a></code></p>
+
+
+        <p>Implements a fully connected layer with no updates.</p>
+<p>QOL implementation for Wback.</p>
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.fully_connected.FrozenFullyConnected.backward" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">backward</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.fully_connected.FrozenFullyConnected.backward" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return zero update for all parameters.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h3 id="darnax.modules.input_output" class="doc doc-heading">
+            <code>input_output</code>
+
+
+<a href="#darnax.modules.input_output" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="darnax.modules.input_output.OutputLayer" class="doc doc-heading">
+            <code>OutputLayer</code>
+
+
+<a href="#darnax.modules.input_output.OutputLayer" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="Layer (darnax.modules.interfaces.Layer)" href="#darnax.modules.interfaces.Layer">Layer</a></code></p>
+
+
+        <p>Simple identity output layer that sums predictions.</p>
+<p>This layer leaves inputs unchanged on forward/activation, and provides a
+<code>reduce</code> method that elementwise-sums all array leaves in a PyTree of
+predictions. The backward pass is a no-op because this layer has no
+trainable parameters.</p>
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.input_output.OutputLayer.__call__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.input_output.OutputLayer.__call__" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return the input unchanged (identity forward).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.input_output.OutputLayer.reduce" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">reduce</span><span class="p">(</span><span class="n">h</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.input_output.OutputLayer.reduce" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Elementwise-sum all array leaves in a PyTree of predictions.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>h</code>
+            </td>
+            <td>
+                  <code><span title="darnax.utils.typing.PyTree">PyTree</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>PyTree whose leaves are arrays with identical shapes/dtypes.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The elementwise sum across all leaves.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If <code>h</code> has no leaves.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.input_output.OutputLayer.activation" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">activation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.input_output.OutputLayer.activation" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Identity activation.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.input_output.OutputLayer.backward" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">backward</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.input_output.OutputLayer.backward" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>No-op backward because the output layer has no parameters.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h3 id="darnax.modules.interfaces" class="doc doc-heading">
+            <code>interfaces</code>
+
+
+<a href="#darnax.modules.interfaces" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="darnax.modules.interfaces.AbstractModule" class="doc doc-heading">
+            <code>AbstractModule</code>
+
+
+<a href="#darnax.modules.interfaces.AbstractModule" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="equinox.Module">Module</span></code>, <code><span title="abc.ABC">ABC</span></code></p>
+
+
+        <p>Base class for layers and adapters.</p>
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="darnax.modules.interfaces.AbstractModule.has_state" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">has_state</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#darnax.modules.interfaces.AbstractModule.has_state" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return whether the module carries persistent state.</p>
+
+    </div>
+
+</div>
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.interfaces.AbstractModule.__call__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#darnax.modules.interfaces.AbstractModule.__call__" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Compute the forward pass.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.interfaces.AbstractModule.backward" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">backward</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#darnax.modules.interfaces.AbstractModule.backward" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Compute a parameter update with the same PyTree structure.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="darnax.modules.interfaces.Layer" class="doc doc-heading">
+            <code>Layer</code>
+
+
+<a href="#darnax.modules.interfaces.Layer" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="AbstractModule (darnax.modules.interfaces.AbstractModule)" href="#darnax.modules.interfaces.AbstractModule">AbstractModule</a></code>, <code><span title="abc.ABC">ABC</span></code></p>
+
+
+        <p>A trainable layer with an activation and reducer.</p>
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="darnax.modules.interfaces.Layer.has_state" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">has_state</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#darnax.modules.interfaces.Layer.has_state" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return True; layers are stateful by design.</p>
+
+    </div>
+
+</div>
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.interfaces.Layer.activation" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">activation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#darnax.modules.interfaces.Layer.activation" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Apply the layer’s activation function.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.interfaces.Layer.reduce" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">reduce</span><span class="p">(</span><span class="n">h</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#darnax.modules.interfaces.Layer.reduce" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Aggregate incoming messages into a single tensor.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="darnax.modules.interfaces.Adapter" class="doc doc-heading">
+            <code>Adapter</code>
+
+
+<a href="#darnax.modules.interfaces.Adapter" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="AbstractModule (darnax.modules.interfaces.AbstractModule)" href="#darnax.modules.interfaces.AbstractModule">AbstractModule</a></code>, <code><span title="abc.ABC">ABC</span></code></p>
+
+
+        <p>A stateless mapping between layers.</p>
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h5 id="darnax.modules.interfaces.Adapter.has_state" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">has_state</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#darnax.modules.interfaces.Adapter.has_state" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return False; adapters carry no persistent state.</p>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h3 id="darnax.modules.recurrent" class="doc doc-heading">
+            <code>recurrent</code>
+
+
+<a href="#darnax.modules.recurrent" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="darnax.modules.recurrent.RecurrentDiscrete" class="doc doc-heading">
+              <code class="highlight language-python"><span class="n">RecurrentDiscrete</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">j_d</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.recurrent.RecurrentDiscrete" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="Layer (darnax.modules.interfaces.Layer)" href="#darnax.modules.interfaces.Layer">Layer</a></code></p>
+
+
+        <p>Binary (±1) recurrent layer with dense couplings.</p>
+
+        <p>Initialize J with Gaussian entries, set diag to j_d, and store thresholds.</p>
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.recurrent.RecurrentDiscrete.activation" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">activation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.recurrent.RecurrentDiscrete.activation" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return strict ±1 activation with ties mapped to +1.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.recurrent.RecurrentDiscrete.__call__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.recurrent.RecurrentDiscrete.__call__" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Compute pre-activation h = x @ J.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.recurrent.RecurrentDiscrete.reduce" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">reduce</span><span class="p">(</span><span class="n">h</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.recurrent.RecurrentDiscrete.reduce" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Aggregate incoming messages by summation.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.modules.recurrent.RecurrentDiscrete.backward" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">backward</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span></code>
+
+<a href="#darnax.modules.recurrent.RecurrentDiscrete.backward" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return a module-shaped update with ΔJ in J and zeros elsewhere.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="darnax.orchestrators" class="doc doc-heading">
+            <code>orchestrators</code>
+
+
+<a href="#darnax.orchestrators" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h3 id="darnax.orchestrators.interface" class="doc doc-heading">
+            <code>interface</code>
+
+
+<a href="#darnax.orchestrators.interface" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="darnax.orchestrators.interface.AbstractOrchestrator" class="doc doc-heading">
+            <code>AbstractOrchestrator</code>
+
+
+<a href="#darnax.orchestrators.interface.AbstractOrchestrator" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="equinox.Module">Module</span></code>, <code><span title="typing.Generic">Generic</span>[<span title="darnax.orchestrators.interface.StateT">StateT</span>]</code></p>
+
+
+        <p>Handles communication and messages between modules in a layermap.</p>
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.orchestrators.interface.AbstractOrchestrator.step" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">step</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#darnax.orchestrators.interface.AbstractOrchestrator.step" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Given the current state, run one forward/update step and return the new state.</p>
+<p>It does not change/affect the value of the output state.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.orchestrators.interface.AbstractOrchestrator.step_inference" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">step_inference</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#darnax.orchestrators.interface.AbstractOrchestrator.step_inference" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Given the current state, run one forward/update step and return the new state.</p>
+<p>Does not compute messages traveling "to the right".
+Does not change/affect the value of the output state.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.orchestrators.interface.AbstractOrchestrator.predict" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">predict</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#darnax.orchestrators.interface.AbstractOrchestrator.predict" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Update the output state.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.orchestrators.interface.AbstractOrchestrator.backward" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">backward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#darnax.orchestrators.interface.AbstractOrchestrator.backward" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Given the current state, compute the updates for the parameters in <code>lmap</code>.</p>
+<p>The returned PyTree must have the same structure as <code>lmap</code> so that it can
+be used with Optax's <code>update</code> and <code>apply_updates</code>.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h3 id="darnax.orchestrators.sequential" class="doc doc-heading">
+            <code>sequential</code>
+
+
+<a href="#darnax.orchestrators.sequential" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="darnax.orchestrators.sequential.SequentialOrchestrator" class="doc doc-heading">
+              <code class="highlight language-python"><span class="n">SequentialOrchestrator</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span></code>
+
+<a href="#darnax.orchestrators.sequential.SequentialOrchestrator" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="AbstractOrchestrator (darnax.orchestrators.interface.AbstractOrchestrator)" href="#darnax.orchestrators.interface.AbstractOrchestrator">AbstractOrchestrator</a>[<a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="#darnax.states.sequential.SequentialState">SequentialState</a>]</code></p>
+
+
+        <p>Sequential message-passing orchestrator compatible with the new LayerMap.</p>
+
+
+<details class="assumptions" open>
+  <summary>Assumptions</summary>
+  <ul>
+<li><code>lmap</code> is a dict-of-dicts PyTree with <strong>static structure</strong> (sorted keys) and
+  Equinox modules as values; the LayerMap flattens <em>through</em> modules so their
+  parameters are visible to JAX/Optax.</li>
+<li>For each receiver <code>i</code>, the diagonal module <code>lmap[i, i]</code> implements
+  <code>reduce(pytree_of_messages)</code> and <code>activation(Array) -&gt; Array</code>.</li>
+<li>Each edge module <code>lmap[i, j]</code> is callable as <code>module(x, rng=...) -&gt; Array</code>
+  and provides <code>backward(x, y, y_hat) -&gt; AbstractModule</code> (same PyTree type).</li>
+</ul>
+</details>
+        <p>Initialize the orchestrator from the layermap.</p>
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.orchestrators.sequential.SequentialOrchestrator.step" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">step</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span></code>
+
+<a href="#darnax.orchestrators.sequential.SequentialOrchestrator.step" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>One forward update over all receivers, except the output layer (skip_last=True).</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>state</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="#darnax.states.sequential.SequentialState">SequentialState</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The current network state.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>rng</code>
+            </td>
+            <td>
+                  <code><span title="darnax.orchestrators.sequential.KeyArray">KeyArray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>PRNG key; will be split per receiver/sender and advanced.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.orchestrators.sequential.SequentialOrchestrator.step_inference" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">step_inference</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span></code>
+
+<a href="#darnax.orchestrators.sequential.SequentialOrchestrator.step_inference" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>One forward update over all receivers, except the output layer (skip_last=True).</p>
+<p>Also skips messages coming from the right (forward_only=True)</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>state</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="#darnax.states.sequential.SequentialState">SequentialState</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The current network state.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>rng</code>
+            </td>
+            <td>
+                  <code><span title="darnax.orchestrators.sequential.KeyArray">KeyArray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>PRNG key; will be split per receiver/sender and advanced.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.orchestrators.sequential.SequentialOrchestrator.predict" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">predict</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span></code>
+
+<a href="#darnax.orchestrators.sequential.SequentialOrchestrator.predict" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Update the output state s[-1].</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.orchestrators.sequential.SequentialOrchestrator.backward" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">backward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span></code>
+
+<a href="#darnax.orchestrators.sequential.SequentialOrchestrator.backward" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Compute per-edge updates for all modules.</p>
+<p>Returns a LayerMap-structured pytree of updates (same PyTree type as modules).</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="darnax.states" class="doc doc-heading">
+            <code>states</code>
+
+
+<a href="#darnax.states" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h3 id="darnax.states.interface" class="doc doc-heading">
+            <code>interface</code>
+
+
+<a href="#darnax.states.interface" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="darnax.states.interface.State" class="doc doc-heading">
+            <code>State</code>
+
+
+<a href="#darnax.states.interface.State" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="equinox.Module">Module</span></code></p>
+
+
+        <p>Global state for a network (layermap).</p>
+<p>Each layer of a layermap has an associated state.
+The number of elements in the global state needs to be
+equal to the number of layers in the LayerMap + 1 at least.</p>
+<p>See "inputs" and "output" in docs.</p>
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.states.interface.State.__getitem__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#darnax.states.interface.State.__getitem__" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return an array for the given key.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.states.interface.State.init" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">init</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#darnax.states.interface.State.init" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Initialize the state with the input and output in the correct place.</p>
+<p>They are the first [0] and last element of the state.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.states.interface.State.replace" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">replace</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#darnax.states.interface.State.replace" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Replace the whole state functionally with new values.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.states.interface.State.replace_val" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">replace_val</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#darnax.states.interface.State.replace_val" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return a new instance with layer state at id idx replaced by value .</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h3 id="darnax.states.sequential" class="doc doc-heading">
+            <code>sequential</code>
+
+
+<a href="#darnax.states.sequential" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="darnax.states.sequential.SequentialState" class="doc doc-heading">
+              <code class="highlight language-python"><span class="n">SequentialState</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></code>
+
+<a href="#darnax.states.sequential.SequentialState" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="State (darnax.states.interface.State)" href="#darnax.states.interface.State">State</a></code></p>
+
+
+        <p>Sequential activations buffer for layered networks.</p>
+<p>Layers are indexed from left to right:
+layer <code>0</code> is the <strong>input</strong> buffer and layer <code>-1</code> is the <strong>output</strong> buffer.</p>
+<p>The internal storage is a list of JAX arrays with shapes <code>(B, *size_l)</code>.
+At construction time buffers are initialized with <code>(1, *size_l)</code> zeros.
+Use :meth:<code>init</code> to resize them to a real batch size <code>B</code> and optionally set the output.</p>
+
+        <p>Create a sequential state with one buffer per layer.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>sizes</code>
+            </td>
+            <td>
+                  <code><span title="collections.abc.Iterable">Iterable</span>[<span title="tuple">tuple</span>[<span title="int">int</span>, ...] | <span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Iterable of <strong>tuples of positive integers</strong> or <strong>positive integers</strong>
+for each layer width, including input and output.
+For example, a one-hidden-layer classifier could be <code>[D, N, C]</code>
+or mixed-rank like <code>[(H, W, C_in), N, (C_out,)]</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>dtype</code>
+            </td>
+            <td>
+                  <code><span title="jax.numpy.dtype">dtype</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>JAX dtype for all buffers (static in the PyTree).</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="jax.numpy.float32">float32</span></code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="AssertionError">AssertionError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If any size is not a positive <code>int</code>/tuple of positive <code>int</code> or
+if the iterable is empty.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.states.sequential.SequentialState.__len__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__len__</span><span class="p">()</span></code>
+
+<a href="#darnax.states.sequential.SequentialState.__len__" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get number of layers (including input and output).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.states.sequential.SequentialState.__getitem__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span></code>
+
+<a href="#darnax.states.sequential.SequentialState.__getitem__" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return the buffer for layer <code>key</code> (supports negative indices).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.states.sequential.SequentialState.replace" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">replace</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></code>
+
+<a href="#darnax.states.sequential.SequentialState.replace" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return a new instance with <code>states</code> replaced by <code>value</code>.</p>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>This is a <strong>functional</strong> update; the original object is not mutated.</p>
+</details>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.states.sequential.SequentialState.replace_val" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">replace_val</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></code>
+
+<a href="#darnax.states.sequential.SequentialState.replace_val" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return a new instance with layer <code>idx</code> replaced by <code>value</code>.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.states.sequential.SequentialState.init" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">init</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#darnax.states.sequential.SequentialState.init" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Resize buffers to batch <code>B</code> and set input (and optionally output).</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>x</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Input batch with shape <code>(B, *D)</code> where <code>*D</code> must match the input layer shape.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>y</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional output batch with shape <code>(B, *C)</code> where <code>*C</code> must match the output layer shape.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="#darnax.states.sequential.SequentialState">SequentialState</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A new instance whose buffers all have shape <code>(B, *size_l)</code>, with
+layer 0 set to <code>x</code> and (if provided) layer -1 set to <code>y</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="AssertionError">AssertionError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If shapes are inconsistent. Checks run at trace time (once per compilation).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="darnax.utils" class="doc doc-heading">
+            <code>utils</code>
+
+
+<a href="#darnax.utils" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h3 id="darnax.utils.default_list" class="doc doc-heading">
+            <code>default_list</code>
+
+
+<a href="#darnax.utils.default_list" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="darnax.utils.default_list.DefaultList" class="doc doc-heading">
+              <code class="highlight language-python"><span class="n">DefaultList</span><span class="p">(</span><span class="n">initial</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">default_factory</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#darnax.utils.default_list.DefaultList" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="collections.abc.MutableSequence">MutableSequence</span>[<span title="darnax.utils.default_list.T">T</span> | None]</code>, <code><span title="typing.Generic">Generic</span>[<span title="darnax.utils.default_list.T">T</span>]</code></p>
+
+
+        <p>Default-filling mutable list, registered as a JAX PyTree.</p>
+
+
+<details class="key-behavior" open>
+  <summary>Key behavior</summary>
+  <ul>
+<li>Assigning or inserting beyond the current length <em>fills gaps</em> with a
+  default sentinel (materialized only when read).</li>
+<li>Slicing returns another :class:<code>DefaultList</code> that preserves default slots.</li>
+<li>Behaves like a normal <code>MutableSequence</code> for typing and basic list ops.</li>
+<li>Participates in JAX PyTree flatten/unflatten.</li>
+</ul>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>initial</code>
+            </td>
+            <td>
+                  <code><span title="collections.abc.Iterable">Iterable</span>[<span title="darnax.utils.default_list.T">T</span> | None]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Initial concrete values to store. Defaults are not inserted unless
+indices are explicitly extended by assignment/insert.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>default</code>
+            </td>
+            <td>
+                  <code><span title="darnax.utils.default_list.T">T</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Value returned when reading a default slot <em>if</em> <code>default_factory</code> is
+not provided. May be <code>None</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>default_factory</code>
+            </td>
+            <td>
+                  <code><span title="collections.abc.Callable">Callable</span>[[], <span title="darnax.utils.default_list.T">T</span> | None]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Zero-arg callable that produces the value for a default slot on read.
+Takes precedence over <code>default</code>.
+<strong>Note:</strong> each read materializes a fresh value; defaults are not cached
+per-slot.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>PyTree leaves are the underlying elements, including the sentinel; any JAX
+<code>tree_map</code> should account for non-numeric leaves if defaults are present.</p>
+</details>
+
+<details class="public-type" open>
+  <summary>Public type</summary>
+  <p>The public element type is <code>T | None</code> because materialized defaults may
+legitimately be <code>None</code>.</p>
+</details>
+        <p>Create a :class:<code>DefaultList</code>.</p>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="TypeError">TypeError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If <code>default_factory</code> is not callable.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.utils.default_list.DefaultList.tree_flatten" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">tree_flatten</span><span class="p">()</span></code>
+
+<a href="#darnax.utils.default_list.DefaultList.tree_flatten" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return children and aux data for JAX PyTree protocol.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="tuple">tuple</span>[<span title="tuple">tuple</span>[<span title="typing.Any">Any</span>, ...], <span title="tuple">tuple</span>[<span title="typing.Any">Any</span>, ...]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Children are the raw underlying items (sentinels preserved).
+Aux data contains <code>(default, default_factory)</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.utils.default_list.DefaultList.tree_unflatten" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">tree_unflatten</span><span class="p">(</span><span class="n">aux</span><span class="p">,</span> <span class="n">children</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#darnax.utils.default_list.DefaultList.tree_unflatten" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Rebuild from aux and children (JAX PyTree protocol).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.utils.default_list.DefaultList.__len__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__len__</span><span class="p">()</span></code>
+
+<a href="#darnax.utils.default_list.DefaultList.__len__" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return number of stored slots (including default placeholders).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.utils.default_list.DefaultList.__iter__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__iter__</span><span class="p">()</span></code>
+
+<a href="#darnax.utils.default_list.DefaultList.__iter__" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Iterate over <em>materialized</em> values (defaults materialized on the fly).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.utils.default_list.DefaultList.__getitem__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__getitem__</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span></code>
+
+<a href="#darnax.utils.default_list.DefaultList.__getitem__" class="headerlink" title="Permanent link">&para;</a></h5>
+          <div class="doc-overloads">
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">__getitem__</span><span class="p">(</span><span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span> <span class="o">|</span> <span class="kc">None</span>
+</code></pre></div><div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">__getitem__</span><span class="p">(</span><span class="n">idx</span><span class="p">:</span> <span class="nb">slice</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MutableSequence</span><span class="p">[</span><span class="n">T</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span>
+</code></pre></div>          </div>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return a materialized value, or a sliced :class:<code>DefaultList</code>.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.utils.default_list.DefaultList.__setitem__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__setitem__</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></code>
+
+<a href="#darnax.utils.default_list.DefaultList.__setitem__" class="headerlink" title="Permanent link">&para;</a></h5>
+          <div class="doc-overloads">
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">__setitem__</span><span class="p">(</span><span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">T</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div><div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">__setitem__</span><span class="p">(</span><span class="n">idx</span><span class="p">:</span> <span class="nb">slice</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">T</span> <span class="o">|</span> <span class="kc">None</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>          </div>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Assign a value; extending past the end fills gaps with defaults.</p>
+<p>Slice assignment expects an iterable (like Python lists do).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.utils.default_list.DefaultList.__delitem__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__delitem__</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span></code>
+
+<a href="#darnax.utils.default_list.DefaultList.__delitem__" class="headerlink" title="Permanent link">&para;</a></h5>
+          <div class="doc-overloads">
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">__delitem__</span><span class="p">(</span><span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div><div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">__delitem__</span><span class="p">(</span><span class="n">idx</span><span class="p">:</span> <span class="nb">slice</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>          </div>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Delete an item or slice (mirrors Python list semantics).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.utils.default_list.DefaultList.insert" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">insert</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></code>
+
+<a href="#darnax.utils.default_list.DefaultList.insert" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Insert at <code>index</code>; if beyond end, fill gap with defaults then append.</p>
+<p>Negative indices are clamped like Python's <code>list.insert</code>.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.utils.default_list.DefaultList.append" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></code>
+
+<a href="#darnax.utils.default_list.DefaultList.append" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Append a value.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.utils.default_list.DefaultList.extend" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">extend</span><span class="p">(</span><span class="n">values</span><span class="p">)</span></code>
+
+<a href="#darnax.utils.default_list.DefaultList.extend" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Extend from an iterable.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.utils.default_list.DefaultList.to_list" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">to_list</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">filter_defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+
+<a href="#darnax.utils.default_list.DefaultList.to_list" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Materialize to a plain Python list.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>filter_defaults</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True, drop default slots entirely. Otherwise materialize them.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="list">list</span>[<span title="darnax.utils.default_list.T">T</span> | None]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A list containing either materialized defaults or only concrete values.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h5 id="darnax.utils.default_list.DefaultList.__repr__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__repr__</span><span class="p">()</span></code>
+
+<a href="#darnax.utils.default_list.DefaultList.__repr__" class="headerlink" title="Permanent link">&para;</a></h5>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Debug representation showing materialized values.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h3 id="darnax.utils.perceptron_rule" class="doc doc-heading">
+            <code>perceptron_rule</code>
+
+
+<a href="#darnax.utils.perceptron_rule" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+        <p>Perceptron (OVA) backward update in JAX.</p>
+<ul>
+<li>Supports batched inputs.</li>
+<li>Labels are {-1, +1} per class (one-vs-all).</li>
+<li><code>y_hat</code> are raw scores (pre-activation).</li>
+<li>Returns weight update <code>dW</code> without applying a learning rate.</li>
+</ul>
+
+
+<details class="shapes" open>
+  <summary>Shapes</summary>
+  <p>x      : (d,) or (n, d)
+y      : (n, K) in {-1, +1}
+y_hat  : (n, K) raw scores
+returns: (d, K)</p>
+</details>
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="darnax.utils.perceptron_rule.perceptron_rule_backward" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">perceptron_rule_backward</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">,</span> <span class="n">margin</span><span class="p">)</span></code>
+
+<a href="#darnax.utils.perceptron_rule.perceptron_rule_backward" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Compute multiclass (OVA) perceptron weight update with scaling (no learning rate).</p>
+<p>Updates are applied when <code>y * y_hat &lt;= margin</code> (ties counted as mistakes).</p>
+<p>Args:
+    x: Input vector(s), shape <code>(d,)</code> or <code>(n, d)</code>.
+    y: Targets in <code>{-1, +1}</code>, shape <code>(n, K)</code>.
+    y_hat: Raw scores, shape <code>(n, K)</code>.
+    margin: Scalar margin threshold; changing its value will not retrace.</p>
+<p>Returns:
+    Weight update <code>dW</code> of shape <code>(d, K)</code> to add to the weights.</p>
+<p>Scaling:
+    - Divides by batch size <code>n</code> so updates are batch-size invariant.
+    - Divides by <code>sqrt(d)</code> (fan-in) so updates remain stable as width grows.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.92b07e13.min.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
