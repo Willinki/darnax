@@ -19,3 +19,5 @@ equinox partition/combine.
 - [ ] Add helper function to build networks
 
 - [ ] How to handle parameter sharing? eqx.shared
+
+- [ ] Orchestrator should be generic type in both state and layermap
