@@ -159,10 +159,27 @@ class LayerMap:
         """Read-only mapping of neighbors (col → module) for row `i`."""
         return MappingProxyType(self._data[i])
 
-    def row_items(self) -> Iterable[tuple[int, Mapping[int, AbstractModule]]]:
-        """Iterate `(row, neighbors)` with deterministic ordering and read-only views."""
-        for i in self._rows:
-            yield i, MappingProxyType(self._data[i])
+    def row_items(
+        self, skip_last: bool = False, forward_only: bool = False
+    ) -> Iterable[tuple[int, Mapping[int, AbstractModule]]]:
+        """Iterate `(row, neighbors)` with deterministic ordering and read-only views.
+
+        Parameters
+        ----------
+        skip_last : bool, default=False
+            If True, the last receiver row is omitted.
+        forward_only : bool, default=False
+            If True, only modules that send messages "forward" are computed.
+
+        """
+        row_keys = list(self._rows)
+        if skip_last:
+            row_keys = row_keys[:-1]
+        for r_idx in row_keys:
+            data = self._data[r_idx]
+            if forward_only:
+                data = {k: v for k, v in data.items() if k <= r_idx}
+            yield r_idx, MappingProxyType(data)
 
     def edge_items(self) -> Iterable[tuple[tuple[int, int], AbstractModule]]:
         """Iterate over `((i, j), module)` in deterministic row-major order."""
