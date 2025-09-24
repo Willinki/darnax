@@ -6,6 +6,10 @@ repo_name: Willinki/BiologicalNetwork
 
 theme:
   name: material
+  palette:
+    - scheme: default      # light mode
+      primary: indigo
+      accent: indigo
   features:
     - navigation.tabs
     - navigation.sections
@@ -64,6 +68,7 @@ nav:
       - tutorials/03_modules.md
       - tutorials/04_layermaps.md
       - tutorials/05_orchestrators.md
+      - tutorials/06_simple_net_on_artificial_data.md
   - Public API: reference/bionet.md
 
 watch:
