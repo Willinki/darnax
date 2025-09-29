@@ -3,6 +3,7 @@ site_description: Deep Asymmetric Recurrent Networks in Jax
 site_url: https://willinki.github.io/darnax/
 repo_url: https://github.com/Willinki/darnax
 repo_name: Willinki/darnax
+docs_dir: docs
 
 theme:
   name: material
@@ -46,6 +47,9 @@ plugins:
   - autorefs
   - section-index
   - literate-nav
+  - gen-files:
+      scripts:
+        - docs/_auto_api.py
   - mkdocstrings:
       handlers:
         python:
@@ -69,7 +73,9 @@ nav:
       - tutorials/04_layermaps.md
       - tutorials/05_orchestrators.md
       - tutorials/06_simple_net_on_artificial_data.md
-  - Public API: reference/darnax.md
+  - Reference:
+      - reference/README.md
+      - API: reference/api/index.md
 
 watch:
   - src
