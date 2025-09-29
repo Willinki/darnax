@@ -1,3 +1,27 @@
+"""Default-filling list registered as a JAX PyTree.
+
+``DefaultList`` behaves like a Python ``list`` but supports *logical defaults*:
+gaps created by assigning/inserting past the current end are represented by a
+sentinel and **materialized only on read**. This keeps storage compact while
+preserving where defaults were implied.
+
+Features
+--------
+- Works like ``collections.abc.MutableSequence`` (indexing, slicing, insert, del).
+- Extending past the end fills with a sentinel; the actual default value is
+  produced only when accessed (``__getitem__``/``__iter__``/``to_list``).
+- Slicing returns another ``DefaultList`` that **preserves** sentinel slots.
+- Registered as a JAX **PyTree** (``tree_flatten``/``tree_unflatten``).
+
+Notes
+-----
+- If ``default_factory`` is provided, **every read** of a default slot creates
+  a fresh value (no per-slot caching).
+- Leaves in the PyTree include the sentinel; JAX transforms that map over
+  leaves should tolerate non-numeric entries when defaults are present.
+
+"""
+
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Iterator, MutableSequence
@@ -12,12 +36,13 @@ T = TypeVar("T")
 class _DefaultSentinel:
     """Unique, unmaterialized placeholder for default-valued slots.
 
-    Notes
-    -----
     This sentinel marks positions that *logically* contain a default value but
     have not been materialized. It is replaced with an actual value only when
-    read via ``__getitem__``/``to_list``. This keeps the underlying storage
-    lightweight and preserves where defaults were implied.
+    read via ``__getitem__``, ``__iter__``, or :meth:`DefaultList.to_list`.
+
+    Notes
+    -----
+    The sentinel itself may appear as a **leaf** in a PyTree during flattening.
 
     """
 
@@ -34,35 +59,23 @@ _DEFAULT = _DefaultSentinel()
 class DefaultList(MutableSequence[T | None], Generic[T]):
     """Default-filling mutable list, registered as a JAX PyTree.
 
-    Key behavior
-    ------------
-    - Assigning or inserting beyond the current length *fills gaps* with a
-      default sentinel (materialized only when read).
-    - Slicing returns another :class:`DefaultList` that preserves default slots.
-    - Behaves like a normal ``MutableSequence`` for typing and basic list ops.
-    - Participates in JAX PyTree flatten/unflatten.
+    Assigning or inserting beyond the current length *fills gaps* with a
+    sentinel; the concrete default value is produced only when read. Slicing
+    returns another :class:`DefaultList` that preserves sentinel slots.
 
     Parameters
     ----------
     initial : Iterable[T | None], optional
-        Initial concrete values to store. Defaults are not inserted unless
+        Concrete values to seed the list. Defaults are not inserted unless
         indices are explicitly extended by assignment/insert.
     default : T | None, optional
-        Value returned when reading a default slot *if* ``default_factory`` is
-        not provided. May be ``None``.
+        Value returned for a default slot *if* ``default_factory`` is not set.
     default_factory : Callable[[], T | None], optional
-        Zero-arg callable that produces the value for a default slot on read.
-        Takes precedence over ``default``.
-        **Note:** each read materializes a fresh value; defaults are not cached
-        per-slot.
+        Zero-arg callable producing the value for a default slot on read.
+        Takes precedence over ``default``. Each read yields a **fresh** value.
 
     Notes
     -----
-    PyTree leaves are the underlying elements, including the sentinel; any JAX
-    ``tree_map`` should account for non-numeric leaves if defaults are present.
-
-    Public type
-    -----------
     The public element type is ``T | None`` because materialized defaults may
     legitimately be ``None``.
 
@@ -92,7 +105,7 @@ class DefaultList(MutableSequence[T | None], Generic[T]):
 
     # ---------- PyTree protocol ----------
     def tree_flatten(self) -> tuple[tuple[Any, ...], tuple[Any, ...]]:
-        """Return children and aux data for JAX PyTree protocol.
+        """Return children and aux data for the JAX PyTree protocol.
 
         Returns
         -------
@@ -111,7 +124,21 @@ class DefaultList(MutableSequence[T | None], Generic[T]):
         aux: tuple[Any, ...],
         children: tuple[Any, ...],
     ) -> DefaultList[T]:
-        """Rebuild from aux and children (JAX PyTree protocol)."""
+        """Rebuild from aux and children (JAX PyTree protocol).
+
+        Parameters
+        ----------
+        aux : tuple[Any, ...]
+            The auxiliary data returned by :meth:`tree_flatten`.
+        children : tuple[Any, ...]
+            The raw items (may include sentinels).
+
+        Returns
+        -------
+        DefaultList[T]
+            A reconstructed list with identical contents and defaults.
+
+        """
         default, default_factory = aux
         out: DefaultList[T] = cls(default=default, default_factory=default_factory)
         out._data = list(children)
@@ -128,7 +155,7 @@ class DefaultList(MutableSequence[T | None], Generic[T]):
 
         Notes
         -----
-        Each read creates a *new* object when ``default_factory`` is provided.
+        A new object is returned on each call when ``default_factory`` is used.
 
         """
         if self._default_factory is not None:
@@ -145,6 +172,12 @@ class DefaultList(MutableSequence[T | None], Generic[T]):
 
         For non-negative indices, returns the index unchanged (allows extension).
         For negative indices, ensures the index is within current bounds.
+
+        Raises
+        ------
+        IndexError
+            If a negative index refers before the start of the list.
+
         """
         if idx >= 0:
             return idx
@@ -154,11 +187,23 @@ class DefaultList(MutableSequence[T | None], Generic[T]):
 
     # ---------- abstract methods required by MutableSequence ----------
     def __len__(self) -> int:
-        """Return number of stored slots (including default placeholders)."""
+        """Return the number of stored slots (including default placeholders)."""
         return len(self._data)
 
     def __iter__(self) -> Iterator[T | None]:
-        """Iterate over *materialized* values (defaults materialized on the fly)."""
+        """Iterate over **materialized** values.
+
+        Yields
+        ------
+        T | None
+            Concrete values where sentinel positions are replaced by defaults.
+
+        Notes
+        -----
+        When a ``default_factory`` is set, repeated iterations can produce
+        distinct objects for the same default slot (no caching).
+
+        """
         for raw in self._data:
             yield self._make_default() if raw is _DEFAULT else raw
 
@@ -168,7 +213,20 @@ class DefaultList(MutableSequence[T | None], Generic[T]):
     def __getitem__(self, idx: slice, /) -> MutableSequence[T | None]: ...
 
     def __getitem__(self, idx: int | slice, /) -> T | None | MutableSequence[T | None]:
-        """Return a materialized value, or a sliced :class:`DefaultList`."""
+        """Return a materialized value or a sliced :class:`DefaultList`.
+
+        Parameters
+        ----------
+        idx : int or slice
+            Index or slice.
+
+        Returns
+        -------
+        T | None or MutableSequence[T | None]
+            Single value (defaults materialized) or a sliced ``DefaultList``
+            that **preserves** sentinel positions.
+
+        """
         if isinstance(idx, slice):
             child: DefaultList[T] = DefaultList(
                 default=self._default,
@@ -192,7 +250,13 @@ class DefaultList(MutableSequence[T | None], Generic[T]):
     ) -> None:
         """Assign a value; extending past the end fills gaps with defaults.
 
-        Slice assignment expects an iterable (like Python lists do).
+        Parameters
+        ----------
+        idx : int or slice
+            Index or slice to assign into.
+        value : T | None or Iterable[T | None]
+            Value(s) to assign. Slice assignment follows Python list semantics.
+
         """
         if isinstance(idx, slice):
             values = list(value)  # type: ignore[arg-type]
@@ -214,7 +278,14 @@ class DefaultList(MutableSequence[T | None], Generic[T]):
     def insert(self, index: int, value: T | None) -> None:
         """Insert at ``index``; if beyond end, fill gap with defaults then append.
 
-        Negative indices are clamped like Python's ``list.insert``.
+        Parameters
+        ----------
+        index : int
+            Insertion position. Negative indices are clamped like
+            ``list.insert``.
+        value : T | None
+            Value to insert.
+
         """
         if index < 0:
             index = max(0, len(self._data) + index)
@@ -239,12 +310,19 @@ class DefaultList(MutableSequence[T | None], Generic[T]):
         Parameters
         ----------
         filter_defaults : bool, default False
-            If True, drop default slots entirely. Otherwise materialize them.
+            If ``True``, drop default slots entirely (positions are lost).
+            Otherwise, materialize defaults into concrete values.
 
         Returns
         -------
         list[T | None]
-            A list containing either materialized defaults or only concrete values.
+            Either a list containing concrete values *and* materialized defaults,
+            or (if ``filter_defaults=True``) only the explicitly set values.
+
+        Notes
+        -----
+        With ``default_factory``, materialized defaults are freshly created and
+        are not cached per-slot.
 
         """
         if filter_defaults:
@@ -255,7 +333,7 @@ class DefaultList(MutableSequence[T | None], Generic[T]):
             ]
         return [(v if v is not _DEFAULT else self._make_default()) for v in self._data]
 
-    def __repr__(self) -> str:
-        """Debug representation showing materialized values."""
+    def __repr__(self) -> str:  # pragma: no cover - debug aid
+        """Debug representation with materialized values."""
         shown = [(v if v is not _DEFAULT else self._make_default()) for v in self._data]
         return f"DefaultList(default={self._default}, data={shown})"

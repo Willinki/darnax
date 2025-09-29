@@ -1,3 +1,31 @@
+"""LayerMap: a static, PyTree-friendly adjacency of modules.
+
+`LayerMap` wraps a nested dict-of-dicts that maps receiver rows ``i`` to
+neighbors (columns) ``j`` → module, i.e. it represents edges ``(i, j)``.
+The structure (row/column keys and their order) is **static** for JIT stability,
+while the **values** (modules and their parameters) are dynamic PyTree leaves.
+
+Design goals
+------------
+- Keep a clear nested dict API while making the structure part of the treedef.
+- Flatten *through* Equinox/JAX modules so inner arrays are visible to JAX/Optax.
+- Forbid structural mutation after construction (frozen dataclass, read-only views).
+
+Conventions
+-----------
+- Rows and, within each row, columns are **sorted** once at construction.
+- Keys are integers (layer indices). Edge ``(i, j)`` connects sender/neighbor
+  ``j`` into receiver ``i`` (lower-triangular including the diagonal is common).
+- The diagonal policy can be enforced: every row must have its ``(i, i)`` self-edge.
+
+PyTree behavior
+---------------
+`tree_flatten` returns all modules in deterministic row-major order as *children*,
+plus static aux data describing the key layout. JAX/Equinox then flattens
+module parameters further, so optimizers and transforms "see" the arrays inside.
+
+"""
+
 from __future__ import annotations
 
 import logging
@@ -20,25 +48,27 @@ logger = logging.getLogger(__name__)
 class LayerMap:
     """PyTree wrapper around a dict-of-dicts with static keys and *non-static* values.
 
-    Design goals
-    ------------
-    - Maintain the clarity of a nested dict-of-dicts API.
-    - Keep the *structure* (row/column keys and their order) static for JIT stability.
-    - **Flatten through modules** so that arrays inside Equinox modules are visible to
-      JAX/Optax (parameters get gradients and updates).
-    - Prevent structural mutation after construction.
+    Parameters
+    ----------
+    _data : dict[int, dict[int, AbstractModule]]
+        Internal mapping from row ``i`` → (col ``j`` → module). Keys are sorted.
+    _rows : tuple[int, ...]
+        All row keys in sorted order (becomes part of the treedef).
+    _ndim : int, default 2
+        Tuple key arity (``(i, j)``). Exposed mainly for reconstruction.
 
     Notes
     -----
-    - Row keys are sorted once at initialization.
-    - Column keys for each row are also sorted at initialization.
-    - Keys are part of the treedef (static). Module *parameters* are leaves.
-    - Public dict-like accessors return read-only mappings to avoid accidental
-      structural mutation. Use `to_dict()` if you need a deep copy for external use.
+    - The dataclass is **frozen** to prevent structural mutation after creation.
+      Use :meth:`to_dict` to obtain a mutable deep copy if you truly need one.
+    - Read-only accessors (e.g., :meth:`neighbors`) return ``MappingProxyType``.
+    - The keys (rows/cols) are included in the PyTree aux data, so the layout
+      is static under JIT; values (modules) are the dynamic leaves.
 
     Public type
     -----------
-    Values are typed as ``AbstractModule`` so that any subclass can be stored.
+    Values are typed as :class:`~darnax.modules.interfaces.AbstractModule` so any
+    concrete layer/adapter subtype can be stored.
 
     """
 
@@ -59,9 +89,20 @@ class LayerMap:
         Parameters
         ----------
         mapping : Mapping[int, Mapping[int, AbstractModule]]
-            Nested mapping from row -> (col -> module).
-        require_diagonal : bool
-            Enforce that (i, i) exists for any i present as either a row or a column.
+            Nested mapping from row ``i`` → (col ``j`` → module).
+        require_diagonal : bool, default True
+            If ``True``, enforce that each present row ``i`` has an explicit
+            self-edge ``(i, i)``.
+
+        Returns
+        -------
+        LayerMap
+            A new instance with rows and per-row columns sorted deterministically.
+
+        Raises
+        ------
+        AttributeError
+            If ``require_diagonal=True`` and some ``(i, i)`` is missing.
 
         """
         rows: tuple[int, ...] = tuple(sorted(mapping.keys()))
@@ -76,7 +117,19 @@ class LayerMap:
 
     @staticmethod
     def _validate_diagonal(data: Mapping[int, Mapping[int, AbstractModule]]) -> None:
-        """Check for every row, also its diagonal value is present."""
+        """Validate that every row has its diagonal entry.
+
+        Parameters
+        ----------
+        data : Mapping[int, Mapping[int, AbstractModule]]
+            Row → (col → module) mapping.
+
+        Raises
+        ------
+        AttributeError
+            If any row ``i`` lacks the diagonal key ``i``.
+
+        """
         rows = set(data.keys())
         missing: list[int] = []
         for k in sorted(rows):
@@ -88,7 +141,22 @@ class LayerMap:
     # ---------- PyTree protocol ----------
 
     def tree_flatten(self) -> tuple[tuple[AbstractModule, ...], tuple[Any, ...]]:
-        """Deconstruct the tree. Does NOT flatten through modules."""
+        """Deconstruct into children and aux (PyTree protocol).
+
+        Returns
+        -------
+        children : tuple[AbstractModule, ...]
+            Modules in deterministic row-major order; JAX/Equinox will flatten
+            their parameter fields further.
+        aux : tuple[Any, ...]
+            Static metadata: ``(rows, cols_per_row, ndim)`` to reconstruct the treedef.
+
+        Notes
+        -----
+        We intentionally **do not** include keys as children; keys are part of
+        the static aux data so JIT sees a stable structure even when values change.
+
+        """
         rows = self._rows
         cols_per_row = tuple(tuple(self._data[i].keys()) for i in rows)
         children: list[AbstractModule] = []
@@ -104,7 +172,22 @@ class LayerMap:
         aux: tuple[Any, ...],
         children: Iterable[AbstractModule],
     ) -> LayerMap:
-        """Reconstruct the tree based on aux and children provided by tree_flatten."""
+        """Reconstruct from aux and children (PyTree protocol).
+
+        Parameters
+        ----------
+        aux : tuple[Any, ...]
+            The static metadata returned by :meth:`tree_flatten`:
+            ``(rows, cols_per_row, ndim)``.
+        children : Iterable[AbstractModule]
+            Modules in the exact row-major order produced by :meth:`tree_flatten`.
+
+        Returns
+        -------
+        LayerMap
+            A new instance with the same static key layout and provided values.
+
+        """
         rows, cols_per_row, ndim = aux
         it = iter(children)
         data: dict[int, dict[int, AbstractModule]] = {}
@@ -125,10 +208,24 @@ class LayerMap:
     def __getitem__(
         self, key: int | tuple[int, int]
     ) -> AbstractModule | Mapping[int, AbstractModule]:
-        """Access row mapping or individual module.
+        """Access a row mapping or a single edge.
 
-        - `lm[i]` returns a read-only mapping of neighbors for row `i`.
-        - `lm[i, j]` returns the module at edge `(i, j)`.
+        Parameters
+        ----------
+        key : int or (int, int)
+            - ``lm[i]`` returns a read-only mapping of neighbors for row ``i``.
+            - ``lm[i, j]`` returns the module at edge ``(i, j)``.
+
+        Returns
+        -------
+        Mapping[int, AbstractModule] or AbstractModule
+            A read-only row mapping, or the concrete module at the given edge.
+
+        Raises
+        ------
+        TypeError
+            If the key is neither ``int`` nor ``(int, int)`` with the expected arity.
+
         """
         if isinstance(key, int):
             return MappingProxyType(self._data[key])
@@ -143,7 +240,19 @@ class LayerMap:
         raise TypeError("Key must be int (row) or tuple[int, int] (edge)")
 
     def __contains__(self, key: tuple[int, int]) -> bool:  # edge membership
-        """Return True if the module key[1] -> key[0] is present."""
+        """Return ``True`` if an edge exists.
+
+        Parameters
+        ----------
+        key : (int, int)
+            The edge ``(i, j)`` to test.
+
+        Returns
+        -------
+        bool
+            ``True`` if ``(i, j)`` is present, ``False`` otherwise.
+
+        """
         i, j = key
         return i in self._data and j in self._data[i]
 
@@ -156,20 +265,28 @@ class LayerMap:
         return tuple(self._data[i].keys())
 
     def neighbors(self, i: int) -> Mapping[int, AbstractModule]:
-        """Read-only mapping of neighbors (col → module) for row `i`."""
+        """Read-only mapping of neighbors (``col → module``) for row ``i``."""
         return MappingProxyType(self._data[i])
 
     def row_items(
         self, skip_last: bool = False, forward_only: bool = False
     ) -> Iterable[tuple[int, Mapping[int, AbstractModule]]]:
-        """Iterate `(row, neighbors)` with deterministic ordering and read-only views.
+        """Iterate over rows with deterministic ordering and read-only views.
 
         Parameters
         ----------
-        skip_last : bool, default=False
-            If True, the last receiver row is omitted.
-        forward_only : bool, default=False
-            If True, only modules that send messages "forward" are computed.
+        skip_last : bool, default False
+            If ``True``, omit the last receiver row (useful when the output row
+            is sink-only).
+        forward_only : bool, default False
+            If ``True``, keep only edges ``(i, j)`` with ``j <= i`` (i.e.,
+            lower-triangular including the diagonal), which is a common
+            “feed-forward” scheduling constraint.
+
+        Yields
+        ------
+        (row, neighbors) : tuple[int, Mapping[int, AbstractModule]]
+            The row index and a read-only mapping of its neighbors.
 
         """
         row_keys = list(self._rows)
@@ -182,11 +299,26 @@ class LayerMap:
             yield r_idx, MappingProxyType(data)
 
     def edge_items(self) -> Iterable[tuple[tuple[int, int], AbstractModule]]:
-        """Iterate over `((i, j), module)` in deterministic row-major order."""
+        """Iterate over edges in deterministic row-major order.
+
+        Yields
+        ------
+        ((i, j), module) : tuple[tuple[int, int], AbstractModule]
+            Edge key and its module.
+
+        """
         for i in self._rows:
             for j, v in self._data[i].items():
                 yield (i, j), v
 
     def to_dict(self) -> dict[int, dict[int, AbstractModule]]:
-        """Deep copy as a plain dict-of-dicts (mutable, not tied to this object)."""
+        """Deep copy as a plain, mutable dict-of-dicts.
+
+        Returns
+        -------
+        dict[int, dict[int, AbstractModule]]
+            A new mapping with the same keys and module values. Mutations on
+            this result do **not** affect the original ``LayerMap``.
+
+        """
         return {i: dict(self._data[i]) for i in self._rows}

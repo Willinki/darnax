@@ -1,16 +1,21 @@
 """Perceptron (OVA) backward update in JAX.
 
+This module implements a one-vs-all perceptron-style local update that returns
+a weight increment ``ΔW`` to be **added** to a dense weight matrix.
+
 - Supports batched inputs.
-- Labels are {-1, +1} per class (one-vs-all).
-- `y_hat` are raw scores (pre-activation).
-- Returns weight update `dW` without applying a learning rate.
+- Labels are in ``{-1, +1}`` per class (one-vs-all coding).
+- ``y_hat`` are raw scores (pre-activation).
+- No learning rate is applied here.
 
 Shapes
 ------
-x      : (d,) or (n, d)
-y      : (n, K) in {-1, +1}
-y_hat  : (n, K) raw scores
-returns: (d, K)
+x       : (d,) or (n, d)
+y       : (n, K) in {-1, +1}
+y_hat   : (n, K) raw scores
+margin  : broadcastable to (n, K) — e.g. scalar, (K,), or (n, K)
+returns : (d, K)  (ΔW to add to weights)
+
 """
 
 from __future__ import annotations
@@ -25,22 +30,46 @@ def perceptron_rule_backward(
     y_hat: jax.Array,
     margin: jax.Array,
 ) -> jax.Array:
-    """Compute multiclass (OVA) perceptron weight update with scaling (no learning rate).
+    """Multiclass (OVA) perceptron update (no learning rate).
 
-    Updates are applied when ``y * y_hat <= margin`` (ties counted as mistakes).
+    Applies an update when the margin condition is violated,
+    i.e. ``y * y_hat <= margin`` (ties count as mistakes). The result is a
+    weight increment ``ΔW`` aligned with a column-per-class layout.
 
-    Args:
-        x: Input vector(s), shape ``(d,)`` or ``(n, d)``.
-        y: Targets in ``{-1, +1}``, shape ``(n, K)``.
-        y_hat: Raw scores, shape ``(n, K)``.
-        margin: Scalar margin threshold; changing its value will not retrace.
+    Parameters
+    ----------
+    x : jax.Array
+        Input vector(s), shape ``(d,)`` or ``(n, d)``.
+    y : jax.Array
+        One-vs-all targets in ``{-1, +1}``, shape ``(n, K)``.
+    y_hat : jax.Array
+        Raw scores (pre-activation), shape ``(n, K)``.
+    margin : jax.Array
+        Margin threshold, **broadcastable** to ``(n, K)``; e.g. a scalar,
+        a per-class vector ``(K,)``, or an array ``(n, K)``.
 
-    Returns:
-        Weight update ``dW`` of shape ``(d, K)`` to add to the weights.
+    Returns
+    -------
+    jax.Array
+        Weight update ``ΔW`` of shape ``(d, K)`` to **add** to the weights.
 
-    Scaling:
-        - Divides by batch size ``n`` so updates are batch-size invariant.
-        - Divides by ``sqrt(d)`` (fan-in) so updates remain stable as width grows.
+    Notes
+    -----
+    - Batch-size normalization: the update is divided by ``n`` so that its
+      magnitude is invariant to the batch size.
+    - Fan-in/width normalization (``1/sqrt(d)``) is **not** applied here. If
+      desired, incorporate it at the call site for your specific model.
+
+    Examples
+    --------
+    >>> import jax.numpy as jnp
+    >>> x = jnp.array([[1., 0.], [0., 1.]])      # (n=2, d=2)
+    >>> y = jnp.array([[+1, -1], [-1, +1]])      # (2, K=2)
+    >>> y_hat = jnp.array([[0.2, -0.3], [0.1, -0.4]])
+    >>> margin = 0.0
+    >>> dW = perceptron_rule_backward(x, y, y_hat, margin)
+    >>> dW.shape
+    (2, 2)
 
     """
     x = jnp.atleast_2d(x)  # (n, d)

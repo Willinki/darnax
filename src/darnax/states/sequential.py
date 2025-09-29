@@ -1,3 +1,19 @@
+"""Sequential, array-backed global state.
+
+`SequentialState` stores per-layer activations for layered networks as a list of
+JAX arrays and follows a strict indexing convention:
+
+- index ``0``: input buffer
+- index ``-1``: output buffer
+- indices ``1..-2``: intermediate layer buffers (left → right)
+
+Construction allocates **placeholder** buffers with batch size 1. Call
+:meth:`SequentialState.init` to resize all buffers to the true batch size and
+populate the endpoints. The object is an Equinox ``Module`` (a PyTree), so it
+plays nicely with JAX transforms; all “updates” are **functional** (return a new
+instance) via :meth:`replace` and :meth:`replace_val`.
+"""
+
 from __future__ import annotations
 
 import logging
@@ -22,12 +38,41 @@ logger = logging.getLogger(__name__)
 class SequentialState(State):
     """Sequential activations buffer for layered networks.
 
-    Layers are indexed from left to right:
-    layer ``0`` is the **input** buffer and layer ``-1`` is the **output** buffer.
+    Layers are indexed from left to right: ``state[0]`` is **input** and
+    ``state[-1]`` is **output**. The internal storage is a list of arrays with
+    shapes ``(B, *size_l)`` where ``B`` is the batch size and ``*size_l`` is the
+    per-layer trailing shape.
 
-    The internal storage is a list of JAX arrays with shapes ``(B, *size_l)``.
-    At construction time buffers are initialized with ``(1, *size_l)`` zeros.
-    Use :meth:`init` to resize them to a real batch size ``B`` and optionally set the output.
+    On construction, buffers are initialized as zeros with shape
+    ``(1, *size_l)`` (a placeholder batch). Call :meth:`init` to resize all
+    buffers to a real batch size and optionally set the output.
+
+    Attributes
+    ----------
+    states : list[Array]
+        Per-layer buffers. Shapes are ``(B, *size_l)`` after :meth:`init`,
+        or ``(1, *size_l)`` immediately after construction.
+    dtype : jnp.dtype
+        Dtype for all buffers (marked static in the PyTree).
+    data_min_ndim : int
+        Minimal rank for data buffers (default ``2`` → enforces a batch dim).
+
+    Notes
+    -----
+    - This class is **functional**: methods like :meth:`replace` and
+      :meth:`replace_val` return a **new** instance; the original is unchanged.
+    - Shape assertions in :meth:`init` are executed at trace time, so they are
+      checked once per JIT compilation.
+    - Nothing prevents you from storing non-floating dtypes, as long as they
+      are consistent with ``dtype`` at construction.
+
+    Examples
+    --------
+    >>> st = SequentialState([4, 8, 2])        # input(4), hidden(8), output(2)
+    >>> st = st.init(jnp.zeros((32, 4)))       # B=32; output left as zeros
+    >>> x = st[0]                               # (32, 4)
+    >>> st2 = st.replace_val(1, jnp.ones((32, 8)))  # update hidden layer
+
     """
 
     states: list[Array]
@@ -41,19 +86,19 @@ class SequentialState(State):
 
         Parameters
         ----------
-        sizes
-            Iterable of **tuples of positive integers** or **positive integers**
-            for each layer width, including input and output.
-            For example, a one-hidden-layer classifier could be ``[D, N, C]``
-            or mixed-rank like ``[(H, W, C_in), N, (C_out,)]``.
-        dtype
-            JAX dtype for all buffers (static in the PyTree).
+        sizes : Iterable[tuple[int, ...] | int]
+            Iterable of **positive** sizes for each layer, including input and
+            output. Each entry can be a positive ``int`` (for 1D layers) or a
+            tuple of positive ``int`` (for multi-axis layers). Examples:
+            ``[D, N, C]`` or ``[(H, W, C_in), N, (C_out,)]``.
+        dtype : jnp.dtype, optional
+            Dtype for all buffers. Default is ``jnp.float32``.
 
         Raises
         ------
         AssertionError
-            If any size is not a positive ``int``/tuple of positive ``int`` or
-            if the iterable is empty.
+            If ``sizes`` is empty, or if any entry is not a positive integer or
+            a tuple of positive integers.
 
         """
         sizes_list = list(sizes)
@@ -67,15 +112,41 @@ class SequentialState(State):
         self.states = [jnp.zeros((1, *size), dtype=dtype) for size in shape_tuples]
 
     def __len__(self) -> int:
-        """Get number of layers (including input and output)."""
+        """Return the number of layers (including input and output)."""
         return len(self.states)
 
     def __getitem__(self, key: int) -> Array:
-        """Return the buffer for layer ``key`` (supports negative indices)."""
+        """Return the buffer for layer ``key`` (supports negative indices).
+
+        Parameters
+        ----------
+        key : int
+            Layer index. ``0`` is input, ``-1`` is output. Negative indices
+            follow Python semantics.
+
+        Returns
+        -------
+        Array
+            The requested buffer with shape ``(B, *size_key)`` (or ``(1, *size)``
+            before :meth:`init`).
+
+        """
         return self.states[key]
 
     def replace(self, value: Sequence[Array] | PyTree) -> Self:
         """Return a new instance with ``states`` replaced by ``value``.
+
+        Parameters
+        ----------
+        value : Sequence[Array] | PyTree
+            A sequence (or PyTree) that will replace the internal list of
+            buffers. In typical use, a list of arrays of length ``len(self)``,
+            each shaped ``(B, *size_l)``.
+
+        Returns
+        -------
+        Self
+            A new ``SequentialState`` carrying ``value`` as its storage.
 
         Notes
         -----
@@ -86,7 +157,21 @@ class SequentialState(State):
         return new_self
 
     def replace_val(self, idx: int, value: Array) -> Self:
-        """Return a new instance with layer ``idx`` replaced by ``value``."""
+        """Return a new instance with layer ``idx`` replaced by ``value``.
+
+        Parameters
+        ----------
+        idx : int
+            Layer index to modify.
+        value : Array
+            New buffer for that layer, typically with shape ``(B, *size_idx)``.
+
+        Returns
+        -------
+        Self
+            A new instance where only the selected layer differs from ``self``.
+
+        """
         new_self: Self = eqx.tree_at(lambda s: s.states[idx], self, value)
         return new_self
 
@@ -95,21 +180,30 @@ class SequentialState(State):
 
         Parameters
         ----------
-        x
-            Input batch with shape ``(B, *D)`` where ``*D`` must match the input layer shape.
-        y
-            Optional output batch with shape ``(B, *C)`` where ``*C`` must match the output layer shape.
+        x : Array
+            Input batch with shape ``(B, *D)``; the trailing shape ``*D`` must
+            equal the configured input layer shape.
+        y : Array or None, optional
+            Optional output batch with shape ``(B, *C)``; the trailing shape
+            ``*C`` must equal the configured output layer shape. If omitted,
+            the output buffer is zero-initialized.
 
         Returns
         -------
-        SequentialState
-            A new instance whose buffers all have shape ``(B, *size_l)``, with
-            layer 0 set to ``x`` and (if provided) layer -1 set to ``y``.
+        Self
+            A new instance whose buffers all have shape ``(B, *size_l)``,
+            with layer ``0`` set to ``x`` and (if provided) layer ``-1`` set to
+            ``y``.
 
         Raises
         ------
         AssertionError
-            If shapes are inconsistent. Checks run at trace time (once per compilation).
+            If shapes are inconsistent (checked at trace time under JIT).
+
+        Notes
+        -----
+        This method does **not** mutate the receiver; it constructs new buffers
+        with batch size ``B`` and returns a fresh state.
 
         """
         # --- trace-time checks (once per JIT compilation) ---
@@ -141,7 +235,26 @@ class SequentialState(State):
 
     @staticmethod
     def _to_shape_tuple(s: tuple[int, ...] | int) -> tuple[int, ...]:
-        """Perform checks and convert to suitable tuple."""
+        """Validate and convert a size spec to a shape tuple.
+
+        Parameters
+        ----------
+        s : tuple[int, ...] or int
+            A positive integer for 1D layers, or a tuple of positive integers
+            for multi-axis layers.
+
+        Returns
+        -------
+        tuple[int, ...]
+            The validated layer shape as a tuple.
+
+        Raises
+        ------
+        AssertionError
+            If ``s`` is neither a positive integer nor a tuple of positive
+            integers.
+
+        """
         if isinstance(s, int):
             assert s > 0, f"size must be positive int; got {s}"
             return (s,)
