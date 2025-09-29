@@ -10,28 +10,24 @@
       
       
       
-        <link rel="canonical" href="https://willinki.github.io/darnax/tutorials/">
+        <link rel="canonical" href="https://willinki.github.io/darnax/reference/api/darnax/orchestrators/sequential/">
       
       
-        <link rel="prev" href="..">
       
       
-        <link rel="next" href="01_jax_and_equinox/">
-      
-      
-      <link rel="icon" href="../assets/images/favicon.png">
+      <link rel="icon" href="../../../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.18">
     
     
       
-        <title>Tutorials - Darnax</title>
+        <title>darnax.orchestrators.sequential - Darnax</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.7e37652d.min.css">
+      <link rel="stylesheet" href="../../../../../assets/stylesheets/main.7e37652d.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../../../../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -50,9 +46,9 @@
       
     
     
-      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../../../../assets/_mkdocstrings.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -78,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#tutorials" class="md-skip">
+        <a href="#darnaxorchestratorssequential" class="md-skip">
           Skip to content
         </a>
       
@@ -92,7 +88,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="Darnax" class="md-header__button md-logo" aria-label="Darnax" data-md-component="logo">
+    <a href="../../../../.." title="Darnax" class="md-header__button md-logo" aria-label="Darnax" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -112,7 +108,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Tutorials
+              darnax.orchestrators.sequential
             
           </span>
         </div>
@@ -211,7 +207,7 @@
   
   
     <li class="md-tabs__item">
-      <a href=".." class="md-tabs__link">
+      <a href="../../../../.." class="md-tabs__link">
         
   
   
@@ -228,11 +224,9 @@
   
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../../../../../tutorials/" class="md-tabs__link">
         
   
   
@@ -251,7 +245,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../reference/" class="md-tabs__link">
+      <a href="../../../../" class="md-tabs__link">
         
   
   
@@ -286,7 +280,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="Darnax" class="md-nav__button md-logo" aria-label="Darnax" data-md-component="logo">
+    <a href="../../../../.." title="Darnax" class="md-nav__button md-logo" aria-label="Darnax" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -316,7 +310,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../../../../.." class="md-nav__link">
         
   
   
@@ -335,10 +329,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -358,23 +350,20 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="./" class="md-nav__link md-nav__link--active">
+            <a href="../../../../../tutorials/" class="md-nav__link ">
               
   
   
@@ -387,13 +376,13 @@
             </a>
             
               
-              <label class="md-nav__link md-nav__link--active" for="__nav_2" id="__nav_2_label" tabindex="">
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             Tutorials
@@ -407,7 +396,7 @@
   
   
     <li class="md-nav__item">
-      <a href="01_jax_and_equinox/" class="md-nav__link">
+      <a href="../../../../../tutorials/01_jax_and_equinox/" class="md-nav__link">
         
   
   
@@ -430,7 +419,7 @@
   
   
     <li class="md-nav__item">
-      <a href="02_states/" class="md-nav__link">
+      <a href="../../../../../tutorials/02_states/" class="md-nav__link">
         
   
   
@@ -453,7 +442,7 @@
   
   
     <li class="md-nav__item">
-      <a href="03_modules/" class="md-nav__link">
+      <a href="../../../../../tutorials/03_modules/" class="md-nav__link">
         
   
   
@@ -476,7 +465,7 @@
   
   
     <li class="md-nav__item">
-      <a href="04_layermaps/" class="md-nav__link">
+      <a href="../../../../../tutorials/04_layermaps/" class="md-nav__link">
         
   
   
@@ -499,7 +488,7 @@
   
   
     <li class="md-nav__item">
-      <a href="05_orchestrators/" class="md-nav__link">
+      <a href="../../../../../tutorials/05_orchestrators/" class="md-nav__link">
         
   
   
@@ -522,7 +511,7 @@
   
   
     <li class="md-nav__item">
-      <a href="06_simple_net_on_artificial_data/" class="md-nav__link">
+      <a href="../../../../../tutorials/06_simple_net_on_artificial_data/" class="md-nav__link">
         
   
   
@@ -573,7 +562,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../reference/" class="md-nav__link ">
+            <a href="../../../../" class="md-nav__link ">
               
   
   
@@ -606,7 +595,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/api/" class="md-nav__link">
+      <a href="../../../" class="md-nav__link">
         
   
   
@@ -649,6 +638,92 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#darnax.orchestrators.sequential" class="md-nav__link">
+    <span class="md-ellipsis">
+      sequential
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#darnax.orchestrators.sequential.KeyArray" class="md-nav__link">
+    <span class="md-ellipsis">
+      KeyArray
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator" class="md-nav__link">
+    <span class="md-ellipsis">
+      SequentialOrchestrator
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SequentialOrchestrator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.lmap" class="md-nav__link">
+    <span class="md-ellipsis">
+      lmap
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.step" class="md-nav__link">
+    <span class="md-ellipsis">
+      step
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.step_inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      step_inference
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.predict" class="md-nav__link">
+    <span class="md-ellipsis">
+      predict
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.backward" class="md-nav__link">
+    <span class="md-ellipsis">
+      backward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -662,24 +737,321 @@
                   
 
 
-  
-    <a href="https://github.com/Willinki/darnax/edit/master/docs/tutorials/README.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
-      
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
-    </a>
-  
-  
+
+<h1 id="darnaxorchestratorssequential">darnax.orchestrators.sequential<a class="headerlink" href="#darnaxorchestratorssequential" title="Permanent link">&para;</a></h1>
 
 
-<h1 id="tutorials">Tutorials<a class="headerlink" href="#tutorials" title="Permanent link">&para;</a></h1>
-<p>This section provides useful tutorial to get started using this library,
-from JAX and Equinox basics to a first functioning example of a classifier on Entangled-MNIST.</p>
-<p>Models and concepts from this library are based on the paper by <a href="https://arxiv.org/abs/2509.05041v1">Badalotti, Baldassi, Mézard, Scardecchia and Zecchina</a>.
-On the final tutorial, we will be training a 1-layer model on a simple benchmark dataset.</p>
-<p>The purpose of this library, however, is more general, as it allows for the quick and intuitive implementation of diverse architectures and learning
-schemes, loosely based on the principles of the original model.</p>
-<p>See the first tutorial to get started.</p>
-<p>For issues or questions, reach out to one of the <a href="https://github.com/Willinki/BiologicalNetwork">Contributors</a>.</p>
+<div class="doc doc-object doc-module">
+
+
+
+<a id="darnax.orchestrators.sequential"></a>
+    <div class="doc doc-contents first">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="darnax.orchestrators.sequential.KeyArray" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">KeyArray</span> <span class="o">=</span> <span class="n">Array</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#darnax.orchestrators.sequential.KeyArray" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="darnax.orchestrators.sequential.SequentialOrchestrator" class="doc doc-heading">
+              <code class="highlight language-python"><span class="n">SequentialOrchestrator</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span></code>
+
+<a href="#darnax.orchestrators.sequential.SequentialOrchestrator" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="AbstractOrchestrator (darnax.orchestrators.interface.AbstractOrchestrator)" href="../interface/#darnax.orchestrators.interface.AbstractOrchestrator">AbstractOrchestrator</a>[<a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="../../states/sequential/#darnax.states.sequential.SequentialState">SequentialState</a>]</code></p>
+
+
+        <p>Sequential message-passing orchestrator compatible with the new LayerMap.</p>
+
+
+<details class="assumptions" open>
+  <summary>Assumptions</summary>
+  <ul>
+<li><code>lmap</code> is a dict-of-dicts PyTree with <strong>static structure</strong> (sorted keys) and
+  Equinox modules as values; the LayerMap flattens <em>through</em> modules so their
+  parameters are visible to JAX/Optax.</li>
+<li>For each receiver <code>i</code>, the diagonal module <code>lmap[i, i]</code> implements
+  <code>reduce(pytree_of_messages)</code> and <code>activation(Array) -&gt; Array</code>.</li>
+<li>Each edge module <code>lmap[i, j]</code> is callable as <code>module(x, rng=...) -&gt; Array</code>
+  and provides <code>backward(x, y, y_hat) -&gt; AbstractModule</code> (same PyTree type).</li>
+</ul>
+</details>
+        <p>Initialize the orchestrator from the layermap.</p>
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.orchestrators.sequential.SequentialOrchestrator.lmap" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">lmap</span> <span class="o">=</span> <span class="n">layers</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.orchestrators.sequential.SequentialOrchestrator.lmap" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="darnax.orchestrators.sequential.SequentialOrchestrator.step" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">step</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span></code>
+
+<a href="#darnax.orchestrators.sequential.SequentialOrchestrator.step" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>One forward update over all receivers, except the output layer (skip_last=True).</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>state</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="../../states/sequential/#darnax.states.sequential.SequentialState">SequentialState</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The current network state.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>rng</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="KeyArray = Array
+
+  
+      module-attribute
+   (darnax.orchestrators.sequential.KeyArray)" href="#darnax.orchestrators.sequential.KeyArray">KeyArray</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>PRNG key; will be split per receiver/sender and advanced.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="darnax.orchestrators.sequential.SequentialOrchestrator.step_inference" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">step_inference</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span></code>
+
+<a href="#darnax.orchestrators.sequential.SequentialOrchestrator.step_inference" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>One forward update over all receivers, except the output layer (skip_last=True).</p>
+<p>Also skips messages coming from the right (forward_only=True)</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>state</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="../../states/sequential/#darnax.states.sequential.SequentialState">SequentialState</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The current network state.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>rng</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="KeyArray = Array
+
+  
+      module-attribute
+   (darnax.orchestrators.sequential.KeyArray)" href="#darnax.orchestrators.sequential.KeyArray">KeyArray</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>PRNG key; will be split per receiver/sender and advanced.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="darnax.orchestrators.sequential.SequentialOrchestrator.predict" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">predict</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span></code>
+
+<a href="#darnax.orchestrators.sequential.SequentialOrchestrator.predict" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Update the output state s[-1].</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="darnax.orchestrators.sequential.SequentialOrchestrator.backward" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">backward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span></code>
+
+<a href="#darnax.orchestrators.sequential.SequentialOrchestrator.backward" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Compute per-edge updates for all modules.</p>
+<p>Returns a LayerMap-structured pytree of updates (same PyTree type as modules).</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
 
 
 
@@ -728,10 +1100,10 @@ schemes, loosely based on the principles of the original model.</p>
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "../../../../..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow", "search.suggest", "search.highlight"], "search": "../../../../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.92b07e13.min.js"></script>
+      <script src="../../../../../assets/javascripts/bundle.92b07e13.min.js"></script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
       

@@ -2,38 +2,122 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://willinki.github.io/darnax/</loc>
-         <lastmod>2025-09-24</lastmod>
+         <lastmod>2025-09-29</lastmod>
     </url>
     <url>
-         <loc>https://willinki.github.io/darnax/reference/darnax/</loc>
-         <lastmod>2025-09-24</lastmod>
+         <loc>https://willinki.github.io/darnax/reference/</loc>
+         <lastmod>2025-09-29</lastmod>
+    </url>
+    <url>
+         <loc>https://willinki.github.io/darnax/reference/api/</loc>
+         <lastmod>2025-09-29</lastmod>
+    </url>
+    <url>
+         <loc>https://willinki.github.io/darnax/reference/api/darnax/</loc>
+         <lastmod>2025-09-29</lastmod>
+    </url>
+    <url>
+         <loc>https://willinki.github.io/darnax/reference/api/darnax/layer_maps/</loc>
+         <lastmod>2025-09-29</lastmod>
+    </url>
+    <url>
+         <loc>https://willinki.github.io/darnax/reference/api/darnax/modules/</loc>
+         <lastmod>2025-09-29</lastmod>
+    </url>
+    <url>
+         <loc>https://willinki.github.io/darnax/reference/api/darnax/orchestrators/</loc>
+         <lastmod>2025-09-29</lastmod>
+    </url>
+    <url>
+         <loc>https://willinki.github.io/darnax/reference/api/darnax/states/</loc>
+         <lastmod>2025-09-29</lastmod>
+    </url>
+    <url>
+         <loc>https://willinki.github.io/darnax/reference/api/darnax/utils/</loc>
+         <lastmod>2025-09-29</lastmod>
+    </url>
+    <url>
+         <loc>https://willinki.github.io/darnax/reference/api/darnax/layer_maps/sparse/</loc>
+         <lastmod>2025-09-29</lastmod>
+    </url>
+    <url>
+         <loc>https://willinki.github.io/darnax/reference/api/darnax/modules/debug/</loc>
+         <lastmod>2025-09-29</lastmod>
+    </url>
+    <url>
+         <loc>https://willinki.github.io/darnax/reference/api/darnax/modules/ferromagnetic/</loc>
+         <lastmod>2025-09-29</lastmod>
+    </url>
+    <url>
+         <loc>https://willinki.github.io/darnax/reference/api/darnax/modules/fully_connected/</loc>
+         <lastmod>2025-09-29</lastmod>
+    </url>
+    <url>
+         <loc>https://willinki.github.io/darnax/reference/api/darnax/modules/input_output/</loc>
+         <lastmod>2025-09-29</lastmod>
+    </url>
+    <url>
+         <loc>https://willinki.github.io/darnax/reference/api/darnax/modules/interfaces/</loc>
+         <lastmod>2025-09-29</lastmod>
+    </url>
+    <url>
+         <loc>https://willinki.github.io/darnax/reference/api/darnax/modules/recurrent/</loc>
+         <lastmod>2025-09-29</lastmod>
+    </url>
+    <url>
+         <loc>https://willinki.github.io/darnax/reference/api/darnax/orchestrators/interface/</loc>
+         <lastmod>2025-09-29</lastmod>
+    </url>
+    <url>
+         <loc>https://willinki.github.io/darnax/reference/api/darnax/orchestrators/sequential/</loc>
+         <lastmod>2025-09-29</lastmod>
+    </url>
+    <url>
+         <loc>https://willinki.github.io/darnax/reference/api/darnax/states/interface/</loc>
+         <lastmod>2025-09-29</lastmod>
+    </url>
+    <url>
+         <loc>https://willinki.github.io/darnax/reference/api/darnax/states/sequential/</loc>
+         <lastmod>2025-09-29</lastmod>
+    </url>
+    <url>
+         <loc>https://willinki.github.io/darnax/reference/api/darnax/utils/default_list/</loc>
+         <lastmod>2025-09-29</lastmod>
+    </url>
+    <url>
+         <loc>https://willinki.github.io/darnax/reference/api/darnax/utils/perceptron_rule/</loc>
+         <lastmod>2025-09-29</lastmod>
+    </url>
+    <url>
+         <loc>https://willinki.github.io/darnax/reference/api/darnax/utils/typing/</loc>
+         <lastmod>2025-09-29</lastmod>
     </url>
     <url>
          <loc>https://willinki.github.io/darnax/tutorials/</loc>
-         <lastmod>2025-09-24</lastmod>
+         <lastmod>2025-09-29</lastmod>
     </url>
     <url>
          <loc>https://willinki.github.io/darnax/tutorials/01_jax_and_equinox/</loc>
-         <lastmod>2025-09-24</lastmod>
+         <lastmod>2025-09-29</lastmod>
     </url>
     <url>
          <loc>https://willinki.github.io/darnax/tutorials/02_states/</loc>
-         <lastmod>2025-09-24</lastmod>
+         <lastmod>2025-09-29</lastmod>
     </url>
     <url>
          <loc>https://willinki.github.io/darnax/tutorials/03_modules/</loc>
-         <lastmod>2025-09-24</lastmod>
+         <lastmod>2025-09-29</lastmod>
     </url>
     <url>
          <loc>https://willinki.github.io/darnax/tutorials/04_layermaps/</loc>
-         <lastmod>2025-09-24</lastmod>
+         <lastmod>2025-09-29</lastmod>
     </url>
     <url>
          <loc>https://willinki.github.io/darnax/tutorials/05_orchestrators/</loc>
-         <lastmod>2025-09-24</lastmod>
+         <lastmod>2025-09-29</lastmod>
     </url>
     <url>
          <loc>https://willinki.github.io/darnax/tutorials/06_simple_net_on_artificial_data/</loc>
-         <lastmod>2025-09-24</lastmod>
+         <lastmod>2025-09-29</lastmod>
     </url>
 </urlset>
