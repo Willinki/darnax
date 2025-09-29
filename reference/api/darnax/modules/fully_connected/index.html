@@ -763,6 +763,17 @@
 <a id="darnax.modules.fully_connected"></a>
     <div class="doc doc-contents first">
 
+        <p>Fully connected adapters.</p>
+<p>This module provides two Equinox-based adapters:</p>
+<ul>
+<li>:class:<code>FullyConnected</code>: trainable affine map with per-output scaling and
+  a local perceptron-style update (only <code>W</code> is updated).</li>
+<li>:class:<code>FrozenFullyConnected</code>: same forward as <code>FullyConnected</code> but returns
+  a zero update (useful for inference or ablation).</li>
+</ul>
+<p>Both classes are <strong>stateless</strong> in the runtime sense (no persistent state across
+steps) but <strong>parameterized</strong> (PyTrees with trainable weights).</p>
+
 
 
 
@@ -817,9 +828,223 @@
               Bases: <code><a class="autorefs autorefs-internal" title="Adapter (darnax.modules.interfaces.Adapter)" href="../interfaces/#darnax.modules.interfaces.Adapter">Adapter</a></code></p>
 
 
-        <p>Fully-connected trainable adapter (x @ W, per-output scaling).</p>
+        <p>Fully connected trainable adapter <code>y = (x @ W) * strength</code>.</p>
+<p>A dense linear projection followed by an elementwise per-output scaling.
+Learning uses a <strong>local perceptron-style rule</strong> parameterized by a
+per-output <code>threshold</code>; only <code>W</code> receives updates, while
+<code>strength</code> and <code>threshold</code> act as (learnable-if-you-want) hyperparameters
+that are <strong>not</strong> updated by :meth:<code>backward</code>.</p>
 
-        <p>Initialize weights and per-output strength/threshold.</p>
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="W = jax.random.normal(key, (in_features, out_features), dtype=dtype) / jnp.sqrt(in_features)
+
+  
+      instance-attribute
+   (darnax.modules.fully_connected.FullyConnected.W)" href="#darnax.modules.fully_connected.FullyConnected.W">W</a></code></td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Weight matrix with shape <code>(in_features, out_features)</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="strength = self._set_shape(strength, out_features, dtype)
+
+  
+      instance-attribute
+   (darnax.modules.fully_connected.FullyConnected.strength)" href="#darnax.modules.fully_connected.FullyConnected.strength">strength</a></code></td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Per-output scale, shape <code>(out_features,)</code>; broadcast across the last
+dimension of the forward output.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="threshold = self._set_shape(threshold, out_features, dtype)
+
+  
+      instance-attribute
+   (darnax.modules.fully_connected.FullyConnected.threshold)" href="#darnax.modules.fully_connected.FullyConnected.threshold">threshold</a></code></td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Per-output margin used by the local update rule, shape <code>(out_features,)</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <ul>
+<li>Adapters are <em>stateless</em> per the Darnax interface, but they may carry
+  trainable parameters. This class advertises trainability through <code>W</code>.</li>
+<li>The local rule is supplied by
+  :func:<code>darnax.utils.perceptron_rule.perceptron_rule_backward</code> and is not
+  required to be a gradient.</li>
+</ul>
+</details>
+        <p>Initialize weights and per-output scale/threshold.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>in_features</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Input dimensionality.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>out_features</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Output dimensionality.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>strength</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span> or <span title="jax.typing.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Scalar (broadcast to <code>(out_features,)</code>) or a vector of
+length <code>out_features</code> providing the per-output scaling.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>threshold</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span> or <span title="jax.typing.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Scalar or vector of length <code>out_features</code> with the per-output
+margins used by the local update rule.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>key</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>JAX PRNG key to initialize <code>W</code> with Gaussian entries scaled by
+<code>1/sqrt(in_features)</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>dtype</code>
+            </td>
+            <td>
+                  <code><span title="jax.typing.DTypeLike">DTypeLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dtype for parameters (default: <code>jnp.float32</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="jax.numpy.float32">float32</span></code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If <code>strength</code> or <code>threshold</code> is neither a scalar nor a 1D array
+of the expected length.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
 
@@ -913,8 +1138,102 @@
 
     <div class="doc doc-contents ">
 
-        <p>Return a module-shaped update: ΔW set; strength/threshold zero.</p>
+        <p>Return a module-shaped local update where only <code>ΔW</code> is set.</p>
 
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>x</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Forward input(s), shape <code>(..., in_features)</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>y</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Supervision signal/targets, broadcast-compatible with <code>y_hat</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>y_hat</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Current prediction/logits, broadcast-compatible with <code>y</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Self">Self</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A PyTree with the same structure as <code>self</code> where:
+- <code>W</code> holds the update <code>ΔW</code> from the local rule,
+- <code>strength</code> and <code>threshold</code> leaves are zeros.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>Calls :func:<code>darnax.utils.perceptron_rule.perceptron_rule_backward</code>
+with the stored per-output <code>threshold</code>.</p>
+</details>
 
     </div>
 
@@ -943,8 +1262,10 @@
               Bases: <code><a class="autorefs autorefs-internal" title="FullyConnected(in_features, out_features, strength, threshold, key, dtype=jnp.float32) (darnax.modules.fully_connected.FullyConnected)" href="#darnax.modules.fully_connected.FullyConnected">FullyConnected</a></code></p>
 
 
-        <p>Implements a fully connected layer with no updates.</p>
-<p>QOL implementation for Wback.</p>
+        <p>Fully connected adapter with <strong>frozen</strong> parameters.</p>
+<p>Same forward behavior as :class:<code>FullyConnected</code>, but :meth:<code>backward</code>
+returns <strong>zeros</strong> for all leaves. Useful for inference-only deployments
+or to ablate learning of a particular edge type in a graph.</p>
 
 
 
@@ -979,6 +1300,92 @@
     <div class="doc doc-contents ">
 
         <p>Return zero update for all parameters.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>x</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Forward input (unused).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>y</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Target/supervision (unused).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>y_hat</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Prediction/logits (unused).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Self">Self</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>PyTree of zeros with the same structure as <code>self</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>

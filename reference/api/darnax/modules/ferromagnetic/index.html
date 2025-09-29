@@ -721,6 +721,12 @@
 <a id="darnax.modules.ferromagnetic"></a>
     <div class="doc doc-contents first">
 
+        <p>Adapters: fixed linear couplings.</p>
+<p>This module defines :class:<code>Ferromagnetic</code>, a stateless adapter that scales
+signals elementwise by a fixed coupling <code>strength</code> (scalar or per-feature).</p>
+<p>Adapters in Darnax are Equinox <code>Module</code>s and thus PyTrees; they should not
+hold persistent state and typically return zero updates in :meth:<code>backward</code>.</p>
+
 
 
 
@@ -776,8 +782,129 @@
 
 
         <p>Elementwise scaling adapter with fixed coupling strength.</p>
+<p>Multiplies inputs by a constant coupling vector <code>strength</code>. This module
+is <strong>stateless</strong> and <strong>non-trainable</strong>: its :meth:<code>backward</code> returns a
+zero-shaped update PyTree.</p>
 
-        <p>Initialize the adapter with scalar or per-feature strength.</p>
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="strength = self._set_shape(strength, features, dtype)
+
+  
+      instance-attribute
+   (darnax.modules.ferromagnetic.Ferromagnetic.strength)" href="#darnax.modules.ferromagnetic.Ferromagnetic.strength">strength</a></code></td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Coupling strengths, shape <code>(features,)</code>; may originate from a scalar
+broadcast to that shape at construction time.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+        <p>Construct the adapter with scalar or per-feature strength.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>features</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of features; determines the length of <code>strength</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>strength</code>
+            </td>
+            <td>
+                  <code><span title="jax.typing.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Either a scalar (broadcast to <code>(features,)</code>) or a 1D array of
+length <code>features</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>dtype</code>
+            </td>
+            <td>
+                  <code><span title="jax.typing.DTypeLike">DTypeLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dtype for the internal <code>strength</code> array. Default is <code>float32</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="jax.numpy.float32">float32</span></code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If <code>strength</code> is neither a scalar nor a 1D array of length
+<code>features</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
 
@@ -832,6 +959,92 @@
     <div class="doc doc-contents ">
 
         <p>Return a zero update to indicate non-trainability.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>x</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Forward input (unused).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>y</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Target/supervision (unused).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>y_hat</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Prediction (unused).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Self">Self</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A PyTree matching <code>self</code> where all leaves are zeros.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>

@@ -748,6 +748,39 @@
 <a id="darnax.orchestrators.sequential"></a>
     <div class="doc doc-contents first">
 
+        <p>Sequential orchestrator for layered networks.</p>
+<p>This module provides :class:<code>SequentialOrchestrator</code>, a concrete implementation
+of the orchestrator contract that traverses a :class:<code>~darnax.layer_maps.sparse.LayerMap</code>
+row-by-row (deterministic order), computes messages along edges, reduces them
+at each receiver, and updates a :class:<code>~darnax.states.sequential.SequentialState</code>.</p>
+
+
+<details class="overview" open>
+  <summary>Overview</summary>
+  <ul>
+<li>:meth:<code>step</code> updates <strong>all receivers except the output row</strong> (keeps <code>state[-1]</code> unchanged).</li>
+<li>:meth:<code>step_inference</code> is like :meth:<code>step</code> but <strong>skips right-going edges</strong>
+  (uses a forward-only schedule; cheaper partial refresh).</li>
+<li>:meth:<code>predict</code> computes the <strong>output buffer</strong> from current internal buffers.</li>
+<li>:meth:<code>backward</code> builds a <strong>LayerMap-shaped PyTree of parameter updates</strong> by
+  calling each module’s local rule. The method returns a new orchestrator whose
+  <code>lmap</code> contains <em>updates</em> (not new parameters), so it can be fed directly
+  to Optax’s <code>apply_updates</code>.</li>
+</ul>
+</details>
+
+<details class="rng-handling" open>
+  <summary>RNG handling</summary>
+  <p>All public methods accept an RNG key and return a <strong>new</strong> key. Internally,
+keys are split <strong>per receiver</strong> and <strong>per sender</strong> to keep randomness
+reproducible and side-effect free.</p>
+</details>
+
+<details class="see-also" open>
+  <summary>See Also</summary>
+  <p>tutorials/05_orchestrators.md
+tutorials/06_simple_net_on_artificial_data.md</p>
+</details>
 
 
 
@@ -802,22 +835,63 @@
               Bases: <code><a class="autorefs autorefs-internal" title="AbstractOrchestrator (darnax.orchestrators.interface.AbstractOrchestrator)" href="../interface/#darnax.orchestrators.interface.AbstractOrchestrator">AbstractOrchestrator</a>[<a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="../../states/sequential/#darnax.states.sequential.SequentialState">SequentialState</a>]</code></p>
 
 
-        <p>Sequential message-passing orchestrator compatible with the new LayerMap.</p>
+        <p>Sequential message-passing orchestrator.</p>
 
 
 <details class="assumptions" open>
   <summary>Assumptions</summary>
   <ul>
-<li><code>lmap</code> is a dict-of-dicts PyTree with <strong>static structure</strong> (sorted keys) and
-  Equinox modules as values; the LayerMap flattens <em>through</em> modules so their
-  parameters are visible to JAX/Optax.</li>
+<li><code>lmap</code> has <strong>static structure</strong> (sorted integer keys); values are Equinox
+  modules that are PyTrees (parameters visible to JAX/Optax).</li>
 <li>For each receiver <code>i</code>, the diagonal module <code>lmap[i, i]</code> implements
   <code>reduce(pytree_of_messages)</code> and <code>activation(Array) -&gt; Array</code>.</li>
 <li>Each edge module <code>lmap[i, j]</code> is callable as <code>module(x, rng=...) -&gt; Array</code>
-  and provides <code>backward(x, y, y_hat) -&gt; AbstractModule</code> (same PyTree type).</li>
+  and exposes <code>backward(x, y, y_hat) -&gt; AbstractModule</code> (same PyTree type).</li>
 </ul>
 </details>
-        <p>Initialize the orchestrator from the layermap.</p>
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>This orchestrator is <strong>pure</strong>: given a state and RNG, it returns a new state
+and a new RNG key. All scheduling choices (row order, forward-only mode) are
+explicit and deterministic.</p>
+</details>
+        <p>Initialize the orchestrator from a layermap.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>layers</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="LayerMap(_data, _rows, _ndim=2)
+
+  
+      dataclass
+   (darnax.layer_maps.sparse.LayerMap)" href="../../layer_maps/sparse/#darnax.layer_maps.sparse.LayerMap">LayerMap</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Static adjacency (rows/cols) with Equinox modules as values.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
 
@@ -871,7 +945,12 @@
 
     <div class="doc doc-contents ">
 
-        <p>One forward update over all receivers, except the output layer (skip_last=True).</p>
+        <p>Run one forward/update sweep for all receivers <strong>except output</strong>.</p>
+<p>For each receiver row <code>i</code> (excluding the last), the orchestrator:
+(1) computes messages from all neighbors <code>j</code> in <code>lmap[i]</code>,
+(2) reduces them via <code>lmap[i, i].reduce(messages)</code>,
+(3) applies <code>lmap[i, i].activation(...)</code>,
+(4) writes the result into <code>state[i]</code>.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -894,7 +973,7 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The current network state.</p>
+                <p>Current global state.</p>
               </div>
             </td>
             <td>
@@ -914,11 +993,34 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>PRNG key; will be split per receiver/sender and advanced.</p>
+                <p>PRNG key (split per receiver/sender).</p>
               </div>
             </td>
             <td>
                 <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>(new_state, new_rng) : tuple[SequentialState, KeyArray]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Updated state (output unchanged) and an advanced RNG key.</p>
+              </div>
             </td>
           </tr>
       </tbody>
@@ -940,8 +1042,9 @@
 
     <div class="doc doc-contents ">
 
-        <p>One forward update over all receivers, except the output layer (skip_last=True).</p>
-<p>Also skips messages coming from the right (forward_only=True)</p>
+        <p>Run a <strong>forward-only</strong> sweep (skip output and right-going edges).</p>
+<p>Like :meth:<code>step</code>, but calls <code>row_items(skip_last=True, forward_only=True)</code>,
+which filters neighbor edges to a forward schedule (commonly <code>j &lt;= i</code>).</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -964,7 +1067,7 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The current network state.</p>
+                <p>Current global state.</p>
               </div>
             </td>
             <td>
@@ -984,11 +1087,34 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>PRNG key; will be split per receiver/sender and advanced.</p>
+                <p>PRNG key (split per receiver/sender).</p>
               </div>
             </td>
             <td>
                 <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>(new_state, new_rng) : tuple[SequentialState, KeyArray]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Updated state (output unchanged) and an advanced RNG key.</p>
+              </div>
             </td>
           </tr>
       </tbody>
@@ -1010,7 +1136,81 @@
 
     <div class="doc doc-contents ">
 
-        <p>Update the output state s[-1].</p>
+        <p>Compute/refresh the <strong>output</strong> buffer <code>state[-1]</code> from current buffers.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>state</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="../../states/sequential/#darnax.states.sequential.SequentialState">SequentialState</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Current global state (uses existing upstream buffers).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>rng</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="KeyArray = Array
+
+  
+      module-attribute
+   (darnax.orchestrators.sequential.KeyArray)" href="#darnax.orchestrators.sequential.KeyArray">KeyArray</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>PRNG key (split internally).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>(new_state, new_rng) : tuple[SequentialState, KeyArray]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A state where the output buffer has been updated, and a fresh RNG key.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>
@@ -1028,9 +1228,100 @@
 
     <div class="doc doc-contents ">
 
-        <p>Compute per-edge updates for all modules.</p>
-<p>Returns a LayerMap-structured pytree of updates (same PyTree type as modules).</p>
+        <p>Compute per-edge parameter updates and return them as an orchestrator.</p>
+<p>Two-phase algorithm:</p>
+<p>1) <strong>Activation pass.</strong> For each receiver <code>i</code> (including the output),
+   compute messages <code>msg[j] = lmap[i, j](state[j], rng=...)</code> from
+   all neighbors, then compute the receiver’s aggregate <strong>using forward
+   messages only</strong> (e.g., <code>j &lt;= i</code>) and store it under <code>msg[i]</code>.
+2) <strong>Local rules.</strong> For every edge <code>(i, j)</code>, call
+   <code>lmap[i, j].backward(x=state[j], y=state[i], y_hat=msg[j])</code> and
+   assemble the results into a new LayerMap with the <strong>same key layout</strong>.</p>
+<p>The method returns <code>type(self)(layers=updates)</code> where <code>updates</code> is
+the LayerMap of per-edge updates. This allows <code>optax.apply_updates</code> to
+be used directly with the returned PyTree.</p>
 
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>state</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="../../states/sequential/#darnax.states.sequential.SequentialState">SequentialState</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Current global state (provides inputs and targets for local rules).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>rng</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="KeyArray = Array
+
+  
+      module-attribute
+   (darnax.orchestrators.sequential.KeyArray)" href="#darnax.orchestrators.sequential.KeyArray">KeyArray</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>PRNG key (split per receiver/sender).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Self">Self</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>An orchestrator whose <code>lmap</code> contains <strong>updates</strong> (not new params),
+mirroring the original layermap structure.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>The receiver aggregate used for learning is computed with <strong>forward-only</strong>
+messages (no right-going edges), matching the schedule used in inference.</p>
+</details>
 
     </div>
 

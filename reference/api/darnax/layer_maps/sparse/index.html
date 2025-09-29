@@ -784,6 +784,38 @@
 <a id="darnax.layer_maps.sparse"></a>
     <div class="doc doc-contents first">
 
+        <p>LayerMap: a static, PyTree-friendly adjacency of modules.</p>
+<p><code>LayerMap</code> wraps a nested dict-of-dicts that maps receiver rows <code>i</code> to
+neighbors (columns) <code>j</code> → module, i.e. it represents edges <code>(i, j)</code>.
+The structure (row/column keys and their order) is <strong>static</strong> for JIT stability,
+while the <strong>values</strong> (modules and their parameters) are dynamic PyTree leaves.</p>
+
+
+<details class="design-goals" open>
+  <summary>Design goals</summary>
+  <ul>
+<li>Keep a clear nested dict API while making the structure part of the treedef.</li>
+<li>Flatten <em>through</em> Equinox/JAX modules so inner arrays are visible to JAX/Optax.</li>
+<li>Forbid structural mutation after construction (frozen dataclass, read-only views).</li>
+</ul>
+</details>
+
+<details class="conventions" open>
+  <summary>Conventions</summary>
+  <ul>
+<li>Rows and, within each row, columns are <strong>sorted</strong> once at construction.</li>
+<li>Keys are integers (layer indices). Edge <code>(i, j)</code> connects sender/neighbor
+  <code>j</code> into receiver <code>i</code> (lower-triangular including the diagonal is common).</li>
+<li>The diagonal policy can be enforced: every row must have its <code>(i, i)</code> self-edge.</li>
+</ul>
+</details>
+
+<details class="pytree-behavior" open>
+  <summary>PyTree behavior</summary>
+  <p><code>tree_flatten</code> returns all modules in deterministic row-major order as <em>children</em>,
+plus static aux data describing the key layout. JAX/Equinox then flattens
+module parameters further, so optimizers and transforms "see" the arrays inside.</p>
+</details>
 
 
 
@@ -843,31 +875,84 @@
         <p>PyTree wrapper around a dict-of-dicts with static keys and <em>non-static</em> values.</p>
 
 
-<details class="design-goals" open>
-  <summary>Design goals</summary>
-  <ul>
-<li>Maintain the clarity of a nested dict-of-dicts API.</li>
-<li>Keep the <em>structure</em> (row/column keys and their order) static for JIT stability.</li>
-<li><strong>Flatten through modules</strong> so that arrays inside Equinox modules are visible to
-  JAX/Optax (parameters get gradients and updates).</li>
-<li>Prevent structural mutation after construction.</li>
-</ul>
-</details>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>_data</code>
+            </td>
+            <td>
+                  <code><span title="dict">dict</span>[<span title="int">int</span>, <span title="dict">dict</span>[<span title="int">int</span>, <a class="autorefs autorefs-internal" title="AbstractModule (darnax.modules.interfaces.AbstractModule)" href="../../modules/interfaces/#darnax.modules.interfaces.AbstractModule">AbstractModule</a>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Internal mapping from row <code>i</code> → (col <code>j</code> → module). Keys are sorted.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>_rows</code>
+            </td>
+            <td>
+                  <code><span title="tuple">tuple</span>[<span title="int">int</span>, ...]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>All row keys in sorted order (becomes part of the treedef).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>_ndim</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Tuple key arity (<code>(i, j)</code>). Exposed mainly for reconstruction.</p>
+              </div>
+            </td>
+            <td>
+                  <code>2</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
 
 <details class="note" open>
   <summary>Notes</summary>
   <ul>
-<li>Row keys are sorted once at initialization.</li>
-<li>Column keys for each row are also sorted at initialization.</li>
-<li>Keys are part of the treedef (static). Module <em>parameters</em> are leaves.</li>
-<li>Public dict-like accessors return read-only mappings to avoid accidental
-  structural mutation. Use <code>to_dict()</code> if you need a deep copy for external use.</li>
+<li>The dataclass is <strong>frozen</strong> to prevent structural mutation after creation.
+  Use :meth:<code>to_dict</code> to obtain a mutable deep copy if you truly need one.</li>
+<li>Read-only accessors (e.g., :meth:<code>neighbors</code>) return <code>MappingProxyType</code>.</li>
+<li>The keys (rows/cols) are included in the PyTree aux data, so the layout
+  is static under JIT; values (modules) are the dynamic leaves.</li>
 </ul>
 </details>
 
 <details class="public-type" open>
   <summary>Public type</summary>
-  <p>Values are typed as <code>AbstractModule</code> so that any subclass can be stored.</p>
+  <p>Values are typed as :class:<code>~darnax.modules.interfaces.AbstractModule</code> so any
+concrete layer/adapter subtype can be stored.</p>
 </details>
 
 
@@ -928,7 +1013,7 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Nested mapping from row -&gt; (col -&gt; module).</p>
+                <p>Nested mapping from row <code>i</code> → (col <code>j</code> → module).</p>
               </div>
             </td>
             <td>
@@ -944,11 +1029,62 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Enforce that (i, i) exists for any i present as either a row or a column.</p>
+                <p>If <code>True</code>, enforce that each present row <code>i</code> has an explicit
+self-edge <code>(i, i)</code>.</p>
               </div>
             </td>
             <td>
                   <code>True</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="LayerMap(_data, _rows, _ndim=2)
+
+  
+      dataclass
+   (darnax.layer_maps.sparse.LayerMap)" href="#darnax.layer_maps.sparse.LayerMap">LayerMap</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A new instance with rows and per-row columns sorted deterministically.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="AttributeError">AttributeError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If <code>require_diagonal=True</code> and some <code>(i, i)</code> is missing.</p>
+              </div>
             </td>
           </tr>
       </tbody>
@@ -970,8 +1106,48 @@
 
     <div class="doc doc-contents ">
 
-        <p>Deconstruct the tree. Does NOT flatten through modules.</p>
+        <p>Deconstruct into children and aux (PyTree protocol).</p>
 
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>children</code></td>            <td>
+                  <code><span title="tuple">tuple</span>[<a class="autorefs autorefs-internal" title="AbstractModule (darnax.modules.interfaces.AbstractModule)" href="../../modules/interfaces/#darnax.modules.interfaces.AbstractModule">AbstractModule</a>, ...]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Modules in deterministic row-major order; JAX/Equinox will flatten
+their parameter fields further.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+<td><code>aux</code></td>            <td>
+                  <code><span title="tuple">tuple</span>[<span title="typing.Any">Any</span>, ...]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Static metadata: <code>(rows, cols_per_row, ndim)</code> to reconstruct the treedef.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>We intentionally <strong>do not</strong> include keys as children; keys are part of
+the static aux data so JIT sees a stable structure even when values change.</p>
+</details>
 
     </div>
 
@@ -992,7 +1168,82 @@
 
     <div class="doc doc-contents ">
 
-        <p>Reconstruct the tree based on aux and children provided by tree_flatten.</p>
+        <p>Reconstruct from aux and children (PyTree protocol).</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>aux</code>
+            </td>
+            <td>
+                  <code><span title="tuple">tuple</span>[<span title="typing.Any">Any</span>, ...]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The static metadata returned by :meth:<code>tree_flatten</code>:
+<code>(rows, cols_per_row, ndim)</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>children</code>
+            </td>
+            <td>
+                  <code><span title="collections.abc.Iterable">Iterable</span>[<a class="autorefs autorefs-internal" title="AbstractModule (darnax.modules.interfaces.AbstractModule)" href="../../modules/interfaces/#darnax.modules.interfaces.AbstractModule">AbstractModule</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Modules in the exact row-major order produced by :meth:<code>tree_flatten</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="LayerMap(_data, _rows, _ndim=2)
+
+  
+      dataclass
+   (darnax.layer_maps.sparse.LayerMap)" href="#darnax.layer_maps.sparse.LayerMap">LayerMap</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A new instance with the same static key layout and provided values.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>
@@ -1046,7 +1297,7 @@
 
     <div class="doc doc-contents ">
 
-        <p>Read-only mapping of neighbors (col → module) for row <code>i</code>.</p>
+        <p>Read-only mapping of neighbors (<code>col → module</code>) for row <code>i</code>.</p>
 
 
     </div>
@@ -1064,7 +1315,7 @@
 
     <div class="doc doc-contents ">
 
-        <p>Iterate <code>(row, neighbors)</code> with deterministic ordering and read-only views.</p>
+        <p>Iterate over rows with deterministic ordering and read-only views.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -1087,7 +1338,8 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>If True, the last receiver row is omitted.</p>
+                <p>If <code>True</code>, omit the last receiver row (useful when the output row
+is sink-only).</p>
               </div>
             </td>
             <td>
@@ -1103,11 +1355,36 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>If True, only modules that send messages "forward" are computed.</p>
+                <p>If <code>True</code>, keep only edges <code>(i, j)</code> with <code>j &lt;= i</code> (i.e.,
+lower-triangular including the diagonal), which is a common
+“feed-forward” scheduling constraint.</p>
               </div>
             </td>
             <td>
                   <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Yields:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>(row, neighbors) : tuple[int, Mapping[int, AbstractModule]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The row index and a read-only mapping of its neighbors.</p>
+              </div>
             </td>
           </tr>
       </tbody>
@@ -1129,7 +1406,30 @@
 
     <div class="doc doc-contents ">
 
-        <p>Iterate over <code>((i, j), module)</code> in deterministic row-major order.</p>
+        <p>Iterate over edges in deterministic row-major order.</p>
+
+
+    <p><span class="doc-section-title">Yields:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>((i, j), module) : tuple[tuple[int, int], AbstractModule]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Edge key and its module.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>
@@ -1147,7 +1447,31 @@
 
     <div class="doc doc-contents ">
 
-        <p>Deep copy as a plain dict-of-dicts (mutable, not tied to this object).</p>
+        <p>Deep copy as a plain, mutable dict-of-dicts.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="dict">dict</span>[<span title="int">int</span>, <span title="dict">dict</span>[<span title="int">int</span>, <a class="autorefs autorefs-internal" title="AbstractModule (darnax.modules.interfaces.AbstractModule)" href="../../modules/interfaces/#darnax.modules.interfaces.AbstractModule">AbstractModule</a>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A new mapping with the same keys and module values. Mutations on
+this result do <strong>not</strong> affect the original <code>LayerMap</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>

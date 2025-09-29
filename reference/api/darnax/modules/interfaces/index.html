@@ -787,6 +787,20 @@
 <a id="darnax.modules.interfaces"></a>
     <div class="doc doc-contents first">
 
+        <p>Interfaces for Darnax modules.</p>
+<p>This module defines the abstract contracts implemented by all computational
+components in Darnax:</p>
+<ul>
+<li><code>AbstractModule</code> is the common base for anything callable during the
+  recurrent dynamics (layers and adapters).</li>
+<li><code>Layer</code> is a <strong>stateful</strong> module that aggregates incoming messages and
+  applies an activation.</li>
+<li><code>Adapter</code> is a <strong>stateless</strong> mapping between layers (e.g., projections,
+  reshapes, or wiring).</li>
+</ul>
+<p>All classes are Equinox <code>Module</code>s (i.e., PyTrees) and are compatible with
+JAX transformations (<code>jit</code>, <code>vmap</code>, <code>grad</code>/<strong>custom rules</strong>, etc.).</p>
+
 
 
 
@@ -843,7 +857,22 @@
 
 
         <p>Base class for layers and adapters.</p>
+<p>Subclasses must implement a pure functional forward pass and a local
+learning rule via :meth:<code>backward</code>. The object itself is a PyTree:
+parameter fields are leaves, and nested modules are subtrees. This makes
+instances compatible with Equinox/Optax update flows.</p>
 
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <ul>
+<li>The forward pass <strong>must not</strong> mutate parameters or hidden state.
+  Any persistent state updates are orchestrated outside the call via the
+  training loop (see tutorials).</li>
+<li><code>rng</code> is optional; when provided, it should be a JAX PRNG key
+  (<code>KeyArray</code>). If <code>None</code>, the module must behave deterministically.</li>
+</ul>
+</details>
 
 
 
@@ -879,7 +908,32 @@
 
     <div class="doc doc-contents ">
 
-        <p>Return whether the module carries persistent state.</p>
+        <p>Whether the module carries persistent state.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>True</code> if the module owns persistent state (e.g., activations,
+running stats, internal buffers) that is managed by the
+orchestrator/training loop; <code>False</code> otherwise.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
     </div>
 
@@ -903,8 +957,108 @@
 
     <div class="doc doc-contents ">
 
-        <p>Compute a parameter update with the same PyTree structure.</p>
+        <p>Compute a local parameter update (same PyTree structure).</p>
+<p>This method implements a <strong>local plasticity rule</strong> that produces a
+PyTree of updates aligned with the module's parameter structure. The
+returned object is typically consumed by an optimizer (e.g., Optax) or
+combined with other updates by the orchestrator.</p>
 
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>x</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Inputs seen at the forward call (may be cached by the caller).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>y</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Supervision signal or target associated with the current step.
+Shape must be compatible with the module's output space.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>y_hat</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The module's (or readout's) current prediction.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Self">Self</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A PyTree with the <strong>same structure</strong> as this module, containing
+per-parameter updates (e.g., <code>dW</code>, <code>db</code>). Implementations may
+return zeros for non-trainable fields.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>The update is <em>not</em> required to be a gradient. It can be any local rule
+(e.g., perceptron-style, Hebbian/anti-Hebbian) as long as the shape and
+PyTree layout match the module parameters.</p>
+</details>
 
     </div>
 
@@ -934,8 +1088,22 @@
               Bases: <code><a class="autorefs autorefs-internal" title="AbstractModule (darnax.modules.interfaces.AbstractModule)" href="#darnax.modules.interfaces.AbstractModule">AbstractModule</a></code>, <code><span title="abc.ABC">ABC</span></code></p>
 
 
-        <p>A trainable layer with an activation and reducer.</p>
+        <p>A stateful, trainable layer that reduces messages then applies an activation.</p>
+<p>Layers are the primary compute units in Darnax. They typically:
+(1) aggregate incoming messages from upstream modules with :meth:<code>reduce</code>,
+and (2) transform the aggregate via :meth:<code>activation</code>.</p>
 
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <ul>
+<li>Layers are <strong>stateful</strong> by design (e.g., carry hidden activations or
+  buffers across steps); the orchestrator is responsible for when/how state
+  is read/written. The State object carries the state.</li>
+<li>The forward pass should be purely functional with respect to parameters
+  and external state; do not mutate in-place.</li>
+</ul>
+</details>
 
 
 
@@ -970,7 +1138,30 @@
 
     <div class="doc doc-contents ">
 
-        <p>Return True; layers are stateful by design.</p>
+        <p>Whether the layer carries persistent state.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Always <code>True</code> for layers.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
     </div>
 
@@ -997,6 +1188,60 @@
         <p>Apply the layer’s activation function.</p>
 
 
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>x</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Pre-activation tensor (e.g., the result of :meth:<code>reduce</code>).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Post-activation tensor. Typically the same shape as <code>x</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
     </div>
 
 </div>
@@ -1017,6 +1262,74 @@
     <div class="doc doc-contents ">
 
         <p>Aggregate incoming messages into a single tensor.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>h</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="PyTree = Any
+
+  
+      module-attribute
+   (darnax.utils.typing.PyTree)" href="../../utils/typing/#darnax.utils.typing.PyTree">PyTree</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Collection of incoming messages from neighbors/upstream modules.
+Implementations define the exact structure; common reducers include
+sum, mean, or structured/sparse contractions.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Aggregated input to be passed to :meth:<code>activation</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <p>A sum reducer over message leaves::</p>
+<div class="highlight"><pre><span></span><code>leaves = jax.tree_util.tree_leaves(h)
+x = jnp.sum(jnp.stack(leaves, axis=0), axis=0)
+return x
+</code></pre></div>
 
 
     </div>
@@ -1048,7 +1361,19 @@
 
 
         <p>A stateless mapping between layers.</p>
+<p>Adapters connect layers (e.g., linear projections, reshapes, sparsifying
+maps). They must not carry persistent state and should behave as pure
+functions of inputs and parameters (plus optional RNG).</p>
 
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <ul>
+<li>Use adapters to express wiring and shape changes between layers.</li>
+<li>Because adapters are stateless, orchestration can freely reorder or
+  parallelize them as long as data dependencies are respected.</li>
+</ul>
+</details>
 
 
 
@@ -1083,7 +1408,30 @@
 
     <div class="doc doc-contents ">
 
-        <p>Return False; adapters carry no persistent state.</p>
+        <p>Whether the adapter carries persistent state.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Always <code>False</code> for adapters.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
     </div>
 

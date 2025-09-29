@@ -781,6 +781,16 @@
 <a id="darnax.modules.debug"></a>
     <div class="doc doc-contents first">
 
+        <p>Debug/test modules for Darnax.</p>
+<p>This module provides tiny implementations used to exercise the orchestration
+and documentation pipeline:</p>
+<ul>
+<li>:class:<code>DebugLayer</code>: a stateful layer with a single scalar parameter.</li>
+<li>:class:<code>DebugAdapter</code>: a stateless adapter with a single scalar parameter.</li>
+</ul>
+<p>They are intentionally simple and <strong>not</strong> meant for learning quality; they
+exist to validate wiring, typing, and update flows.</p>
+
 
 
 
@@ -815,10 +825,73 @@
               Bases: <code><a class="autorefs autorefs-internal" title="Layer (darnax.modules.interfaces.Layer)" href="../interfaces/#darnax.modules.interfaces.Layer">Layer</a></code></p>
 
 
-        <p>A simple trainable layer for testing and debugging.</p>
+        <p>A minimal trainable layer for testing and debugging.</p>
+<p>Multiplies inputs elementwise by a learnable scalar <code>w</code>. The activation
+(:meth:<code>activation</code>) is the sign function, but the default forward pass
+(:meth:<code>__call__</code>) deliberately returns <code>w * x</code> to keep behavior simple.</p>
 
-        <p>Initialize the weight equal to 1.0.</p>
 
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="w = jnp.ones((1,), dtype=(jnp.float32))
+
+  
+      instance-attribute
+   (darnax.modules.debug.DebugLayer.w)" href="#darnax.modules.debug.DebugLayer.w">w</a></code></td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Learnable weight, shape <code>(1,)</code>, dtype <code>float32</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="a = True
+
+  
+      class-attribute
+      instance-attribute
+   (darnax.modules.debug.DebugLayer.a)" href="#darnax.modules.debug.DebugLayer.a">a</a></code></td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Static flag (non-PyTree) to mark the object as a layer. Kept for
+debugging/demo purposes only.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <ul>
+<li>This class is <strong>stateful</strong> (as all :class:<code>~darnax.modules.interfaces.Layer</code>).</li>
+<li>The local update (:meth:<code>backward</code>) is a no-op that returns <code>self</code>; it
+  exists to exercise the training loop, not to learn.</li>
+</ul>
+</details>
+        <p>Initialize parameters.</p>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>Sets <code>w = 1.0</code> (<code>float32</code>) and <code>a = True</code>.</p>
+</details>
 
 
 
@@ -895,6 +968,60 @@
         <p>Apply the layer’s activation function.</p>
 
 
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>x</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Pre-activation tensor.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>sign(x)</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
     </div>
 
 </div>
@@ -913,6 +1040,69 @@
         <p>Aggregate incoming messages into a single tensor.</p>
 
 
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>h</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="PyTree = Any
+
+  
+      module-attribute
+   (darnax.utils.typing.PyTree)" href="../../utils/typing/#darnax.utils.typing.PyTree">PyTree</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>PyTree of arrays to be summed.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Sum over all leaves in <code>h</code> via an associative reduction.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>Uses :func:<code>jax.tree.reduce_associative</code> with <code>operator.add</code>.</p>
+</details>
+
     </div>
 
 </div>
@@ -928,7 +1118,93 @@
 
     <div class="doc doc-contents ">
 
-        <p>Return the update is the itself.</p>
+        <p>Return a no-op parameter update.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>x</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Forward input (unused).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>y</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Target/supervision (unused).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>y_hat</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Prediction (unused).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Self">Self</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>self</code> — identity update (no change).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>
@@ -958,10 +1234,62 @@
               Bases: <code><a class="autorefs autorefs-internal" title="Adapter (darnax.modules.interfaces.Adapter)" href="../interfaces/#darnax.modules.interfaces.Adapter">Adapter</a></code></p>
 
 
-        <p>A stateless mapping between layers.</p>
+        <p>A minimal stateless mapping for testing and debugging.</p>
+<p>Multiplies inputs elementwise by a scalar <code>w</code>. Carries no persistent
+state and returns a no-op update in :meth:<code>backward</code>.</p>
 
-        <p>Initialize the weight equal to 1.0.</p>
 
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="w = jnp.ones((1,), dtype=(jnp.float32))
+
+  
+      instance-attribute
+   (darnax.modules.debug.DebugAdapter.w)" href="#darnax.modules.debug.DebugAdapter.w">w</a></code></td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Weight, shape <code>(1,)</code>, dtype <code>float32</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="a = False
+
+  
+      class-attribute
+      instance-attribute
+   (darnax.modules.debug.DebugAdapter.a)" href="#darnax.modules.debug.DebugAdapter.a">a</a></code></td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Static flag (non-PyTree) to mark the object as an adapter.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+        <p>Initialize parameters.</p>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>Sets <code>w = 1.0</code> (<code>float32</code>) and <code>a = False</code>.</p>
+</details>
 
 
 
@@ -1035,7 +1363,93 @@
 
     <div class="doc doc-contents ">
 
-        <p>Return the update is the itself.</p>
+        <p>Return a no-op parameter update.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>x</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Forward input (unused).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>y</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Target/supervision (unused).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>y_hat</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Prediction (unused).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Self">Self</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>self</code> — identity update (no change).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>

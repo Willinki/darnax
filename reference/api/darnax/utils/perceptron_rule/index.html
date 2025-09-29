@@ -689,20 +689,23 @@
     <div class="doc doc-contents first">
 
         <p>Perceptron (OVA) backward update in JAX.</p>
+<p>This module implements a one-vs-all perceptron-style local update that returns
+a weight increment <code>ΔW</code> to be <strong>added</strong> to a dense weight matrix.</p>
 <ul>
 <li>Supports batched inputs.</li>
-<li>Labels are {-1, +1} per class (one-vs-all).</li>
+<li>Labels are in <code>{-1, +1}</code> per class (one-vs-all coding).</li>
 <li><code>y_hat</code> are raw scores (pre-activation).</li>
-<li>Returns weight update <code>dW</code> without applying a learning rate.</li>
+<li>No learning rate is applied here.</li>
 </ul>
 
 
 <details class="shapes" open>
   <summary>Shapes</summary>
-  <p>x      : (d,) or (n, d)
-y      : (n, K) in {-1, +1}
-y_hat  : (n, K) raw scores
-returns: (d, K)</p>
+  <p>x       : (d,) or (n, d)
+y       : (n, K) in {-1, +1}
+y_hat   : (n, K) raw scores
+margin  : broadcastable to (n, K) — e.g. scalar, (K,), or (n, K)
+returns : (d, K)  (ΔW to add to weights)</p>
 </details>
 
 
@@ -735,18 +738,135 @@ returns: (d, K)</p>
 
     <div class="doc doc-contents ">
 
-        <p>Compute multiclass (OVA) perceptron weight update with scaling (no learning rate).</p>
-<p>Updates are applied when <code>y * y_hat &lt;= margin</code> (ties counted as mistakes).</p>
-<p>Args:
-    x: Input vector(s), shape <code>(d,)</code> or <code>(n, d)</code>.
-    y: Targets in <code>{-1, +1}</code>, shape <code>(n, K)</code>.
-    y_hat: Raw scores, shape <code>(n, K)</code>.
-    margin: Scalar margin threshold; changing its value will not retrace.</p>
-<p>Returns:
-    Weight update <code>dW</code> of shape <code>(d, K)</code> to add to the weights.</p>
-<p>Scaling:
-    - Divides by batch size <code>n</code> so updates are batch-size invariant.
-    - Divides by <code>sqrt(d)</code> (fan-in) so updates remain stable as width grows.</p>
+        <p>Multiclass (OVA) perceptron update (no learning rate).</p>
+<p>Applies an update when the margin condition is violated,
+i.e. <code>y * y_hat &lt;= margin</code> (ties count as mistakes). The result is a
+weight increment <code>ΔW</code> aligned with a column-per-class layout.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>x</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Input vector(s), shape <code>(d,)</code> or <code>(n, d)</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>y</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>One-vs-all targets in <code>{-1, +1}</code>, shape <code>(n, K)</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>y_hat</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Raw scores (pre-activation), shape <code>(n, K)</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>margin</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Margin threshold, <strong>broadcastable</strong> to <code>(n, K)</code>; e.g. a scalar,
+a per-class vector <code>(K,)</code>, or an array <code>(n, K)</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Weight update <code>ΔW</code> of shape <code>(d, K)</code> to <strong>add</strong> to the weights.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <ul>
+<li>Batch-size normalization: the update is divided by <code>n</code> so that its
+  magnitude is invariant to the batch size.</li>
+<li>Fan-in/width normalization (<code>1/sqrt(d)</code>) is <strong>not</strong> applied here. If
+  desired, incorporate it at the call site for your specific model.</li>
+</ul>
+</details>
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]])</span>      <span class="c1"># (n=2, d=2)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">+</span><span class="mi">1</span><span class="p">]])</span>      <span class="c1"># (2, K=2)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">y_hat</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.2</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.3</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.4</span><span class="p">]])</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">margin</span> <span class="o">=</span> <span class="mf">0.0</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">dW</span> <span class="o">=</span> <span class="n">perceptron_rule_backward</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">,</span> <span class="n">margin</span><span class="p">)</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">dW</span><span class="o">.</span><span class="n">shape</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="go">(2, 2)</span>
+</code></pre></div>
 
 
     </div>

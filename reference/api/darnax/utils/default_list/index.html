@@ -757,6 +757,33 @@
 <a id="darnax.utils.default_list"></a>
     <div class="doc doc-contents first">
 
+        <p>Default-filling list registered as a JAX PyTree.</p>
+<p><code>DefaultList</code> behaves like a Python <code>list</code> but supports <em>logical defaults</em>:
+gaps created by assigning/inserting past the current end are represented by a
+sentinel and <strong>materialized only on read</strong>. This keeps storage compact while
+preserving where defaults were implied.</p>
+
+
+<details class="features" open>
+  <summary>Features</summary>
+  <ul>
+<li>Works like <code>collections.abc.MutableSequence</code> (indexing, slicing, insert, del).</li>
+<li>Extending past the end fills with a sentinel; the actual default value is
+  produced only when accessed (<code>__getitem__</code>/<code>__iter__</code>/<code>to_list</code>).</li>
+<li>Slicing returns another <code>DefaultList</code> that <strong>preserves</strong> sentinel slots.</li>
+<li>Registered as a JAX <strong>PyTree</strong> (<code>tree_flatten</code>/<code>tree_unflatten</code>).</li>
+</ul>
+</details>
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <ul>
+<li>If <code>default_factory</code> is provided, <strong>every read</strong> of a default slot creates
+  a fresh value (no per-slot caching).</li>
+<li>Leaves in the PyTree include the sentinel; JAX transforms that map over
+  leaves should tolerate non-numeric entries when defaults are present.</li>
+</ul>
+</details>
 
 
 
@@ -820,18 +847,10 @@
 
 
         <p>Default-filling mutable list, registered as a JAX PyTree.</p>
+<p>Assigning or inserting beyond the current length <em>fills gaps</em> with a
+sentinel; the concrete default value is produced only when read. Slicing
+returns another :class:<code>DefaultList</code> that preserves sentinel slots.</p>
 
-
-<details class="key-behavior" open>
-  <summary>Key behavior</summary>
-  <ul>
-<li>Assigning or inserting beyond the current length <em>fills gaps</em> with a
-  default sentinel (materialized only when read).</li>
-<li>Slicing returns another :class:<code>DefaultList</code> that preserves default slots.</li>
-<li>Behaves like a normal <code>MutableSequence</code> for typing and basic list ops.</li>
-<li>Participates in JAX PyTree flatten/unflatten.</li>
-</ul>
-</details>
 
 <p><span class="doc-section-title">Parameters:</span></p>
     <table>
@@ -857,7 +876,7 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Initial concrete values to store. Defaults are not inserted unless
+                <p>Concrete values to seed the list. Defaults are not inserted unless
 indices are explicitly extended by assignment/insert.</p>
               </div>
             </td>
@@ -878,8 +897,7 @@ indices are explicitly extended by assignment/insert.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Value returned when reading a default slot <em>if</em> <code>default_factory</code> is
-not provided. May be <code>None</code>.</p>
+                <p>Value returned for a default slot <em>if</em> <code>default_factory</code> is not set.</p>
               </div>
             </td>
             <td>
@@ -899,10 +917,8 @@ not provided. May be <code>None</code>.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Zero-arg callable that produces the value for a default slot on read.
-Takes precedence over <code>default</code>.
-<strong>Note:</strong> each read materializes a fresh value; defaults are not cached
-per-slot.</p>
+                <p>Zero-arg callable producing the value for a default slot on read.
+Takes precedence over <code>default</code>. Each read yields a <strong>fresh</strong> value.</p>
               </div>
             </td>
             <td>
@@ -915,12 +931,6 @@ per-slot.</p>
 
 <details class="note" open>
   <summary>Notes</summary>
-  <p>PyTree leaves are the underlying elements, including the sentinel; any JAX
-<code>tree_map</code> should account for non-numeric leaves if defaults are present.</p>
-</details>
-
-<details class="public-type" open>
-  <summary>Public type</summary>
   <p>The public element type is <code>T | None</code> because materialized defaults may
 legitimately be <code>None</code>.</p>
 </details>
@@ -981,7 +991,7 @@ legitimately be <code>None</code>.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Return children and aux data for JAX PyTree protocol.</p>
+        <p>Return children and aux data for the JAX PyTree protocol.</p>
 
 
     <p><span class="doc-section-title">Returns:</span></p>
@@ -1030,6 +1040,80 @@ Aux data contains <code>(default, default_factory)</code>.</p>
         <p>Rebuild from aux and children (JAX PyTree protocol).</p>
 
 
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>aux</code>
+            </td>
+            <td>
+                  <code><span title="tuple">tuple</span>[<span title="typing.Any">Any</span>, ...]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The auxiliary data returned by :meth:<code>tree_flatten</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>children</code>
+            </td>
+            <td>
+                  <code><span title="tuple">tuple</span>[<span title="typing.Any">Any</span>, ...]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The raw items (may include sentinels).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="DefaultList(initial=None, *, default=None, default_factory=None) (darnax.utils.default_list.DefaultList)" href="#darnax.utils.default_list.DefaultList">DefaultList</a>[<a class="autorefs autorefs-internal" title="T = TypeVar('T')
+
+  
+      module-attribute
+   (darnax.utils.default_list.T)" href="#darnax.utils.default_list.T">T</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A reconstructed list with identical contents and defaults.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
     </div>
 
 </div>
@@ -1046,7 +1130,58 @@ Aux data contains <code>(default, default_factory)</code>.</p>
     <div class="doc doc-contents ">
 
         <p>Insert at <code>index</code>; if beyond end, fill gap with defaults then append.</p>
-<p>Negative indices are clamped like Python's <code>list.insert</code>.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>index</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Insertion position. Negative indices are clamped like
+<code>list.insert</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>value</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="T = TypeVar('T')
+
+  
+      module-attribute
+   (darnax.utils.default_list.T)" href="#darnax.utils.default_list.T">T</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Value to insert.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>
@@ -1123,7 +1258,8 @@ Aux data contains <code>(default, default_factory)</code>.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>If True, drop default slots entirely. Otherwise materialize them.</p>
+                <p>If <code>True</code>, drop default slots entirely (positions are lost).
+Otherwise, materialize defaults into concrete values.</p>
               </div>
             </td>
             <td>
@@ -1153,13 +1289,20 @@ Aux data contains <code>(default, default_factory)</code>.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A list containing either materialized defaults or only concrete values.</p>
+                <p>Either a list containing concrete values <em>and</em> materialized defaults,
+or (if <code>filter_defaults=True</code>) only the explicitly set values.</p>
               </div>
             </td>
           </tr>
       </tbody>
     </table>
 
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>With <code>default_factory</code>, materialized defaults are freshly created and
+are not cached per-slot.</p>
+</details>
 
     </div>
 

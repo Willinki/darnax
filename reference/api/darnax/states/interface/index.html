@@ -721,6 +721,18 @@
 <a id="darnax.states.interface"></a>
     <div class="doc doc-contents first">
 
+        <p>State interfaces.</p>
+<p>This module defines the abstract :class:<code>State</code> contract used by orchestrators
+and layer maps. A concrete state holds per-layer tensors plus two special
+slots:</p>
+<ul>
+<li>index <code>0</code>: <strong>input</strong> (provided by the caller),</li>
+<li>last index: <strong>output</strong> (produced by the network).</li>
+</ul>
+<p>Implementations must be Equinox <code>Module</code>s (i.e., PyTrees) and support
+functional updates (returning <strong>new</strong> state instances rather than mutating
+in place).</p>
+
 
 
 
@@ -756,12 +768,33 @@
               Bases: <code><span title="equinox.Module">Module</span></code></p>
 
 
-        <p>Global state for a network (layermap).</p>
-<p>Each layer of a layermap has an associated state.
-The number of elements in the global state needs to be
-equal to the number of layers in the LayerMap + 1 at least.</p>
-<p>See "inputs" and "output" in docs.</p>
+        <p>Global state for a network (LayerMap).</p>
+<p>A <code>State</code> stores the tensors associated with each layer plus the
+designated <strong>input</strong> and <strong>output</strong> slots. The total number of elements
+must be <strong>at least</strong> <code>#layers + 1</code> (input + one per layer + output).</p>
+<p>Concretely, orchestrators assume:
+- <code>state[0]</code> holds the <strong>input</strong>,
+- <code>state[-1]</code> holds the <strong>output</strong>,
+- the remaining indices map to intermediate layer states according to the
+  LayerMap’s ordering.</p>
 
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <ul>
+<li><code>State</code> is an Equinox <code>Module</code> and thus a PyTree; it should be safe
+  to pass through JAX transformations (<code>jit</code>, <code>vmap</code>) as long as
+  implementations avoid in-place mutation.</li>
+<li>All mutating operations must be exposed as <strong>functional</strong> methods that
+  return a <em>new</em> instance (see :meth:<code>replace</code> and :meth:<code>replace_val</code>).</li>
+</ul>
+</details>
+
+<details class="see-also" open>
+  <summary>See Also</summary>
+  <p>darnax.states.sequential.SequentialState
+    A concrete reference implementation using array-backed storage.</p>
+</details>
 
 
 
@@ -798,9 +831,86 @@ equal to the number of layers in the LayerMap + 1 at least.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Initialize the state with the input and output in the correct place.</p>
-<p>They are the first [0] and last element of the state.</p>
+        <p>Initialize input/output slots and return a fresh state.</p>
 
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>x</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Input tensor to place at index <code>0</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>y</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span> or None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional target/output tensor to place at the last index. If
+<code>None</code>, the output slot should be initialized according to the
+implementation’s policy (e.g., zeros or a placeholder).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Self">Self</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A new state instance with input/output slots set.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>This method must <strong>not</strong> mutate the receiver; it returns a new state
+object with the appropriate slots populated.</p>
+</details>
 
     </div>
 
@@ -821,8 +931,72 @@ equal to the number of layers in the LayerMap + 1 at least.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Replace the whole state functionally with new values.</p>
+        <p>Return a new state with <strong>all</strong> underlying values replaced.</p>
 
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>value</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="PyTree = Any
+
+  
+      module-attribute
+   (darnax.utils.typing.PyTree)" href="../../utils/typing/#darnax.utils.typing.PyTree">PyTree</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A PyTree matching the internal storage structure.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Self">Self</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A new instance containing <code>value</code> as its storage.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>This is the coarse-grained replacement primitive used by orchestrators
+when recomputing the entire state in one shot.</p>
+</details>
 
     </div>
 
@@ -843,8 +1017,84 @@ equal to the number of layers in the LayerMap + 1 at least.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Return a new instance with layer state at id idx replaced by value .</p>
+        <p>Return a new state with a <strong>single</strong> slot replaced.</p>
 
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>idx</code>
+            </td>
+            <td>
+                  <code><span title="typing.Any">Any</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Index/key indicating which slot to replace (commonly an <code>int</code>).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>value</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>New tensor to store at the selected position.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Self">Self</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A new instance where only the selected slot differs from <code>self</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>This is the fine-grained primitive used during step-wise updates
+(e.g., updating a single layer’s activation while keeping the rest).</p>
+</details>
 
     </div>
 

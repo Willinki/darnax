@@ -730,6 +730,25 @@
 <a id="darnax.modules.input_output"></a>
     <div class="doc doc-contents first">
 
+        <p>Output layer utilities.</p>
+<p>This module defines :class:<code>OutputLayer</code>, a lightweight aggregation layer meant
+to sit at the boundary of the network. It provides:</p>
+<ul>
+<li>identity <strong>activation</strong> (no nonlinearity),</li>
+<li>identity <strong>forward</strong> pass (conceptually; see Notes),</li>
+<li>a <strong>reduce</strong> method that elementwise-sums all array leaves in a PyTree of
+  predictions,</li>
+<li>a <strong>no-op</strong> local update (:meth:<code>backward</code>) since there are no trainable
+  parameters.</li>
+</ul>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>Despite being conceptually stateless, :class:<code>OutputLayer</code> subclasses
+:class:<code>darnax.modules.interfaces.Layer</code> to reuse the orchestration contract,
+including the <code>reduce</code> interface.</p>
+</details>
 
 
 
@@ -785,12 +804,16 @@
               Bases: <code><a class="autorefs autorefs-internal" title="Layer (darnax.modules.interfaces.Layer)" href="../interfaces/#darnax.modules.interfaces.Layer">Layer</a></code></p>
 
 
-        <p>Simple identity output layer that sums predictions.</p>
-<p>This layer leaves inputs unchanged on forward/activation, and provides a
-<code>reduce</code> method that elementwise-sums all array leaves in a PyTree of
-predictions. The backward pass is a no-op because this layer has no
-trainable parameters.</p>
+        <p>Simple output layer that aggregates predictions via summation.</p>
+<p>The layer leaves activations unchanged and defines a <code>reduce</code> that
+elementwise-sums a PyTree of predictions. Its backward pass is a no-op
+because it has no trainable parameters.</p>
 
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>The current implementation of :meth:<code>__call__</code> returns <code>zeros_like(x)</code>.</p>
+</details>
 
 
 
@@ -850,7 +873,7 @@ trainable parameters.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>PyTree whose leaves are arrays with identical shapes/dtypes.</p>
+                <p>PyTree whose leaves are arrays with identical shapes and dtypes.</p>
               </div>
             </td>
             <td>
@@ -899,13 +922,18 @@ trainable parameters.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>If <code>h</code> has no leaves.</p>
+                <p>If <code>h</code> has no leaves (as per <code>tree_reduce</code> semantics).</p>
               </div>
             </td>
           </tr>
       </tbody>
     </table>
 
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>Uses :func:<code>jax.tree_util.tree_reduce</code> with :data:<code>operator.add</code>.</p>
+</details>
 
     </div>
 
@@ -925,6 +953,60 @@ trainable parameters.</p>
         <p>Identity activation.</p>
 
 
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>x</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Input tensor.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>x</code> unchanged.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
     </div>
 
 </div>
@@ -940,7 +1022,94 @@ trainable parameters.</p>
 
     <div class="doc doc-contents ">
 
-        <p>No-op backward because the output layer has no parameters.</p>
+        <p>No-op local update.</p>
+<p>This layer has no trainable parameters, so it returns itself unchanged.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>x</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Forward input (unused).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>y</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Target/supervision (unused).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>y_hat</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Prediction (unused).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Self">Self</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>self</code> (no parameter updates).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>

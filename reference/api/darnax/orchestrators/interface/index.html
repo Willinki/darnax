@@ -766,6 +766,40 @@
 <a id="darnax.orchestrators.interface"></a>
     <div class="doc doc-contents first">
 
+        <p>Abstract orchestrator interface.</p>
+<p>An orchestrator schedules <strong>message passing</strong>, <strong>state updates</strong>, and <strong>local
+learning</strong> over a :class:<code>~darnax.layer_maps.sparse.LayerMap</code>. It owns no
+parameters itself; it <em>routes</em> tensors through modules, updates a global
+:class:<code>~darnax.states.interface.State</code>, and returns parameter updates shaped
+like the layermap.</p>
+
+
+<details class="responsibilities" open>
+  <summary>Responsibilities</summary>
+  <ul>
+<li><strong>step</strong>: run one forward/update pass that refreshes non-output buffers
+  (keeps the output buffer unchanged). Typically used inside a recurrent loop.</li>
+<li><strong>step_inference</strong>: like <code>step</code> but restricted to a one-sided schedule
+  (e.g., skip “right-going” messages) for cheaper partial updates; output
+  remains unchanged.</li>
+<li><strong>predict</strong>: compute the output buffer from the current internal buffers
+  (no learning).</li>
+<li><strong>backward</strong>: compute a PyTree of parameter updates with the <strong>same structure</strong>
+  as the layermap (suitable for Optax <code>update/apply_updates</code>).</li>
+</ul>
+</details>
+
+<details class="rng-handling" open>
+  <summary>RNG handling</summary>
+  <p>Each method accepts an RNG key and returns a <strong>new</strong> RNG key. Implementations
+should <strong>split</strong> the key to ensure reproducible, side-effect-free randomness.</p>
+</details>
+
+<details class="see-also" open>
+  <summary>See Also</summary>
+  <p>tutorials/05_orchestrators.md
+tutorials/06_simple_net_on_artificial_data.md</p>
+</details>
 
 
 
@@ -865,8 +899,59 @@
    (darnax.orchestrators.interface.StateT)" href="#darnax.orchestrators.interface.StateT">StateT</a>]</code></p>
 
 
-        <p>Handles communication and messages between modules in a layermap.</p>
+        <p>Handle communication and scheduling over a :class:<code>LayerMap</code>.</p>
+<p>The orchestrator defines <em>how</em> modules exchange messages (graph traversal,
+fan-in reduction, activation timing) and <em>when</em> learning rules are applied.
+Concrete subclasses encode the schedule (e.g., left→right passes, recurrent
+sweeps, or sparsity-aware traversals).</p>
 
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="lmap
+
+  
+      instance-attribute
+   (darnax.orchestrators.interface.AbstractOrchestrator.lmap)" href="#darnax.orchestrators.interface.AbstractOrchestrator.lmap">lmap</a></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="LayerMap(_data, _rows, _ndim=2)
+
+  
+      dataclass
+   (darnax.layer_maps.sparse.LayerMap)" href="../../layer_maps/sparse/#darnax.layer_maps.sparse.LayerMap">LayerMap</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The static adjacency (rows/cols and order). Module <strong>parameters</strong> inside
+the layermap are PyTree leaves visible to JAX/Optax; the key layout is
+static for JIT stability.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <ul>
+<li>Methods are expected to be <strong>pure</strong> with respect to inputs: given a state
+  and RNG, they return a new state and a new RNG (no in-place mutation).</li>
+<li>Use :func:<code>jax.random.split</code> to manage randomness. Determinism under JIT
+  requires not reusing RNG keys.</li>
+<li><code>backward</code> returns <em>updates</em> (same PyTree shape as <code>lmap</code>), not new
+  parameters. Applying those updates is the optimizer’s job.</li>
+</ul>
+</details>
 
 
 
@@ -923,9 +1008,94 @@
 
     <div class="doc doc-contents ">
 
-        <p>Given the current state, run one forward/update step and return the new state.</p>
-<p>It does not change/affect the value of the output state.</p>
+        <p>Run one forward/update step <strong>without</strong> touching the output buffer.</p>
+<p>Typical use is inside a recurrent loop to evolve hidden buffers while
+deferring the explicit output computation to :meth:<code>predict</code>.</p>
 
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>state</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="StateT = TypeVar('StateT', bound='State')
+
+  
+      module-attribute
+   (darnax.orchestrators.interface.StateT)" href="#darnax.orchestrators.interface.StateT">StateT</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Current global state (input at index <code>0</code>, output at <code>-1</code>).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>rng</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>PRNG key for any stochastic modules. Implementations should split
+the key internally.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>(new_state, new_rng) : tuple[StateT, jax.Array]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The updated state (same type) and a fresh RNG key.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <ul>
+<li>Must <strong>not</strong> modify <code>state[-1]</code> (the output buffer).</li>
+<li>Scheduling is defined by the subclass (e.g., process edges with
+  <code>j &lt;= i</code> only, or a full sweep excluding output).</li>
+</ul>
+</details>
 
     </div>
 
@@ -946,10 +1116,90 @@
 
     <div class="doc doc-contents ">
 
-        <p>Given the current state, run one forward/update step and return the new state.</p>
-<p>Does not compute messages traveling "to the right".
-Does not change/affect the value of the output state.</p>
+        <p>Run a cheaper, inference-oriented step (output unchanged).</p>
+<p>This variant avoids computing messages that travel “to the right”
+(exact meaning is schedule-specific; commonly skip edges with
+<code>j &gt; i</code>). Useful for partial refreshes of upstream buffers.</p>
 
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>state</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="StateT = TypeVar('StateT', bound='State')
+
+  
+      module-attribute
+   (darnax.orchestrators.interface.StateT)" href="#darnax.orchestrators.interface.StateT">StateT</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Current global state.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>rng</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>PRNG key to split.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>(new_state, new_rng) : tuple[StateT, jax.Array]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The updated state and a fresh RNG key.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>Must <strong>not</strong> modify the output buffer <code>state[-1]</code>.</p>
+</details>
 
     </div>
 
@@ -970,8 +1220,87 @@ Does not change/affect the value of the output state.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Update the output state.</p>
+        <p>Compute/refresh the <strong>output</strong> buffer from current internal buffers.</p>
 
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>state</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="StateT = TypeVar('StateT', bound='State')
+
+  
+      module-attribute
+   (darnax.orchestrators.interface.StateT)" href="#darnax.orchestrators.interface.StateT">StateT</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Current global state (uses existing hidden buffers).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>rng</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>PRNG key to split, if output computation is stochastic.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>(new_state, new_rng) : tuple[StateT, jax.Array]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A state where <code>state[-1]</code> has been updated, and a fresh RNG key.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>This method performs <strong>no parameter updates</strong>; it’s a pure readout pass.</p>
+</details>
 
     </div>
 
@@ -992,10 +1321,96 @@ Does not change/affect the value of the output state.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Given the current state, compute the updates for the parameters in <code>lmap</code>.</p>
-<p>The returned PyTree must have the same structure as <code>lmap</code> so that it can
-be used with Optax's <code>update</code> and <code>apply_updates</code>.</p>
+        <p>Compute parameter updates aligned with the layermap structure.</p>
 
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>state</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="StateT = TypeVar('StateT', bound='State')
+
+  
+      module-attribute
+   (darnax.orchestrators.interface.StateT)" href="#darnax.orchestrators.interface.StateT">StateT</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Current global state providing the activations/messages required by
+local learning rules (e.g., perceptron updates).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>rng</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>PRNG key to split for stochastic update rules.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Self">Self</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A PyTree <strong>with the same structure as</strong> <code>self</code> where the <code>lmap</code>
+subtree mirrors the original layermap but each module is replaced by
+its parameter <strong>update</strong> (zeros for non-trainable fields).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <ul>
+<li>The returned object is intended for use with Optax:
+  <code>updates = orchestrator.backward(state, rng)</code>,
+  then <code>new_params = optax.apply_updates(params, updates)</code>.</li>
+<li>Implementations should avoid side effects and return only <em>updates</em>,
+  not updated parameters.</li>
+</ul>
+</details>
 
     </div>
 

@@ -757,6 +757,20 @@
 <a id="darnax.states.sequential"></a>
     <div class="doc doc-contents first">
 
+        <p>Sequential, array-backed global state.</p>
+<p><code>SequentialState</code> stores per-layer activations for layered networks as a list of
+JAX arrays and follows a strict indexing convention:</p>
+<ul>
+<li>index <code>0</code>: input buffer</li>
+<li>index <code>-1</code>: output buffer</li>
+<li>indices <code>1..-2</code>: intermediate layer buffers (left → right)</li>
+</ul>
+<p>Construction allocates <strong>placeholder</strong> buffers with batch size 1. Call
+:meth:<code>SequentialState.init</code> to resize all buffers to the true batch size and
+populate the endpoints. The object is an Equinox <code>Module</code> (a PyTree), so it
+plays nicely with JAX transforms; all “updates” are <strong>functional</strong> (return a new
+instance) via :meth:<code>replace</code> and :meth:<code>replace_val</code>.</p>
+
 
 
 
@@ -812,11 +826,95 @@
 
 
         <p>Sequential activations buffer for layered networks.</p>
-<p>Layers are indexed from left to right:
-layer <code>0</code> is the <strong>input</strong> buffer and layer <code>-1</code> is the <strong>output</strong> buffer.</p>
-<p>The internal storage is a list of JAX arrays with shapes <code>(B, *size_l)</code>.
-At construction time buffers are initialized with <code>(1, *size_l)</code> zeros.
-Use :meth:<code>init</code> to resize them to a real batch size <code>B</code> and optionally set the output.</p>
+<p>Layers are indexed from left to right: <code>state[0]</code> is <strong>input</strong> and
+<code>state[-1]</code> is <strong>output</strong>. The internal storage is a list of arrays with
+shapes <code>(B, *size_l)</code> where <code>B</code> is the batch size and <code>*size_l</code> is the
+per-layer trailing shape.</p>
+<p>On construction, buffers are initialized as zeros with shape
+<code>(1, *size_l)</code> (a placeholder batch). Call :meth:<code>init</code> to resize all
+buffers to a real batch size and optionally set the output.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="states = [(jnp.zeros((1, *size), dtype=dtype)) for size in shape_tuples]
+
+  
+      instance-attribute
+   (darnax.states.sequential.SequentialState.states)" href="#darnax.states.sequential.SequentialState.states">states</a></code></td>
+            <td>
+                  <code><span title="list">list</span>[<span title="jax.Array">Array</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Per-layer buffers. Shapes are <code>(B, *size_l)</code> after :meth:<code>init</code>,
+or <code>(1, *size_l)</code> immediately after construction.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="dtype = dtype
+
+  
+      class-attribute
+      instance-attribute
+   (darnax.states.sequential.SequentialState.dtype)" href="#darnax.states.sequential.SequentialState.dtype">dtype</a></code></td>
+            <td>
+                  <code><span title="jax.numpy.dtype">dtype</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dtype for all buffers (marked static in the PyTree).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="data_min_ndim = eqx.field(default=2, static=True)
+
+  
+      class-attribute
+      instance-attribute
+   (darnax.states.sequential.SequentialState.data_min_ndim)" href="#darnax.states.sequential.SequentialState.data_min_ndim">data_min_ndim</a></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Minimal rank for data buffers (default <code>2</code> → enforces a batch dim).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <ul>
+<li>This class is <strong>functional</strong>: methods like :meth:<code>replace</code> and
+  :meth:<code>replace_val</code> return a <strong>new</strong> instance; the original is unchanged.</li>
+<li>Shape assertions in :meth:<code>init</code> are executed at trace time, so they are
+  checked once per JIT compilation.</li>
+<li>Nothing prevents you from storing non-floating dtypes, as long as they
+  are consistent with <code>dtype</code> at construction.</li>
+</ul>
+</details>
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">st</span> <span class="o">=</span> <span class="n">SequentialState</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>        <span class="c1"># input(4), hidden(8), output(2)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">st</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">32</span><span class="p">,</span> <span class="mi">4</span><span class="p">)))</span>       <span class="c1"># B=32; output left as zeros</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>                               <span class="c1"># (32, 4)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">st2</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">replace_val</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">32</span><span class="p">,</span> <span class="mi">8</span><span class="p">)))</span>  <span class="c1"># update hidden layer</span>
+</code></pre></div>
 
         <p>Create a sequential state with one buffer per layer.</p>
 
@@ -841,10 +939,10 @@ Use :meth:<code>init</code> to resize them to a real batch size <code>B</code> a
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Iterable of <strong>tuples of positive integers</strong> or <strong>positive integers</strong>
-for each layer width, including input and output.
-For example, a one-hidden-layer classifier could be <code>[D, N, C]</code>
-or mixed-rank like <code>[(H, W, C_in), N, (C_out,)]</code>.</p>
+                <p>Iterable of <strong>positive</strong> sizes for each layer, including input and
+output. Each entry can be a positive <code>int</code> (for 1D layers) or a
+tuple of positive <code>int</code> (for multi-axis layers). Examples:
+<code>[D, N, C]</code> or <code>[(H, W, C_in), N, (C_out,)]</code>.</p>
               </div>
             </td>
             <td>
@@ -860,7 +958,7 @@ or mixed-rank like <code>[(H, W, C_in), N, (C_out,)]</code>.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>JAX dtype for all buffers (static in the PyTree).</p>
+                <p>Dtype for all buffers. Default is <code>jnp.float32</code>.</p>
               </div>
             </td>
             <td>
@@ -886,8 +984,8 @@ or mixed-rank like <code>[(H, W, C_in), N, (C_out,)]</code>.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>If any size is not a positive <code>int</code>/tuple of positive <code>int</code> or
-if the iterable is empty.</p>
+                <p>If <code>sizes</code> is empty, or if any entry is not a positive integer or
+a tuple of positive integers.</p>
               </div>
             </td>
           </tr>
@@ -991,6 +1089,66 @@ if the iterable is empty.</p>
         <p>Return a new instance with <code>states</code> replaced by <code>value</code>.</p>
 
 
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>value</code>
+            </td>
+            <td>
+                  <code><span title="collections.abc.Sequence">Sequence</span>[<span title="jax.Array">Array</span>] | <a class="autorefs autorefs-internal" title="PyTree = Any
+
+  
+      module-attribute
+   (darnax.utils.typing.PyTree)" href="../../utils/typing/#darnax.utils.typing.PyTree">PyTree</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A sequence (or PyTree) that will replace the internal list of
+buffers. In typical use, a list of arrays of length <code>len(self)</code>,
+each shaped <code>(B, *size_l)</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Self">Self</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A new <code>SequentialState</code> carrying <code>value</code> as its storage.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
 <details class="note" open>
   <summary>Notes</summary>
   <p>This is a <strong>functional</strong> update; the original object is not mutated.</p>
@@ -1012,6 +1170,76 @@ if the iterable is empty.</p>
     <div class="doc doc-contents ">
 
         <p>Return a new instance with layer <code>idx</code> replaced by <code>value</code>.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>idx</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Layer index to modify.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>value</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>New buffer for that layer, typically with shape <code>(B, *size_idx)</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Self">Self</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A new instance where only the selected layer differs from <code>self</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>
@@ -1052,7 +1280,8 @@ if the iterable is empty.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Input batch with shape <code>(B, *D)</code> where <code>*D</code> must match the input layer shape.</p>
+                <p>Input batch with shape <code>(B, *D)</code>; the trailing shape <code>*D</code> must
+equal the configured input layer shape.</p>
               </div>
             </td>
             <td>
@@ -1064,11 +1293,13 @@ if the iterable is empty.</p>
                 <code>y</code>
             </td>
             <td>
-                  <code><span title="jax.Array">Array</span> | None</code>
+                  <code><span title="jax.Array">Array</span> or None</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Optional output batch with shape <code>(B, *C)</code> where <code>*C</code> must match the output layer shape.</p>
+                <p>Optional output batch with shape <code>(B, *C)</code>; the trailing shape
+<code>*C</code> must equal the configured output layer shape. If omitted,
+the output buffer is zero-initialized.</p>
               </div>
             </td>
             <td>
@@ -1090,12 +1321,13 @@ if the iterable is empty.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="#darnax.states.sequential.SequentialState">SequentialState</a></code>
+                  <code><span title="typing.Self">Self</span></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A new instance whose buffers all have shape <code>(B, *size_l)</code>, with
-layer 0 set to <code>x</code> and (if provided) layer -1 set to <code>y</code>.</p>
+                <p>A new instance whose buffers all have shape <code>(B, *size_l)</code>,
+with layer <code>0</code> set to <code>x</code> and (if provided) layer <code>-1</code> set to
+<code>y</code>.</p>
               </div>
             </td>
           </tr>
@@ -1118,13 +1350,19 @@ layer 0 set to <code>x</code> and (if provided) layer -1 set to <code>y</code>.<
             </td>
             <td>
               <div class="doc-md-description">
-                <p>If shapes are inconsistent. Checks run at trace time (once per compilation).</p>
+                <p>If shapes are inconsistent (checked at trace time under JIT).</p>
               </div>
             </td>
           </tr>
       </tbody>
     </table>
 
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>This method does <strong>not</strong> mutate the receiver; it constructs new buffers
+with batch size <code>B</code> and returns a fresh state.</p>
+</details>
 
     </div>
 

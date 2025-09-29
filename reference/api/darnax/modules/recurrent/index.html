@@ -757,6 +757,38 @@
 <a id="darnax.modules.recurrent"></a>
     <div class="doc doc-contents first">
 
+        <p>Binary (±1) recurrent layer with dense couplings.</p>
+<p>This module defines :class:<code>RecurrentDiscrete</code>, a fully connected recurrent
+layer whose states live in <code>{-1, +1}</code>. The coupling matrix <code>J</code> has a
+controllable diagonal <code>J_D</code> (self-couplings), and learning uses a local,
+perceptron-style rule with per-unit margins (<code>threshold</code>).</p>
+
+
+<details class="design" open>
+  <summary>Design</summary>
+  <ul>
+<li><strong>State space:</strong> discrete, <code>s_i ∈ {-1, +1}</code>.</li>
+<li><strong>Couplings:</strong> dense matrix <code>J ∈ ℝ^{d×d}</code>, diagonal forced to <code>J_D</code>.</li>
+<li><strong>Forward:</strong> pre-activation <code>h = x @ J</code> (no in-place mutation).</li>
+<li><strong>Activation:</strong> hard sign with ties to <code>+1</code>.</li>
+<li><strong>Learning:</strong> :func:<code>darnax.utils.perceptron_rule.perceptron_rule_backward</code>
+  produces <code>ΔJ</code>; the <strong>diagonal update is masked to zero</strong> so self-couplings
+  remain fixed at <code>J_D</code>.</li>
+</ul>
+</details>
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>This class is an Equinox <code>Module</code> (a PyTree). Parameters are leaves and can be
+updated via Optax or custom update code. The orchestrator controls when to call
+<code>activation</code> vs forwarding pre-activations.</p>
+</details>
+
+<details class="see-also" open>
+  <summary>See Also</summary>
+  <p>darnax.modules.interfaces.Layer
+darnax.utils.perceptron_rule.perceptron_rule_backward</p>
+</details>
 
 
 
@@ -812,8 +844,213 @@
 
 
         <p>Binary (±1) recurrent layer with dense couplings.</p>
+<p>The layer keeps a dense coupling matrix <code>J</code> (with fixed diagonal
+<code>J_D</code>), a per-unit margin <code>threshold</code> for local updates, and an
+internal diagonal mask used to zero out self-updates during learning.</p>
 
-        <p>Initialize J with Gaussian entries, set diag to j_d, and store thresholds.</p>
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="J = J
+
+  
+      instance-attribute
+   (darnax.modules.recurrent.RecurrentDiscrete.J)" href="#darnax.modules.recurrent.RecurrentDiscrete.J">J</a></code></td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Coupling matrix with shape <code>(features, features)</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="J_D = j_d_vec
+
+  
+      instance-attribute
+   (darnax.modules.recurrent.RecurrentDiscrete.J_D)" href="#darnax.modules.recurrent.RecurrentDiscrete.J_D">J_D</a></code></td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Diagonal self-couplings, shape <code>(features,)</code>. Mirrors
+<code>jnp.diag(J)</code> and is kept fixed by masking during updates.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="threshold = thresh_vec
+
+  
+      instance-attribute
+   (darnax.modules.recurrent.RecurrentDiscrete.threshold)" href="#darnax.modules.recurrent.RecurrentDiscrete.threshold">threshold</a></code></td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Per-unit margin used by the local perceptron-style rule,
+shape <code>(features,)</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="darnax.modules.recurrent.RecurrentDiscrete._mask">_mask</span></code></td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Binary matrix (<code>1 - I</code>) that zeroes the diagonal of <code>ΔJ</code> before
+applying updates. Same shape and dtype as <code>J</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+        <p>Construct the layer parameters.</p>
+<p>Initializes a dense coupling matrix <code>J</code> with i.i.d. Gaussian entries
+scaled by <code>1/sqrt(features)</code> and sets its diagonal to <code>j_d</code>.
+Stores per-unit margins in <code>threshold</code> and a diagonal masking matrix
+to keep self-couplings fixed during learning.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>features</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of units (dimension <code>d</code>). Shapes are derived from this.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>j_d</code>
+            </td>
+            <td>
+                  <code><span title="jax.typing.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Self-couplings (diagonal of <code>J</code>). Either a scalar (broadcast to
+<code>(features,)</code>) or a vector of length <code>features</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>threshold</code>
+            </td>
+            <td>
+                  <code><span title="jax.typing.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Per-unit margins for the local update rule. Scalar or vector of
+length <code>features</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>key</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="KeyArray = jax.Array
+
+  
+      module-attribute
+   (darnax.modules.recurrent.KeyArray)" href="#darnax.modules.recurrent.KeyArray">KeyArray</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>JAX PRNG key used to initialize the off-diagonal entries of <code>J</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>dtype</code>
+            </td>
+            <td>
+                  <code><span title="jax.typing.DTypeLike">DTypeLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Parameter dtype, by default <code>jnp.float32</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="jax.numpy.float32">float32</span></code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If <code>j_d</code> or <code>threshold</code> is not scalar or a 1D vector with
+length <code>features</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
 
@@ -907,8 +1144,69 @@
 
     <div class="doc doc-contents ">
 
-        <p>Return strict ±1 activation with ties mapped to +1.</p>
+        <p>Hard-sign activation mapping ties to <code>+1</code>.</p>
 
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>x</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Pre-activation tensor.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>(+1)</code> where <code>x &gt;= 0</code> and <code>(-1)</code> otherwise, cast to
+<code>x.dtype</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>This function is separate from :meth:<code>__call__</code> so orchestrators can
+decide when to discretize (e.g., training vs inference dynamics).</p>
+</details>
 
     </div>
 
@@ -928,6 +1226,69 @@
         <p>Aggregate incoming messages by summation.</p>
 
 
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>h</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="PyTree = Any
+
+  
+      module-attribute
+   (darnax.utils.typing.PyTree)" href="../../utils/typing/#darnax.utils.typing.PyTree">PyTree</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>PyTree of arrays (e.g., messages from neighbors) to be summed.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Elementwise sum over all leaves in <code>h</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>Uses :func:<code>jax.tree_util.tree_reduce</code> with :data:<code>operator.add</code>.</p>
+</details>
+
     </div>
 
 </div>
@@ -943,7 +1304,112 @@
 
     <div class="doc doc-contents ">
 
-        <p>Return a module-shaped update with ΔJ in J and zeros elsewhere.</p>
+        <p>Compute a module-shaped local update.</p>
+<p>Produces a PyTree of updates where only <code>J</code> receives a nonzero
+<code>ΔJ</code>; all other fields are zero. The diagonal of <code>ΔJ</code> is masked
+to zero so self-couplings stay fixed at <code>J_D</code>.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>x</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Inputs used to produce the current prediction. Shape
+<code>(features,)</code> or <code>(batch, features)</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>y</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Supervision signal/targets, broadcast-compatible with <code>y_hat</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>y_hat</code>
+            </td>
+            <td>
+                  <code><span title="jax.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Current prediction/logits, broadcast-compatible with <code>y</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Self">Self</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A PyTree with the same structure as <code>self</code> where:
+- <code>J</code> contains <code>ΔJ</code> (diagonal zeroed),
+- all other leaves are zeros.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>Calls :func:<code>darnax.utils.perceptron_rule.perceptron_rule_backward</code>
+with the stored per-unit <code>threshold</code>. The rule is local and need not
+be a true gradient.</p>
+</details>
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">upd</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">new_params</span> <span class="o">=</span> <span class="n">eqx</span><span class="o">.</span><span class="n">tree_at</span><span class="p">(</span><span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">J</span><span class="p">,</span> <span class="n">layer</span><span class="p">,</span> <span class="n">layer</span><span class="o">.</span><span class="n">J</span> <span class="o">+</span> <span class="n">lr</span> <span class="o">*</span> <span class="n">upd</span><span class="o">.</span><span class="n">J</span><span class="p">)</span>
+</code></pre></div>
 
 
     </div>
