@@ -2,7 +2,7 @@
 
 This file is made to list future improvements of the code base.
 
-It is supposed to contain high level ideas, for specific fixes, open an issue
+It is supposed to contain high level ideas, for specific fixes, open an issue (well actually...)
 
 - [ ] Remove sequential key splitting in the orchestrator
 
@@ -21,3 +21,7 @@ equinox partition/combine.
 - [ ] How to handle parameter sharing? eqx.shared
 
 - [ ] Orchestrator should be generic type in both state and layermap
+
+- [ ] Add Trainer object to remove further boilerplate
+
+- [ ] Improve docs in perceptron rule update docs to clear meaning and clarify J x against J s in the paper
