@@ -17,7 +17,7 @@ dev = ["pytest>=8", "pytest-cov", "ruff>=0.5", "black>=24", "mypy>=1.10",
        "types-setuptools", "pytest-benchmark", "nbmake", "pre-commit", "pip-audit"]
 docs = ["mkdocs", "mkdocs-material", "mkdocstrings[python]", "mkdocs-autorefs",
         "mkdocs-section-index", "mkdocs-literate-nav", "jupytext", "mkdocs-gen-files"]
-add-ons = ["optax>=0.2.6", "tqdm>=4.0"]
+add-ons = ["optax>=0.2.6", "tqdm>=4.0", "datasets>=4.1.1", "pillow>=11.3.0"]
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
