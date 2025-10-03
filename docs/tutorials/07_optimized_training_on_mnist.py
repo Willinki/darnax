@@ -18,6 +18,7 @@
 
 # %%
 # --- Imports ---------------------------------------------------------------
+import logging
 import time
 from collections.abc import Iterator
 from typing import Any
@@ -34,6 +35,9 @@ from darnax.modules.input_output import OutputLayer
 from darnax.modules.recurrent import RecurrentDiscrete
 from darnax.orchestrators.sequential import SequentialOrchestrator
 from darnax.states.sequential import SequentialState
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 # %% [markdown]
 # ## Utilities (metrics & summaries)
@@ -194,7 +198,7 @@ class MNISTData:
     def _labels_to_pm1(y_scalar: jax.Array, num_classes: int) -> jax.Array:
         """Convert integer labels `(N,)` to ±1 vectors `(N, C)`."""
         one_hot = jax.nn.one_hot(y_scalar, num_classes, dtype=jnp.float32)
-        return one_hot * (num_classes**0.5 / 2 + 0.5) - 0.5
+        return one_hot * ((num_classes**0.5) / 2 + 0.5) - 0.5
 
     @staticmethod
     def _random_projection_matrix(
@@ -208,7 +212,7 @@ class MNISTData:
         under i.i.d. unit-variance inputs.
         """
         w = jax.random.normal(key, (out_dim, in_dim), dtype=jnp.float32)
-        return w / jnp.sqrt(jnp.float32(in_dim))
+        return w
 
     @staticmethod
     def _take_per_class(
@@ -279,6 +283,11 @@ class MNISTData:
         k_train = self.num_data // self.NUM_CLASSES
         x_tr, y_tr_scalar = self._take_per_class(key_sample, x_tr_all, y_tr_all, k_train)
 
+        # --- NEW: global centering ---
+        mu = jnp.mean(x_tr_all, axis=0, dtype=jnp.float32)  # (784,)
+        x_tr_all = x_tr_all - mu
+        x_ev_all = x_ev_all - mu
+
         # (3) EVAL full test split (already loaded as x_ev_all, y_ev_scalar)
 
         # (4) Shared projection/sign
@@ -304,7 +313,7 @@ class MNISTData:
 
         # Metadata
         self.input_dim = int(self.x.shape[1])
-        self.output_dim = self.input_dim
+        self.output_dim = self.linear_projection
         self.num_eval_data = int(self.x_eval.shape[0])
         self.num_eval_batches = -(-self.num_eval_data // self.batch_size)  # ceil div
 
@@ -355,7 +364,7 @@ DIM_HIDDEN = 512
 THRESHOLD_OUT = 3.0
 THRESHOLD_IN = 3.0
 THRESHOLD_J = 1.2
-STRENGTH_BACK = 0.9
+STRENGTH_BACK = 1.2
 STRENGTH_FORTH = 5.0
 J_D = 0.5
 
@@ -401,6 +410,7 @@ layer_map = LayerMap.from_dict(layer_map)
 
 # Trainable orchestrator built from the fixed topology.
 orchestrator = SequentialOrchestrator(layers=layer_map)
+logger.info("Defined model with orchestrator.")
 
 # %% [markdown]
 # ## Optimizer
@@ -410,7 +420,14 @@ orchestrator = SequentialOrchestrator(layers=layer_map)
 # We also show how to update the model with the function `update(orchestrator, state, optimizer)`.
 
 # %%
-optimizer = optax.chain(optax.add_decayed_weights(0.0001), optax.sgd(0.003))
+# Build a mask: True = trainable, False = frozen (e.g., W_back)
+trainable_mask = jax.tree_util.tree_map(
+    lambda leaf: isinstance(leaf, jnp.ndarray),  # start from arrays
+    eqx.filter(orchestrator, eqx.is_inexact_array),
+)
+# turn off the mask at the exact leaves belonging to the FrozenFullyConnected W
+trainable_mask = eqx.tree_at(lambda o: o.lmap[1][2].W, trainable_mask, False)
+optimizer = optax.masked(optax.sgd(0.008), trainable_mask)
 opt_state = optimizer.init(eqx.filter(orchestrator, eqx.is_inexact_array))
 
 
@@ -518,7 +535,9 @@ def train_step(
 
     # 3) Update the model
     rng, update_key = jax.random.split(rng)
-    orch, opt_state = update(orch, s, optimizer, opt_state, update_key)
+    orch, opt_state = update(
+        orch, s.replace_val(-1, jnp.sign(s[-1])), optimizer, opt_state, update_key
+    )
     return orch, rng, opt_state
 
 
@@ -583,6 +602,11 @@ history = {"acc": []}
 for epoch in range(1, EPOCHS + 1):
     t0 = time.time()
     print(f"\n=== Epoch {epoch}/{EPOCHS} ===")
+    w_in_norm = jnp.linalg.norm(orchestrator.lmap[1, 0].W)
+    w_out_norm = jnp.linalg.norm(orchestrator.lmap[2, 1].W)
+    w_back_norm = jnp.linalg.norm(orchestrator.lmap[1, 2].W)
+    J_norm = jnp.linalg.norm(orchestrator.lmap[1, 1].J)
+    print(f"{w_in_norm=} {w_out_norm=} {J_norm=} {w_back_norm=}")
     for x_batch, y_batch in data:
         # Keep batch arrays float32 (consistency)
         master_key, train_key, eval_key = jax.random.split(master_key, num=3)
@@ -597,6 +621,11 @@ for epoch in range(1, EPOCHS + 1):
             t_train=T_TRAIN,
         )
     print(f"Epoch {epoch} done in {time.time() - t0:.2f}s")
+    w_in_norm = jnp.linalg.norm(orchestrator.lmap[1, 0].W)
+    w_out_norm = jnp.linalg.norm(orchestrator.lmap[2, 1].W)
+    w_back_norm = jnp.linalg.norm(orchestrator.lmap[1, 2].W)
+    J_norm = jnp.linalg.norm(orchestrator.lmap[1, 1].J)
+    print(f"{w_in_norm=} {w_out_norm=} {J_norm=} {w_back_norm=}")
 
     eval_acc = []
     for x_b, y_b in data:
