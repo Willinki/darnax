@@ -198,7 +198,7 @@ class MNISTData:
     def _labels_to_pm1(y_scalar: jax.Array, num_classes: int) -> jax.Array:
         """Convert integer labels `(N,)` to ±1 vectors `(N, C)`."""
         one_hot = jax.nn.one_hot(y_scalar, num_classes, dtype=jnp.float32)
-        return one_hot * ((num_classes**0.5) / 2 + 0.5) - 0.5
+        return one_hot * 2 - 1
 
     @staticmethod
     def _random_projection_matrix(
@@ -334,6 +334,12 @@ class MNISTData:
         )
 
 
+def scale_labels_for_messages(y_pm1: jnp.ndarray) -> jnp.ndarray:
+    """Scale labels to increase weight in positive class."""
+    C = y_pm1.shape[-1]
+    return jnp.where(y_pm1 > 0, jnp.sqrt(C) / 2.0, -0.5).astype(y_pm1.dtype)
+
+
 # %% [markdown]
 # ## Build Model & State
 #
@@ -363,8 +369,8 @@ NUM_LABELS = MNISTData.NUM_CLASSES
 DIM_HIDDEN = 512
 THRESHOLD_OUT = 3.0
 THRESHOLD_IN = 3.0
-THRESHOLD_J = 1.2
-STRENGTH_BACK = 1.2
+THRESHOLD_J = 1.0
+STRENGTH_BACK = 0.9
 STRENGTH_FORTH = 5.0
 J_D = 0.5
 
@@ -421,13 +427,8 @@ logger.info("Defined model with orchestrator.")
 
 # %%
 # Build a mask: True = trainable, False = frozen (e.g., W_back)
-trainable_mask = jax.tree_util.tree_map(
-    lambda leaf: isinstance(leaf, jnp.ndarray),  # start from arrays
-    eqx.filter(orchestrator, eqx.is_inexact_array),
-)
-# turn off the mask at the exact leaves belonging to the FrozenFullyConnected W
-trainable_mask = eqx.tree_at(lambda o: o.lmap[1][2].W, trainable_mask, False)
-optimizer = optax.masked(optax.sgd(0.008), trainable_mask)
+# DO NOT APPLY WEIGHT DECAY! STILL NOT COMPATIBLE WITH THAT
+optimizer = optax.sgd(0.01)
 opt_state = optimizer.init(eqx.filter(orchestrator, eqx.is_inexact_array))
 
 
@@ -449,6 +450,9 @@ def update(
     # training.
     params = eqx.filter(orchestrator, eqx.is_inexact_array)
     grads = eqx.filter(grads, eqx.is_inexact_array)
+    # print("||ΔW_in||  =", jnp.linalg.norm(grads.lmap[1][0].W))
+    # print("||ΔJ||     =", jnp.linalg.norm(grads.lmap[1][1].J))
+    # print("||ΔW_out|| =", jnp.linalg.norm(grads.lmap[2][1].W))
 
     # 3) We compute the updates and apply them to our model
     updates, opt_state = optimizer.update(grads, optimizer_state, params=params)
@@ -528,16 +532,16 @@ def train_step(
 ):
     """Perform a batch update of the model."""
     # 1) Clamp current batch (inputs & labels).
-    s = s.init(x, y)
+    y_msg = scale_labels_for_messages(y)
+    s = s.init(x, y_msg)
 
     # 2) Training dynamics (kept as-is).
     s, rng = run_dynamics_training(orch, s, rng, steps=t_train)
 
     # 3) Update the model
+    s_upd = s.replace_val(-1, y)
     rng, update_key = jax.random.split(rng)
-    orch, opt_state = update(
-        orch, s.replace_val(-1, jnp.sign(s[-1])), optimizer, opt_state, update_key
-    )
+    orch, opt_state = update(orch, s_upd, optimizer, opt_state, update_key)
     return orch, rng, opt_state
 
 
