@@ -98,11 +98,13 @@ class FullyConnected(Adapter):
             of the expected length.
 
         """
-        self.W = jax.random.normal(key, (in_features, out_features), dtype=dtype) / jnp.sqrt(
-            in_features
-        )
         self.strength = self._set_shape(strength, out_features, dtype)
         self.threshold = self._set_shape(threshold, out_features, dtype)
+        self.W = (
+            jax.random.normal(key, (in_features, out_features), dtype=dtype)
+            * self.strength
+            / jnp.sqrt(in_features)
+        )
 
     def __call__(self, x: Array, rng: KeyArray | None = None) -> Array:
         """Compute ``y = (x @ W) * strength`` (broadcast on last dim).
@@ -122,7 +124,7 @@ class FullyConnected(Adapter):
             Output tensor with trailing dimension ``out_features``.
 
         """
-        return (x @ self.W) * self.strength
+        return x @ self.W
 
     def backward(self, x: Array, y: Array, y_hat: Array) -> Self:
         """Return a module-shaped local update where only ``ΔW`` is set.
@@ -150,7 +152,6 @@ class FullyConnected(Adapter):
 
         """
         dW = perceptron_rule_backward(x, y, y_hat, self.threshold)
-        dW = dW * self.strength
         zero_update = jax.tree.map(jnp.zeros_like, self)
         new_self: Self = eqx.tree_at(lambda m: m.W, zero_update, dW)
         return new_self
