@@ -150,6 +150,7 @@ class FullyConnected(Adapter):
 
         """
         dW = perceptron_rule_backward(x, y, y_hat, self.threshold)
+        dW = dW * self.strength
         zero_update = jax.tree.map(jnp.zeros_like, self)
         new_self: Self = eqx.tree_at(lambda m: m.W, zero_update, dW)
         return new_self
