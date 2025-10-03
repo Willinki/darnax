@@ -216,16 +216,16 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         messages (no right-going edges), matching the schedule used in inference.
 
         """
-        activations: dict[int, dict[int, Array]] = {}
-        # here we compute all activations (back, forth, and last)
-        for receiver_idx, senders_group in self.lmap.row_items():
+        # here we compute all activations (back, forth, and last), equivalent to h_i
+        activations: SequentialState = state
+        for receiver_idx, senders_group in self.lmap.row_items(skip_last=False, forward_only=True):
             rng, sub = jax.random.split(rng)
             msgs = self._compute_messages(senders_group, state, rng=sub)
             # Add the receiver's aggregated activation under its own key.
-            msgs[receiver_idx] = self.lmap[receiver_idx, receiver_idx].reduce(
-                {k: v for k, v in msgs.items() if k <= receiver_idx}
-            )  # IMPORTANT: in the backward we dont consider backward messages when aggregating
-            activations[receiver_idx] = msgs
+            # IMPORTANT: in the backward we dont consider backward messages when aggregating
+            activations = activations.replace_val(
+                receiver_idx, self.lmap[receiver_idx, receiver_idx].reduce(msgs)
+            )
         # Second pass: ask each module for its update.
         return type(self)(layers=self._backward_direct(state, activations))
 
@@ -234,7 +234,7 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
     def _backward_direct(
         self,
         state: SequentialState,
-        activations: dict[int, dict[int, Array]],
+        activations: SequentialState,
     ) -> LayerMap:
         """Assemble a LayerMap of per-edge updates from local rules.
 
@@ -242,9 +242,8 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         ----------
         state : SequentialState
             Current global state (provides ``x=state[j]`` and ``y=state[i]``).
-        activations : dict[int, dict[int, Array]]
-            For each receiver ``i``, a mapping ``j -> y_hat_ij`` containing
-            edge predictions/messages (and the receiver aggregate under key ``i``).
+        activations : SequentialState
+            TODO: correct documentation
 
         Returns
         -------
@@ -254,15 +253,12 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
 
         """
         updates: dict[int, dict[int, AbstractModule]] = {}
-        for receiver_idx, sent_messages in activations.items():
-            rec_updates: dict[int, AbstractModule] = {}
-            for sender_idx, message in sent_messages.items():
-                rec_updates[sender_idx] = self.lmap[receiver_idx, sender_idx].backward(
-                    x=state[sender_idx],
-                    y=state[receiver_idx],
-                    y_hat=message,
-                )
-            updates[receiver_idx] = rec_updates
+        for (receiver_idx, sender_idx), module in self.lmap.edge_items():
+            if receiver_idx not in updates:
+                updates[receiver_idx] = {}
+            updates[receiver_idx][sender_idx] = module.backward(
+                x=state[sender_idx], y=state[receiver_idx], y_hat=activations[receiver_idx]
+            )
         return LayerMap.from_dict(updates, require_diagonal=True)
 
     def _compute_messages(
