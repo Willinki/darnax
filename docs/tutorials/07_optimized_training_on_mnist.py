@@ -21,11 +21,14 @@
 import logging
 import time
 from collections.abc import Iterator
+from pathlib import Path
 from typing import Any
 
 import equinox as eqx
 import jax
 import jax.numpy as jnp
+import matplotlib.pyplot as plt
+import numpy as np
 import optax
 from datasets import load_dataset
 
@@ -198,7 +201,7 @@ class MNISTData:
     def _labels_to_pm1(y_scalar: jax.Array, num_classes: int) -> jax.Array:
         """Convert integer labels `(N,)` to ±1 vectors `(N, C)`."""
         one_hot = jax.nn.one_hot(y_scalar, num_classes, dtype=jnp.float32)
-        return one_hot * 2 - 1
+        return one_hot * (num_classes**0.5 / 2) - 0.5
 
     @staticmethod
     def _random_projection_matrix(
@@ -283,13 +286,6 @@ class MNISTData:
         k_train = self.num_data // self.NUM_CLASSES
         x_tr, y_tr_scalar = self._take_per_class(key_sample, x_tr_all, y_tr_all, k_train)
 
-        # --- NEW: global centering ---
-        mu = jnp.mean(x_tr_all, axis=0, dtype=jnp.float32)  # (784,)
-        x_tr_all = x_tr_all - mu
-        x_ev_all = x_ev_all - mu
-
-        # (3) EVAL full test split (already loaded as x_ev_all, y_ev_scalar)
-
         # (4) Shared projection/sign
         if self.linear_projection is not None:
             w = self._random_projection_matrix(
@@ -366,11 +362,11 @@ def scale_labels_for_messages(y_pm1: jnp.ndarray) -> jnp.ndarray:
 # %%
 DIM_DATA = 100
 NUM_LABELS = MNISTData.NUM_CLASSES
-DIM_HIDDEN = 512
-THRESHOLD_OUT = 3.0
-THRESHOLD_IN = 3.0
+DIM_HIDDEN = 300
+THRESHOLD_OUT = 1.0
+THRESHOLD_IN = 1.0
 THRESHOLD_J = 1.0
-STRENGTH_BACK = 0.9
+STRENGTH_BACK = 0.5
 STRENGTH_FORTH = 5.0
 J_D = 0.5
 
@@ -428,7 +424,7 @@ logger.info("Defined model with orchestrator.")
 # %%
 # Build a mask: True = trainable, False = frozen (e.g., W_back)
 # DO NOT APPLY WEIGHT DECAY! STILL NOT COMPATIBLE WITH THAT
-optimizer = optax.sgd(0.01)
+optimizer = optax.adam(0.001)
 opt_state = optimizer.init(eqx.filter(orchestrator, eqx.is_inexact_array))
 
 
@@ -450,9 +446,6 @@ def update(
     # training.
     params = eqx.filter(orchestrator, eqx.is_inexact_array)
     grads = eqx.filter(grads, eqx.is_inexact_array)
-    # print("||ΔW_in||  =", jnp.linalg.norm(grads.lmap[1][0].W))
-    # print("||ΔJ||     =", jnp.linalg.norm(grads.lmap[1][1].J))
-    # print("||ΔW_out|| =", jnp.linalg.norm(grads.lmap[2][1].W))
 
     # 3) We compute the updates and apply them to our model
     updates, opt_state = optimizer.update(grads, optimizer_state, params=params)
@@ -486,7 +479,6 @@ def run_dynamics_training(
 
     Note: Kept identical to your working version for consistency.
     """
-    s, rng = orch.step_inference(s, rng=rng)
     for _ in range(steps):
         s, rng = orch.step(s, rng=rng)
     for _ in range(steps):
@@ -501,7 +493,7 @@ def run_dynamics_inference(
     steps: int,
 ):
     """Run `steps` iterations discarding rightward/backward messages (free phase)."""
-    for _ in range(steps):
+    for _ in range(steps * 2):
         s, rng = orch.step_inference(s, rng=rng)
     return s, rng
 
@@ -532,16 +524,14 @@ def train_step(
 ):
     """Perform a batch update of the model."""
     # 1) Clamp current batch (inputs & labels).
-    y_msg = scale_labels_for_messages(y)
-    s = s.init(x, y_msg)
+    s = s.init(x, y)
 
     # 2) Training dynamics (kept as-is).
     s, rng = run_dynamics_training(orch, s, rng, steps=t_train)
 
     # 3) Update the model
-    s_upd = s.replace_val(-1, y)
     rng, update_key = jax.random.split(rng)
-    orch, opt_state = update(orch, s_upd, optimizer, opt_state, update_key)
+    orch, opt_state = update(orch, s, optimizer, opt_state, update_key)
     return orch, rng, opt_state
 
 
@@ -568,6 +558,124 @@ def eval_step(
     y_pred = s[-1]
     metrics = {"acc": batch_accuracy(y, y_pred)}
     return metrics, rng
+
+
+# %%
+
+
+def plot_couplings(model: SequentialOrchestrator, flag: str):
+    """Plot weights of the model."""
+    W_in = model.lmap[1][0].W
+    W_out = model.lmap[2][1].W
+    W_back = model.lmap[1][2].W
+    J = model.lmap[1][1].J
+    fig, axes = plt.subplots(2, 2, figsize=(10, 8))
+    mats = [(W_in, "W_in"), (W_out, "W_out"), (W_back, "W_back"), (J, "J")]
+    for ax, (mat, name) in zip(axes.ravel(), mats, strict=False):
+        vals = np.asarray(jnp.ravel(mat))
+        ax.hist(vals, bins=50, color="C0", alpha=0.8)
+        mean = float(vals.mean())
+        var = float(vals.var())
+        ax.set_title(name)
+        ax.set_xlabel("Value")
+        ax.set_ylabel("Count")
+        text = f"mean={mean:.6f}\nvar={var:.6e}"
+        ax.text(
+            0.98,
+            0.98,
+            text,
+            transform=ax.transAxes,
+            ha="right",
+            va="top",
+            fontsize=9,
+            bbox=dict(facecolor="white", alpha=0.7, edgecolor="none"),
+        )
+    fig.tight_layout()
+
+    outdir = Path("docs/examples")
+    outdir.mkdir(parents=True, exist_ok=True)
+    outfile = outdir / f"couplings_histograms_{flag}.png"
+    fig.savefig(outfile, dpi=150)
+    plt.close(fig)
+    print(f"Saved coupling histograms to {outfile}")
+
+
+def plot_fields(
+    model: SequentialOrchestrator,
+    data: MNISTData,
+    state: SequentialState,
+    rng: jax.Array,
+    flag: str,
+):
+    """Plot fields for the whole dataset."""
+    left_fields = []
+    right_fields = []
+    internal_fields = []
+    for x, y in data:
+        state = state.init(x, y)
+        state, rng = run_dynamics_training(model, state, rng=rng, steps=10)
+        rng, carry = jax.random.split(rng)
+        left_field = model.lmap[1][0](state[0], carry)
+        rng, carry = jax.random.split(rng)
+        right_field = model.lmap[1][2](state[2], carry)
+        rng, carry = jax.random.split(rng)
+        internal_field = model.lmap[1][1](state[1], carry)
+        left_fields.append(left_field.ravel())
+        right_fields.append(right_field.ravel())
+        internal_fields.append(internal_field.ravel())
+    # Aggregate values
+    left_vals = (
+        np.concatenate([np.asarray(x).ravel() for x in left_fields])
+        if left_fields
+        else np.array([])
+    )
+    right_vals = (
+        np.concatenate([np.asarray(x).ravel() for x in right_fields])
+        if right_fields
+        else np.array([])
+    )
+    internal_vals = (
+        np.concatenate([np.asarray(x).ravel() for x in internal_fields])
+        if internal_fields
+        else np.array([])
+    )
+
+    # Plot histograms side-by-side
+    fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+    mats = [
+        (left_vals, "left_field"),
+        (right_vals, "right_field"),
+        (internal_vals, "internal_field"),
+    ]
+    for ax, (vals, name) in zip(axes, mats, strict=False):
+        if vals.size > 0:
+            ax.hist(vals, bins=50, color="C0", alpha=0.8)
+            mean = float(vals.mean())
+            var = float(vals.var())
+            ax.set_xlabel("Value")
+            ax.set_ylabel("Count")
+            txt = f"mean={mean:.6f}\nvar={var:.6e}"
+            ax.text(
+                0.98,
+                0.98,
+                txt,
+                transform=ax.transAxes,
+                ha="right",
+                va="top",
+                fontsize=9,
+                bbox=dict(facecolor="white", alpha=0.7, edgecolor="none"),
+            )
+        else:
+            ax.text(0.5, 0.5, "no data", ha="center", va="center")
+        ax.set_title(name)
+    fig.tight_layout()
+
+    outdir = Path("docs/examples")
+    outdir.mkdir(parents=True, exist_ok=True)
+    outfile = outdir / f"fields_histograms_{flag}.png"
+    fig.savefig(outfile, dpi=150)
+    plt.close(fig)
+    print(f"Saved field histograms to {outfile}")
 
 
 # %% [markdown]
@@ -602,7 +710,9 @@ print(f"Dataset: x.shape={tuple(data.x.shape)}  y.shape={tuple(data.y.shape)}")
 # Training config
 
 history = {"acc": []}
-
+plot_couplings(orchestrator, "init")
+master_key, plot_key = jax.random.split(master_key)
+plot_fields(orchestrator, data, state, plot_key, "init")
 for epoch in range(1, EPOCHS + 1):
     t0 = time.time()
     print(f"\n=== Epoch {epoch}/{EPOCHS} ===")
@@ -647,6 +757,9 @@ for epoch in range(1, EPOCHS + 1):
         eval_acc.append(metrics["acc"])
 
     print(f"Accuracy={float(jnp.mean(jnp.array(eval_acc))):.3f}")
+plot_couplings(orchestrator, "final")
+master_key, plot_key = jax.random.split(master_key)
+plot_fields(orchestrator, data, state, plot_key, "final")
 
 # %% [markdown]
 # ## Final evaluation (demo)
