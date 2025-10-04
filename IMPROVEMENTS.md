@@ -25,3 +25,5 @@ equinox partition/combine.
 - [ ] Add Trainer object to remove further boilerplate
 
 - [ ] Improve docs in perceptron rule update docs to clear meaning and clarify J x against J s in the paper
+
+- [ ] Add system to mask parameters for optax
