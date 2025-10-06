@@ -7,28 +7,35 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.17.3
+#       jupytext_version: '1.17.3'
 # ---
 
 # %% [markdown]
-# # 06 — Optimized training on MNIST
+# # 06 — Training on MNIST with **darnax** (JAX-first, CPU)
 #
-# As before, this notebook shows an end‑to‑end training loop.
-# We will see how to optimize the training loop with just-in-time compilation on GPU:
+# This tutorial is for readers who want to **understand how darnax is used** in practice:
+# how a network is assembled from modules, how the **orchestrator** runs recurrent dynamics,
+# and how **local plasticity** integrates with Equinox/Optax to update parameters *without*
+# backpropagation.
+#
+# We’ll implement a compact, JAX-friendly training loop:
+#
+# - **Only the outer steps are `jit`-compiled**: `train_step`, `eval_step`.
+# - Recurrent dynamics use **`jax.lax.scan`** (no Python loops inside compiled code).
+# - The dataset iterator is **slice-based** (avoid `array_split`), better for accelerators and CPUs.
+# - We **stay on CPU** to keep the focus on design; the code is accelerator-ready.
 
 # %%
 # --- Imports ---------------------------------------------------------------
+from __future__ import annotations
+
 import logging
 import time
-from collections.abc import Iterator
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING
 
 import equinox as eqx
 import jax
 import jax.numpy as jnp
-import matplotlib.pyplot as plt
-import numpy as np
 import optax
 from datasets import load_dataset
 
@@ -39,14 +46,35 @@ from darnax.modules.recurrent import RecurrentDiscrete
 from darnax.orchestrators.sequential import SequentialOrchestrator
 from darnax.states.sequential import SequentialState
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # %% [markdown]
-# ## Utilities (metrics & summaries)
+# ## 1) What darnax gives you
 #
-# Small helpers used for monitoring. Labels are OVA ±1 and predictions are
-# decoded via `argmax` over the output scores.
+# darnax decomposes a model into **modules** connected by a **LayerMap**. At runtime,
+# an **orchestrator** applies a **message-passing schedule** over a **state** vector.
+#
+# - **Modules** (edges/diagonals) consume a sender buffer and emit a message to a receiver.
+#   Some modules are trainable; some are frozen; some are “diagonal” (operate on a buffer itself).
+# - The **LayerMap** defines the fixed topology: for each receiver row `i`, which senders `j`
+#   contribute, and with which module.
+# - The **SequentialOrchestrator** drives the update order (left→right, recurrent self, right→left
+#   as needed) and exposes:
+#   - `step`: full dynamics (all messages allowed).
+#   - `step_inference`: inference dynamics (typically suppress “backward” messages).
+#   - `backward`: compute **local** parameter deltas from the current state (no backprop).
+#   - `predict`: produce output scores in the final buffer.
+# - The **State** is a fixed-shape tuple of buffers `(input, hidden, output)`. You **clamp**
+#   inputs (and possibly labels) by writing them into the state, then run dynamics to a fixed point.
+
+# %% [markdown]
+# ## 2) A tiny metric helper
+#
+# Labels are One-Vs-All (OVA) in ±1. We decode predictions via `argmax`.
 
 
 # %%
@@ -54,19 +82,37 @@ def batch_accuracy(y_true: jnp.ndarray, y_pred: jnp.ndarray) -> float:
     """Accuracy with ±1 OVA labels (class = argmax along last dim)."""
     y_true_idx = jnp.argmax(y_true, axis=-1)
     y_pred_idx = jnp.argmax(y_pred, axis=-1)
-    return float(jnp.mean(y_true_idx == y_pred_idx))
+    return jnp.mean((y_true_idx == y_pred_idx).astype(jnp.float32))
 
 
 # %% [markdown]
-# ## Dataset: MNIST with optional linear projection and sign.
-# The data is obtained by taking an image from MNIST,
+# ## 3) Dataset object designed for JAX
+#
+# We keep the data pipeline deliberately simple to highlight the model mechanics:
+#
+# - **Materialize once**: training subset and full test split live as device arrays.
+# - **Shared projection**: an optional linear projection (same matrix for train/test) reduces
+#   dimensionality and can be followed by a `sign` transform (Entangled-MNIST style).
+# - **Slice-based batches**: iterators yield contiguous chunks; no list materialization or
+#   `array_split`.
+# - **Label scaling** (your original choice):
+#   - true class → `+√C / 2`
+#   - others → `−0.5`
+#
+# This scaling biases the output field to favor the target class during clamped dynamics.
 
 
 # %%
 class MNISTData:
-    """MNIST dataset with optional linear projection and sign."""
+    """MNIST dataset with optional linear projection and sign; slice-based iterators.
 
-    TOTAL_SIZE_PER_CLASS = 6000  # train split
+    Design:
+      - Single in-memory materialization (train subset, full test).
+      - Shared projection across splits.
+      - Deterministic batch slicing (precomputed ranges).
+    """
+
+    TOTAL_SIZE_PER_CLASS = 5900  # train split
     TEST_SIZE_PER_CLASS = 1000  # test split
     NUM_CLASSES = 10
     FLAT_DIM = 28 * 28
@@ -74,295 +120,164 @@ class MNISTData:
     def __init__(
         self,
         key: jax.Array,
-        batch_size: int = 16,
+        batch_size: int = 64,
         linear_projection: int | None = 100,
         apply_sign_transform: bool = True,
         num_images_per_class: int = TOTAL_SIZE_PER_CLASS,
     ):
-        """Create MNIST dataset with optional projection and sign non-linearity.
-
-        Define an object that contains MNIST images, on which we can iterate.
-        Images are flattened pixelwise. Optionally, if `linear_projection` is an
-        integer, the images are projected with a linear transformation to the
-        specified dimension. After projection, if `apply_sign_transform=True`,
-        we apply the `sign()` function element-wise, resulting in ±1 values.
-
-        Parameters
-        ----------
-        key
-            RNG key for generation (projection matrix, shuffling, sampling).
-        batch_size
-            Batch size for the training/eval iterators. Must be > 1.
-        linear_projection
-            If `int`, project each flattened image with a random linear map to
-            this dimensionality. If `None`, no projection is applied.
-        apply_sign_transform
-            If `True`, apply `jnp.sign` element-wise at the end (after
-            projection if any). Zeros are mapped to -1 so outputs are in
-            {-1, +1}.
-        num_images_per_class
-            Total number of images **per class** to include in the **training**
-            set (uniform per-class sampling from the 60k train split).
-            Cannot be greater than 6000.
-
-        Examples
-        --------
-        # Entangled-MNIST dataset
-        >>> MNISTData(key, batch_size=16, linear_projection=100, apply_sign_transform=True)
-        # Regular MNIST
-        >>> MNISTData(key, batch_size=16, linear_projection=None, apply_sign_transform=False)
-
-        """
+        """Initialize the dataset object."""
+        # Lightweight validation; fail fast on easy mistakes.
         if not (linear_projection is None or isinstance(linear_projection, int)):
             raise TypeError("`linear_projection` must be `None` or `int`.")
         if batch_size <= 1:
             raise ValueError(f"Invalid batch_size={batch_size!r}; must be > 1.")
         if not (0 < num_images_per_class <= self.TOTAL_SIZE_PER_CLASS):
-            raise ValueError(
-                f"Invalid num_images_per_class={num_images_per_class!r}; "
-                f"must be in [1, {self.TOTAL_SIZE_PER_CLASS}]."
-            )
+            raise ValueError(f"`num_images_per_class` must be in [1, {self.TOTAL_SIZE_PER_CLASS}]")
 
         self.linear_projection = linear_projection
         self.apply_sign_transform = bool(apply_sign_transform)
 
-        # Training set size (eval uses full test set and is independent)
         self.num_data = int(num_images_per_class) * self.NUM_CLASSES
         self.batch_size = int(batch_size)
-        self.num_batches = -(-self.num_data // self.batch_size)  # ceil division
+        self.num_batches = -(-self.num_data // self.batch_size)  # ceil div
 
-        # Materialize datasets (train + eval) and keep a reference returned as well.
+        # Build arrays once.
         self._create_dataset(key)
 
-    # --------------------------------------------------------------------- #
-    # Public API
-    # --------------------------------------------------------------------- #
+        # Precompute slicing ranges for train/eval.
+        self._train_bounds = [
+            (i * self.batch_size, min((i + 1) * self.batch_size, self.num_data))
+            for i in range(self.num_batches)
+        ]
+        self.num_eval_data = int(self.x_eval.shape[0])
+        self.num_eval_batches = -(-self.num_eval_data // self.batch_size)
+        self._eval_bounds = [
+            (i * self.batch_size, min((i + 1) * self.batch_size, self.num_eval_data))
+            for i in range(self.num_eval_batches)
+        ]
+
+    # ------------------------------- Public API ------------------------------- #
     def __iter__(self) -> Iterator[tuple[jax.Array, jax.Array]]:
-        """Yield `(x, y)` **training** batches.
-
-        Yields
-        ------
-        Iterator[Tuple[jax.Array, jax.Array]]
-            Batches of inputs and labels.
-            - `x`: shape `(batch, D)` where `D` is either 784 or `linear_projection`.
-            - `y`: shape `(batch, 10)` with entries in {-1.0, +1.0}; +1.0 at the
-              ground-truth class, -1.0 elsewhere.
-
-        """
-        return zip(
-            jnp.array_split(self.x, self.num_batches),
-            jnp.array_split(self.y, self.num_batches),
-            strict=True,
-        )
+        """Yield `(x, y)` training batches by contiguous slicing."""
+        for lo, hi in self._train_bounds:
+            yield self.x[lo:hi], self.y[lo:hi]
 
     def iter_eval(self) -> Iterator[tuple[jax.Array, jax.Array]]:
-        """Yield `(x_eval, y_eval)` **validation** batches (full test split)."""
-        if self.num_eval_batches == 0:
-            return iter(())  # empty iterator
-        return zip(
-            jnp.array_split(self.x_eval, self.num_eval_batches),
-            jnp.array_split(self.y_eval, self.num_eval_batches),
-            strict=True,
-        )
+        """Yield `(x_eval, y_eval)` validation batches (full test split)."""
+        for lo, hi in self._eval_bounds:
+            yield self.x_eval[lo:hi], self.y_eval[lo:hi]
 
     def __len__(self) -> int:
-        """Return number of **training** batches produced by the iterator."""
+        """Return the number of batches."""
         return self.num_batches
 
-    # --------------------------------------------------------------------- #
-    # Internal helpers
-    # --------------------------------------------------------------------- #
+    # ------------------------------ Internals ------------------------------ #
     @staticmethod
     def _load_mnist_split(split: str) -> tuple[jax.Array, jax.Array]:
-        """Load a MNIST split ('train' or 'test'), flattened.
-
-        Parameters
-        ----------
-        split
-            One of {"train", "test"}.
-
-        Returns
-        -------
-        x : jax.Array
-            Array of shape `(N, 784)`, dtype float32 in [0, 1].
-        y : jax.Array
-            Array of shape `(N,)`, dtype int32 with labels in [0, 9].
-
-        """
+        """Load MNIST split and flatten to (N, 784)."""
         assert split in ["train", "test"]
-        mnist = load_dataset("mnist")
-        x = jnp.asarray([jnp.array(im) for im in mnist[split]["image"]], dtype=jnp.float32)
-        y = jnp.asarray(mnist[split]["label"], dtype=jnp.int16)
-        x = x.reshape(x.shape[0], -1) / 255
-
+        ds = load_dataset("mnist")
+        x = jnp.asarray([jnp.array(im) for im in ds[split]["image"]], dtype=jnp.float32)
+        y = jnp.asarray(ds[split]["label"], dtype=jnp.int32)
+        x = x.reshape(x.shape[0], -1) / 255.0
         return x, y
 
     @staticmethod
-    def _labels_to_pm1(y_scalar: jax.Array, num_classes: int) -> jax.Array:
-        """Convert integer labels `(N,)` to ±1 vectors `(N, C)`."""
+    def _labels_to_pm1_scaled(y_scalar: jax.Array, num_classes: int) -> jax.Array:
+        """Original scaling: +√C/2 at the true class, −0.5 elsewhere."""
         one_hot = jax.nn.one_hot(y_scalar, num_classes, dtype=jnp.float32)
-        return one_hot * (num_classes**0.5 / 2) - 0.5
+        return one_hot * (num_classes**0.5 / 2.0) - 0.5
 
     @staticmethod
-    def _random_projection_matrix(
-        key: jax.Array,
-        out_dim: int,
-        in_dim: int,
-    ) -> jax.Array:
-        """Gaussian random projection matrix with variance scaling.
-
-        Draws `W ~ N(0, 1/in_dim)` so that each output dimension has unit variance
-        under i.i.d. unit-variance inputs.
-        """
-        w = jax.random.normal(key, (out_dim, in_dim), dtype=jnp.float32)
-        return w
+    def _random_projection_matrix(key: jax.Array, out_dim: int, in_dim: int) -> jax.Array:
+        """Gaussian projection with variance 1/in_dim to keep outputs ~unit variance."""
+        return jax.random.normal(key, (out_dim, in_dim), dtype=jnp.float32) / jnp.sqrt(in_dim)
 
     @staticmethod
     def _take_per_class(
-        key: jax.Array,
-        x: jax.Array,
-        y: jax.Array,
-        k_per_class: int,
+        key: jax.Array, x: jax.Array, y: jax.Array, k_per_class: int
     ) -> tuple[jax.Array, jax.Array]:
         """Uniformly sample `k_per_class` examples for each class 0..9."""
-        xs: list[jax.Array] = []
-        ys: list[jax.Array] = []
+        xs, ys = [], []
         for cls in range(MNISTData.NUM_CLASSES):
             key, sub = jax.random.split(key)
             idx = jnp.where(y == cls)[0]
             if k_per_class > idx.shape[0]:
                 raise ValueError(
-                    f"Requested {k_per_class} samples for class {cls}, "
-                    f"but only {idx.shape[0]} available."
+                    f"Requested {k_per_class} for class {cls}, but only {idx.shape[0]} available."
                 )
             perm = jax.random.permutation(sub, idx.shape[0])
             take = idx[perm[:k_per_class]]
             xs.append(x[take])
             ys.append(y[take])
-
-        x_out = jnp.concatenate(xs, axis=0)
-        y_out = jnp.concatenate(ys, axis=0)
-        return x_out, y_out
+        return jnp.concatenate(xs, axis=0), jnp.concatenate(ys, axis=0)
 
     def _maybe_project_and_sign(self, w: jax.Array | None, x: jax.Array) -> jax.Array:
-        """Apply optional linear projection (via `w`) and optional sign."""
+        """Apply optional linear projection + optional sign nonlinearity (Entangled-MNIST)."""
         if w is not None:
             x = (x @ w.T).astype(jnp.float32)
         if self.apply_sign_transform:
             sgn = jnp.sign(x)
-            x = jnp.where(sgn == 0, jnp.array(-1, dtype=sgn.dtype), sgn)
+            x = jnp.where(sgn == 0, jnp.array(-1.0, dtype=sgn.dtype), sgn)
         return x
 
-    # --------------------------------------------------------------------- #
-    # Dataset materialization (train subset + full test eval)
-    # --------------------------------------------------------------------- #
-    def _create_dataset(
-        self,
-        key: jax.Array,
-    ) -> tuple[tuple[jax.Array, jax.Array], tuple[jax.Array, jax.Array]]:
-        """Create train/eval datasets and return them.
-
-        Steps
-        -----
-        1) Load MNIST train split (60k) and test split (10k), flattened.
-        2) TRAIN: uniformly sample `num_images_per_class` per class from train.
-        3) EVAL: take the full test split (no subsetting).
-        4) Apply a shared projection (if enabled) and optional sign to both.
-        5) Convert labels to ±1 vectors; shuffle **train** only.
-
-        Returns
-        -------
-        (x_train, y_train), (x_eval, y_eval)
-            Train and eval features/labels. Labels are ±1 vectors.
-
-        """
+    def _create_dataset(self, key: jax.Array) -> None:
+        """Materialize train subset and full test split with consistent preprocessing."""
         key_sample, key_proj, key_shuf_tr = jax.random.split(key, 3)
 
-        # (1) Load splits
+        # Load raw splits.
         x_tr_all, y_tr_all = self._load_mnist_split("train")
         x_ev_all, y_ev_scalar = self._load_mnist_split("test")
 
-        # (2) TRAIN subset per class
+        # Uniform per-class sampling.
         k_train = self.num_data // self.NUM_CLASSES
         x_tr, y_tr_scalar = self._take_per_class(key_sample, x_tr_all, y_tr_all, k_train)
 
-        # (4) Shared projection/sign
-        if self.linear_projection is not None:
-            w = self._random_projection_matrix(
-                key_proj, int(self.linear_projection), x_tr.shape[-1]
-            )
-        else:
-            w = None
+        # Shared projection/sign across splits.
+        w = (
+            self._random_projection_matrix(key_proj, int(self.linear_projection), x_tr.shape[-1])
+            if self.linear_projection is not None
+            else None
+        )
         x_tr = self._maybe_project_and_sign(w, x_tr)
         x_ev = self._maybe_project_and_sign(w, x_ev_all)
 
-        # (5) Labels to ±1; shuffle train only
-        y_tr = self._labels_to_pm1(y_tr_scalar, self.NUM_CLASSES)
+        # Labels with original scaling; shuffle train only.
+        y_tr = self._labels_to_pm1_scaled(y_tr_scalar, self.NUM_CLASSES)
         perm_tr = jax.random.permutation(key_shuf_tr, x_tr.shape[0])
-        x_tr, y_tr = x_tr[perm_tr], y_tr[perm_tr]
+        self.x, self.y = x_tr[perm_tr], y_tr[perm_tr]
 
-        y_ev = self._labels_to_pm1(y_ev_scalar, self.NUM_CLASSES)
+        self.x_eval = x_ev
+        self.y_eval = self._labels_to_pm1_scaled(y_ev_scalar, self.NUM_CLASSES)
 
-        # Store
-        self.x, self.y = x_tr, y_tr
-        self.x_eval, self.y_eval = x_ev, y_ev
-
-        # Metadata
+        # Convenience metadata.
         self.input_dim = int(self.x.shape[1])
-        self.output_dim = self.linear_projection
-        self.num_eval_data = int(self.x_eval.shape[0])
-        self.num_eval_batches = -(-self.num_eval_data // self.batch_size)  # ceil div
-
-        return (self.x, self.y), (self.x_eval, self.y_eval)
-
-    # --------------------------------------------------------------------- #
-    # Nice-to-have representations
-    # --------------------------------------------------------------------- #
-    def __repr__(self) -> str:
-        """Debug-friendly representation."""
-        proj = self.linear_projection if self.linear_projection is not None else "None"
-        return (
-            "MNISTData("
-            f"num_data={self.num_data}, batch_size={self.batch_size}, "
-            f"linear_projection={proj}, apply_sign_transform={self.apply_sign_transform}, "
-            f"input_dim={getattr(self, 'input_dim', 'n/a')}, "
-            f"num_eval_data={getattr(self, 'num_eval_data', 'n/a')})"
-        )
-
-
-def scale_labels_for_messages(y_pm1: jnp.ndarray) -> jnp.ndarray:
-    """Scale labels to increase weight in positive class."""
-    C = y_pm1.shape[-1]
-    return jnp.where(y_pm1 > 0, jnp.sqrt(C) / 2.0, -0.5).astype(y_pm1.dtype)
 
 
 # %% [markdown]
-# ## Build Model & State
+# ## 4) Model topology as a LayerMap
 #
-# The model is exactly the same as the first tutorial. For completeness, we describe it again.
+# We build a minimal network with **one hidden layer** and an **output sink**:
 #
-# Here we define a simple model with one hidden layer and fully-connected adapters,
-# similar to a perceptron with one hidden layer, except that the hidden layer has internal
-# recurrency.
+# - Receiver row **1 (hidden)** gets messages from:
+#   - **0 (input)** via `FullyConnected` (forward path)
+#   - **1 (itself)** via `RecurrentDiscrete` (internal recurrency)
+#   - **2 (labels)** via `FrozenFullyConnected` (backward/clamping path)
+# - Receiver row **2 (output)** gets:
+#   - **1 (hidden)** via `FullyConnected` (readout)
+#   - **2 (itself)** via `OutputLayer` (diagonal sink/aggregator, returns zeros)
 #
-# The topology of the layer map is the following:
-# - Layer 1 (hidden) receives from input (0, forth), itself (1, recurrent), and labels (2, back).
-# - Layer 2 (output) receives from hidden (1) and itself (2).
-#
-# Some first comments:
-#
-# - Notice that we do not define a input layer, that would correspond to layer 0 in the receivers. This is totally fine and intended.
-# The input in this case is simply a sent message and never updated. If we dont define layer 0 in the receivers, the first component of the
-# state is fixed.
-# - You should inspect the implementation of the OutputLayer. It does not have an internal state, parameters, and the `__call__` function
-# returns an array of zeros. It is basically a sink that aggregates messages from all layers that contribute to the output and sums them.
-# This behaviour can change in the future with the definition of new OutputLayers with a more complex logic, but for now it is basically an
-# aggregator.
+# The **SequentialState** is `(input, hidden, output)` with fixed sizes.
+# The **SequentialOrchestrator** knows how to:
+# - aggregate edge messages for each receiver,
+# - apply diagonal modules,
+# - and run the chosen schedule (`step`, `step_inference`, `predict`, `backward`).
 
 # %%
 DIM_DATA = 100
 NUM_LABELS = MNISTData.NUM_CLASSES
 DIM_HIDDEN = 300
+
 THRESHOLD_OUT = 1.0
 THRESHOLD_IN = 1.0
 THRESHOLD_J = 1.0
@@ -373,13 +288,12 @@ J_D = 0.5
 # Global state with three buffers: input (0), hidden (1), output/labels (2)
 state = SequentialState((DIM_DATA, DIM_HIDDEN, NUM_LABELS))
 
-# Distinct keys per module to avoid accidental correlations.
+# Independent keys for each module (avoid accidental correlations).
 master_key = jax.random.key(seed=44)
 keys = jax.random.split(master_key, num=5)
 
 layer_map = {
-    # Hidden row (1): from input (0), self (1), and labels (2)
-    1: {
+    1: {  # Hidden row receives from input, itself, and labels
         0: FullyConnected(
             in_features=DIM_DATA,
             out_features=DIM_HIDDEN,
@@ -387,8 +301,13 @@ layer_map = {
             threshold=THRESHOLD_IN,
             key=keys[0],
         ),
-        1: RecurrentDiscrete(features=DIM_HIDDEN, j_d=J_D, threshold=THRESHOLD_J, key=keys[1]),
-        2: FrozenFullyConnected(
+        1: RecurrentDiscrete(
+            features=DIM_HIDDEN,
+            j_d=J_D,
+            threshold=THRESHOLD_J,
+            key=keys[1],
+        ),
+        2: FrozenFullyConnected(  # clamping/teaching signal, not trainable
             in_features=NUM_LABELS,
             out_features=DIM_HIDDEN,
             strength=STRENGTH_BACK,
@@ -396,8 +315,7 @@ layer_map = {
             key=keys[2],
         ),
     },
-    # Output row (2): from hidden (1), and itself (2)
-    2: {
+    2: {  # Output row receives from hidden and aggregates
         1: FullyConnected(
             in_features=DIM_HIDDEN,
             out_features=NUM_LABELS,
@@ -405,112 +323,126 @@ layer_map = {
             threshold=THRESHOLD_OUT,
             key=keys[3],
         ),
-        2: OutputLayer(),  # the 2-2 __call__ is a vector of zeros, it does not contribute
+        2: OutputLayer(),  # diagonal sink: produces zeros; acts as aggregator anchor
     },
 }
 layer_map = LayerMap.from_dict(layer_map)
 
 # Trainable orchestrator built from the fixed topology.
 orchestrator = SequentialOrchestrator(layers=layer_map)
-logger.info("Defined model with orchestrator.")
+logger.info("Model initialized with SequentialOrchestrator.")
 
 # %% [markdown]
-# ## Optimizer
+# ## 5) Optimizer and the “no-backprop” update
 #
-# We choose Adam with `lr=5e-3`.
-# As you can see we can call `eqx.filter` directly on the orchestrator, since it is a pytree.
-# We also show how to update the model with the function `update(orchestrator, state, optimizer)`.
+# darnax does **not** use backpropagation here. Instead:
+#
+# 1. Run recurrent dynamics with the current batch **clamped** (inputs + labels in the state).
+# 2. Call `orchestrator.backward(state, rng)` to get **local** deltas for every trainable module.
+# 3. Apply those deltas using **Optax**—this gives you the familiar optimizer ergonomics.
+#
+# Notes for JAX compilation:
+# - We pass the **optimizer object** as an argument to the jitted functions.
+#   Under `eqx.filter_jit`, non-array args are **static**. Reusing the same instance prevents retracing.
+# - Only the **optimizer state** (arrays) flows through the jitted code.
 
 # %%
-# Build a mask: True = trainable, False = frozen (e.g., W_back)
-# DO NOT APPLY WEIGHT DECAY! STILL NOT COMPATIBLE WITH THAT
-optimizer = optax.adam(0.001)
+optimizer = optax.adam(2e-3)
 opt_state = optimizer.init(eqx.filter(orchestrator, eqx.is_inexact_array))
 
 
-def update(
-    orchestrator: SequentialOrchestrator, state: SequentialState, optimizer, optimizer_state, rng
-) -> tuple[SequentialOrchestrator, Any]:
-    """Compute and applies the updates and returns the updated model.
+def _apply_update(
+    orch: SequentialOrchestrator,
+    s: SequentialState,
+    opt_state,
+    rng: jax.Array,
+    optimizer,
+):
+    """Compute local deltas via .backward, then apply Optax updates.
 
-    It also returns the optimizer state, typed as Any for now.
+    Why separate this helper?
+      - Clear separation of concerns (dynamics vs parameter updates).
+      - Easier to unit-test and profile independently.
     """
-    # 1) Local deltas (orchestrator-shaped deltas).
-    grads = orchestrator.backward(state, rng=rng)
+    grads = orch.backward(s, rng=rng)  # local deltas, tree-shaped like `orch`
+    params = eqx.filter(orch, eqx.is_inexact_array)  # trainable leaves
+    grads = eqx.filter(grads, eqx.is_inexact_array)  # drop non-arrays from grads
 
-    # 2) Optax over the orchestrator (tree structures match by construction).
-    # This is common equinox + optax pattern, used in the same way when training
-    # "regular" deep learning models.
-    # First we filter fields with equinox and then we give them to the optimizer.
-    # This allows us to handle complex pytrees with static fields seamlessly during
-    # training.
-    params = eqx.filter(orchestrator, eqx.is_inexact_array)
-    grads = eqx.filter(grads, eqx.is_inexact_array)
-
-    # 3) We compute the updates and apply them to our model
-    updates, opt_state = optimizer.update(grads, optimizer_state, params=params)
-    orchestrator = eqx.apply_updates(orchestrator, updates)
-
-    # 4) We return the updated model and the optimizer state
-    return orchestrator, opt_state
+    updates, opt_state = optimizer.update(grads, opt_state, params=params)
+    orch = eqx.apply_updates(orch, updates)
+    return orch, opt_state
 
 
 # %% [markdown]
-# ## Dynamics helpers
+# ## 6) Dynamics with `lax.scan` (not jitted directly)
 #
-# We now define two simple functions that run during training, they are extremely simple.
-# During run_dynamics_training we have two phases: a first one where we compute all messages and run the dynamics
-# with both forward and backward messages. We run this phase for a fixed number of steps.
-# Then, we do a second phase where we suppress all messages "going backward", we run this dynamics for a fixed
-# number of steps and we obtain a second fixed point s^*.
+# The orchestrator exposes **one-step** transitions:
+# - `step(s, rng)` → (s’, rng’): full dynamics (includes backward/label messages).
+# - `step_inference(s, rng)` → (s’, rng’): inference-only dynamics (suppress backward messages).
 #
-# During inference, we only run the dynamics with suppressed messages from the right.
+# We wrap those into **scans**. These helpers are not jitted on their own; they are traced as
+# part of the outer jitted steps. That keeps the code modular and the compiled graph clean.
+
 
 # %%
+def _scan_steps(fn, s: SequentialState, rng: jax.Array, steps: int):
+    """Scan `steps` times a (s, rng)->(s, rng) transition."""
+
+    def body(carry, _):
+        s, rng = carry
+        s, rng = fn(s, rng=rng)
+        return (s, rng), None
+
+    (s, rng), _ = jax.lax.scan(body, (s, rng), xs=None, length=steps)
+    return s, rng
 
 
 def run_dynamics_training(
     orch: SequentialOrchestrator,
-    s,
+    s: SequentialState,
     rng: jax.Array,
     steps: int,
 ):
-    """Run `steps` iterations using ALL messages (clamped phase).
-
-    Note: Kept identical to your working version for consistency.
-    """
-    for _ in range(steps):
-        s, rng = orch.step(s, rng=rng)
-    for _ in range(steps):
-        s, rng = orch.step_inference(s, rng=rng)
+    """Clamped phase (full dynamics) followed by a short free relaxation (inference)."""
+    s, rng = _scan_steps(orch.step, s, rng, steps)  # clamped
+    s, rng = _scan_steps(orch.step_inference, s, rng, steps)  # free
     return s, rng
 
 
 def run_dynamics_inference(
     orch: SequentialOrchestrator,
-    s,
+    s: SequentialState,
     rng: jax.Array,
     steps: int,
 ):
-    """Run `steps` iterations discarding rightward/backward messages (free phase)."""
-    for _ in range(steps * 2):
-        s, rng = orch.step_inference(s, rng=rng)
+    """Inference-only relaxation to a fixed point."""
+    s, rng = _scan_steps(orch.step_inference, s, rng, 2 * steps)
     return s, rng
 
 
 # %% [markdown]
-# ## Train step
+# ## 7) Outer steps (the only `jit`-compiled functions)
 #
-# This function summarizes the whole training protocol, for a single batch.
+# We jit **only** the functions that are called many times and represent the outer boundary
+# of our computation:
 #
-# Protocol per batch:
-# 1. Initialize/clamp the global state with `(x, y)`.
-# 2. Run **training dynamics** for `2 * T_train` steps.
-# 3. Update the model with `update`, as seen before.
+# - **`train_step`** (per batch):
+#   1) write `(x, y)` into the state (clamp),
+#   2) run clamped + free dynamics,
+#   3) compute local deltas and apply the Optax update.
+#
+# - **`eval_step`** (per batch):
+#   1) write `x` only,
+#   2) run free dynamics,
+#   3) `predict` and compute accuracy.
+#
+# JIT boundary discipline:
+# - **Static args** (optimizer object, Python ints like `t_train`) trigger retraces **only if** they
+#   change. Keep them fixed during a run.
+
 
 # %%
-
-
+@eqx.filter_jit
 def train_step(
     orch: SequentialOrchestrator,
     s: SequentialState,
@@ -522,26 +454,20 @@ def train_step(
     optimizer,
     t_train: int = 3,
 ):
-    """Perform a batch update of the model."""
-    # 1) Clamp current batch (inputs & labels).
+    """Perform a train step in a single batch."""
+    # 1) Clamp inputs + labels into the global state.
     s = s.init(x, y)
 
-    # 2) Training dynamics (kept as-is).
+    # 2) Recurrent dynamics: clamped phase then free relaxation.
     s, rng = run_dynamics_training(orch, s, rng, steps=t_train)
 
-    # 3) Update the model
+    # 3) Local deltas + Optax update.
     rng, update_key = jax.random.split(rng)
-    orch, opt_state = update(orch, s, optimizer, opt_state, update_key)
+    orch, opt_state = _apply_update(orch, s, opt_state, update_key, optimizer)
     return orch, rng, opt_state
 
 
-# %% [markdown]
-# ## Eval step
-#
-# Initializes with inputs only (labels are just for metrics), then runs the inference dynamics and computes metrics.
-
-
-# %%
+@eqx.filter_jit
 def eval_step(
     orch: SequentialOrchestrator,
     s: SequentialState,
@@ -550,148 +476,39 @@ def eval_step(
     rng: jax.Array,
     *,
     t_eval: int = 5,
-) -> tuple[SequentialOrchestrator, SequentialState, dict, jax.Array]:
-    """Evaluate the model on a single forward."""
+) -> tuple[float, jax.Array]:
+    """Perform a validation step on a single batch."""
+    # 1) Clamp inputs only (labels aren't used by dynamics here).
     s = s.init(x, None)
+
+    # 2) Free relaxation to a fixed point.
     s, rng = run_dynamics_inference(orch, s, rng, steps=t_eval)
-    s, rng = orchestrator.predict(s, rng)
+
+    # 3) Predict scores from the settled state and measure accuracy.
+    s, rng = orch.predict(s, rng)
     y_pred = s[-1]
-    metrics = {"acc": batch_accuracy(y, y_pred)}
-    return metrics, rng
-
-
-# %%
-
-
-def plot_couplings(model: SequentialOrchestrator, flag: str):
-    """Plot weights of the model."""
-    W_in = model.lmap[1][0].W
-    W_out = model.lmap[2][1].W
-    W_back = model.lmap[1][2].W
-    J = model.lmap[1][1].J
-    fig, axes = plt.subplots(2, 2, figsize=(10, 8))
-    mats = [(W_in, "W_in"), (W_out, "W_out"), (W_back, "W_back"), (J, "J")]
-    for ax, (mat, name) in zip(axes.ravel(), mats, strict=False):
-        vals = np.asarray(jnp.ravel(mat))
-        ax.hist(vals, bins=50, color="C0", alpha=0.8)
-        mean = float(vals.mean())
-        var = float(vals.var())
-        ax.set_title(name)
-        ax.set_xlabel("Value")
-        ax.set_ylabel("Count")
-        text = f"mean={mean:.6f}\nvar={var:.6e}"
-        ax.text(
-            0.98,
-            0.98,
-            text,
-            transform=ax.transAxes,
-            ha="right",
-            va="top",
-            fontsize=9,
-            bbox=dict(facecolor="white", alpha=0.7, edgecolor="none"),
-        )
-    fig.tight_layout()
-
-    outdir = Path("docs/examples")
-    outdir.mkdir(parents=True, exist_ok=True)
-    outfile = outdir / f"couplings_histograms_{flag}.png"
-    fig.savefig(outfile, dpi=150)
-    plt.close(fig)
-    print(f"Saved coupling histograms to {outfile}")
-
-
-def plot_fields(
-    model: SequentialOrchestrator,
-    data: MNISTData,
-    state: SequentialState,
-    rng: jax.Array,
-    flag: str,
-):
-    """Plot fields for the whole dataset."""
-    left_fields = []
-    right_fields = []
-    internal_fields = []
-    for x, y in data:
-        state = state.init(x, y)
-        state, rng = run_dynamics_training(model, state, rng=rng, steps=10)
-        rng, carry = jax.random.split(rng)
-        left_field = model.lmap[1][0](state[0], carry)
-        rng, carry = jax.random.split(rng)
-        right_field = model.lmap[1][2](state[2], carry)
-        rng, carry = jax.random.split(rng)
-        internal_field = model.lmap[1][1](state[1], carry)
-        left_fields.append(left_field.ravel())
-        right_fields.append(right_field.ravel())
-        internal_fields.append(internal_field.ravel())
-    # Aggregate values
-    left_vals = (
-        np.concatenate([np.asarray(x).ravel() for x in left_fields])
-        if left_fields
-        else np.array([])
-    )
-    right_vals = (
-        np.concatenate([np.asarray(x).ravel() for x in right_fields])
-        if right_fields
-        else np.array([])
-    )
-    internal_vals = (
-        np.concatenate([np.asarray(x).ravel() for x in internal_fields])
-        if internal_fields
-        else np.array([])
-    )
-
-    # Plot histograms side-by-side
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4))
-    mats = [
-        (left_vals, "left_field"),
-        (right_vals, "right_field"),
-        (internal_vals, "internal_field"),
-    ]
-    for ax, (vals, name) in zip(axes, mats, strict=False):
-        if vals.size > 0:
-            ax.hist(vals, bins=50, color="C0", alpha=0.8)
-            mean = float(vals.mean())
-            var = float(vals.var())
-            ax.set_xlabel("Value")
-            ax.set_ylabel("Count")
-            txt = f"mean={mean:.6f}\nvar={var:.6e}"
-            ax.text(
-                0.98,
-                0.98,
-                txt,
-                transform=ax.transAxes,
-                ha="right",
-                va="top",
-                fontsize=9,
-                bbox=dict(facecolor="white", alpha=0.7, edgecolor="none"),
-            )
-        else:
-            ax.text(0.5, 0.5, "no data", ha="center", va="center")
-        ax.set_title(name)
-    fig.tight_layout()
-
-    outdir = Path("docs/examples")
-    outdir.mkdir(parents=True, exist_ok=True)
-    outfile = outdir / f"fields_histograms_{flag}.png"
-    fig.savefig(outfile, dpi=150)
-    plt.close(fig)
-    print(f"Saved field histograms to {outfile}")
+    acc = batch_accuracy(y, y_pred)
+    return acc, rng
 
 
 # %% [markdown]
-# ## Run the training
+# ## 8) Training loop (CPU)
 #
-# Finally, we build a small `PrototypeData` stream, train for a few epochs using `train_step`
-# per batch, and evaluate on the same stream.
+# The Python epoch loop shepherds data and RNG. All heavy lifting happens inside the two
+# jitted steps above. Practical guidance:
+#
+# - Keep **array shapes/dtypes** and the **pytrees’ structures** stable across calls.
+# - Reuse the **same optimizer instance**; pass its **state** through the jitted code.
+# - If you change `t_train`/`t_eval` between calls, expect a retrace (they are static).
 
 # %%
-# Constants
-NUM_IMAGES_PER_CLASS = 600
+# Experiment knobs
+NUM_IMAGES_PER_CLASS = 5400
 APPLY_SIGN_TRANSFORM = True
 BATCH_SIZE = 16
 EPOCHS = 5
-T_TRAIN = 10  # training dynamics steps per batch
-T_EVAL = 10  # short inference steps for monitoring
+T_TRAIN = 10  # clamped + free steps per batch
+T_EVAL = 10  # inference steps multiplier (2*T_EVAL iterations)
 
 # RNGs
 master_key = jax.random.key(59)
@@ -705,82 +522,84 @@ data = MNISTData(
     apply_sign_transform=APPLY_SIGN_TRANSFORM,
     num_images_per_class=NUM_IMAGES_PER_CLASS,
 )
-print(f"Dataset: x.shape={tuple(data.x.shape)}  y.shape={tuple(data.y.shape)}")
+print(f"Dataset ready — x.shape={tuple(data.x.shape)}, y.shape={tuple(data.y.shape)}")
 
-# Training config
-
-history = {"acc": []}
-plot_couplings(orchestrator, "init")
-master_key, plot_key = jax.random.split(master_key)
-plot_fields(orchestrator, data, state, plot_key, "init")
+# Train & evaluate
 for epoch in range(1, EPOCHS + 1):
     t0 = time.time()
     print(f"\n=== Epoch {epoch}/{EPOCHS} ===")
-    w_in_norm = jnp.linalg.norm(orchestrator.lmap[1, 0].W)
-    w_out_norm = jnp.linalg.norm(orchestrator.lmap[2, 1].W)
-    w_back_norm = jnp.linalg.norm(orchestrator.lmap[1, 2].W)
-    J_norm = jnp.linalg.norm(orchestrator.lmap[1, 1].J)
-    print(f"{w_in_norm=} {w_out_norm=} {J_norm=} {w_back_norm=}")
+
+    # Training epoch
     for x_batch, y_batch in data:
-        # Keep batch arrays float32 (consistency)
-        master_key, train_key, eval_key = jax.random.split(master_key, num=3)
+        master_key, step_key = jax.random.split(master_key)
         orchestrator, master_key, opt_state = train_step(
             orchestrator,
             state,
             x_batch,
             y_batch,
-            rng=train_key,
+            rng=step_key,
             opt_state=opt_state,
-            optimizer=optimizer,
+            optimizer=optimizer,  # static in the JIT sense; same instance every call
             t_train=T_TRAIN,
         )
-    print(f"Epoch {epoch} done in {time.time() - t0:.2f}s")
-    w_in_norm = jnp.linalg.norm(orchestrator.lmap[1, 0].W)
-    w_out_norm = jnp.linalg.norm(orchestrator.lmap[2, 1].W)
-    w_back_norm = jnp.linalg.norm(orchestrator.lmap[1, 2].W)
-    J_norm = jnp.linalg.norm(orchestrator.lmap[1, 1].J)
-    print(f"{w_in_norm=} {w_out_norm=} {J_norm=} {w_back_norm=}")
 
-    eval_acc = []
-    for x_b, y_b in data:
-        x_batch = x_b.astype(jnp.float32)
-        y_batch = y_b.astype(jnp.float32)
+    # Evaluation epoch (full test split)
+    accs = []
+    for x_b, y_b in data.iter_eval():
         master_key, step_key = jax.random.split(master_key)
-        metrics, master_key = eval_step(
+        acc, master_key = eval_step(
             orchestrator,
             state,
-            x_batch,
-            y_batch,
+            x_b.astype(jnp.float32),
+            y_b.astype(jnp.float32),
             rng=step_key,
             t_eval=T_EVAL,
         )
-        eval_acc.append(metrics["acc"])
+        accs.append(acc)
 
-    print(f"Accuracy={float(jnp.mean(jnp.array(eval_acc))):.3f}")
-plot_couplings(orchestrator, "final")
-master_key, plot_key = jax.random.split(master_key)
-plot_fields(orchestrator, data, state, plot_key, "final")
+    acc_epoch = float(jnp.mean(jnp.array(accs)))
+    print(f"Eval Accuracy = {acc_epoch:.3f}  |  epoch time: {time.time() - t0:.2f}s")
 
 # %% [markdown]
-# ## Final evaluation (demo)
+# ## 9) One-line final report
 #
-# Single pass over the same iterator; replace with a held‑out set in practice.
+# This is just to have a single scalar you can grep from logs or compare across runs.
 
 # %%
-eval_acc = []
-for x_b, y_b in data:
-    x_batch = x_b.astype(jnp.float32)
-    y_batch = y_b.astype(jnp.float32)
+final_accs = []
+for x_b, y_b in data.iter_eval():
     master_key, step_key = jax.random.split(master_key)
-    metrics, master_key = eval_step(
+    acc, master_key = eval_step(
         orchestrator,
         state,
-        x_batch,
-        y_batch,
+        x_b.astype(jnp.float32),
+        y_b.astype(jnp.float32),
         rng=step_key,
         t_eval=T_EVAL,
     )
-    eval_acc.append(metrics["acc"])
+    final_accs.append(acc)
 
 print("\n=== Final evaluation summary ===")
-print(f"Accuracy={float(jnp.mean(jnp.array(eval_acc))):.3f}")
+print(f"Accuracy = {float(jnp.mean(jnp.array(final_accs))):.3f}")
+
+# %% [markdown]
+# ## 10) Recap & next steps
+#
+# You just trained a **recurrent, locally-plastic** network on MNIST using darnax:
+#
+# - You **declared** topology with a `LayerMap`, not a layer stack.
+# - A **state** of fixed buffers `(input, hidden, output)` was **clamped** and then
+#   relaxed to a fixed point by the **orchestrator**.
+# - You updated parameters using **local deltas** (`orchestrator.backward`) funneled through Optax.
+# - You **JIT-compiled the outer loop only**, using `lax.scan` for inner dynamics.
+#
+# If you’re serious about scaling this:
+#
+# - **Parallel orchestrators**: swap `SequentialOrchestrator` for a parallel flavor when your
+#   graphs grow (careful with data dependencies).
+# - **Topology as data**: generate `LayerMap` programmatically (e.g., blocks, conv-like bands).
+# - **Per-block scalings**: match initialization and LR magnitudes to each path’s fan-in/out.
+# - **Profiling**: dump HLO for `train_step`/`eval_step`, sanity-check fusion and shape stability.
+#
+# Don’t just accept the defaults—pressure-test the schedule and the rules. If a path doesn’t
+# pull its weight (e.g., backward clamp too weak/strong), instrument it and fix it.

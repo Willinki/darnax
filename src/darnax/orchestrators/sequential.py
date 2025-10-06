@@ -116,8 +116,8 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         for receiver_idx, senders_group in self.lmap.row_items(skip_last=True):
             rng, sub = jax.random.split(rng)
             messages = self._compute_messages(senders_group, state, rng=sub)
-            aggregated: Array = self.lmap[receiver_idx, receiver_idx].reduce(messages)
-            activated: Array = self.lmap[receiver_idx, receiver_idx].activation(aggregated)
+            aggregated: Array = self.lmap[receiver_idx, receiver_idx].reduce(messages)  # type: ignore
+            activated: Array = self.lmap[receiver_idx, receiver_idx].activation(aggregated)  # type: ignore
             state = state.replace_val(receiver_idx, activated)
         return state, rng
 
@@ -150,8 +150,8 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         for receiver_idx, senders_group in self.lmap.row_items(skip_last=True, forward_only=True):
             rng, sub = jax.random.split(rng)
             messages = self._compute_messages(senders_group, state, rng=sub)
-            aggregated: Array = self.lmap[receiver_idx, receiver_idx].reduce(messages)
-            activated: Array = self.lmap[receiver_idx, receiver_idx].activation(aggregated)
+            aggregated: Array = self.lmap[receiver_idx, receiver_idx].reduce(messages)  # type: ignore
+            activated: Array = self.lmap[receiver_idx, receiver_idx].activation(aggregated)  # type: ignore
             state = state.replace_val(receiver_idx, activated)
         return state, rng
 
@@ -175,8 +175,8 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         senders_group = self.lmap.neighbors(receiver_idx)
         rng, sub = jax.random.split(rng)
         messages = self._compute_messages(senders_group, state, rng=sub)
-        aggregated: Array = self.lmap[receiver_idx, receiver_idx].reduce(messages)
-        activated: Array = self.lmap[receiver_idx, receiver_idx].activation(aggregated)
+        aggregated = self.lmap[receiver_idx, receiver_idx].reduce(messages)  # type: ignore
+        activated = self.lmap[receiver_idx, receiver_idx].activation(aggregated)  # type: ignore
         state = state.replace_val(-1, activated)
         return state, rng
 
@@ -224,7 +224,8 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
             # Add the receiver's aggregated activation under its own key.
             # IMPORTANT: in the backward we dont consider backward messages when aggregating
             activations = activations.replace_val(
-                receiver_idx, self.lmap[receiver_idx, receiver_idx].reduce(msgs)
+                receiver_idx,
+                self.lmap[receiver_idx, receiver_idx].reduce(msgs),  # type: ignore
             )
         # Second pass: ask each module for its update.
         return type(self)(layers=self._backward_direct(state, activations))
