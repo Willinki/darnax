@@ -55,10 +55,9 @@ def perceptron_rule_backward(
 
     Notes
     -----
-    - Batch-size normalization: the update is divided by ``n`` so that its
+    - Batch-size normalization: the update is divided by ``n**0.5`` so that its
       magnitude is invariant to the batch size.
-    - Fan-in/width normalization (``1/sqrt(d)``) is **not** applied here. If
-      desired, incorporate it at the call site for your specific model.
+    - Fan-in/width normalization (``1/sqrt(d)``) is applied here.
 
     Examples
     --------
@@ -81,5 +80,5 @@ def perceptron_rule_backward(
         raise ValueError("y and y_hat must have the same (n, K) shape.")
     m = y * y_hat  # (n, K)
     mistake = (m <= margin).astype(x.dtype)  # (n, K)
-    update = (x.T @ (mistake * y)) / (n)  # (d, K)
+    update: jax.Array = (x.T @ (mistake * y)) / (n**0.5 * d**0.5)  # (d, K)
     return -update

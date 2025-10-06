@@ -112,7 +112,7 @@ class DebugLayer(Layer):
         Uses :func:`jax.tree.reduce_associative` with ``operator.add``.
 
         """
-        return jnp.asarray(jax.tree.reduce_associative(operator.add, h))
+        return jnp.asarray(jax.tree_util.tree_reduce(operator.add, h))
 
     def backward(self, x: Array, y: Array, y_hat: Array) -> Self:
         """Return a no-op parameter update.
