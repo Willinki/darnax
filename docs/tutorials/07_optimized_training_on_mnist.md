@@ -1,31 +1,31 @@
-# ---
-# jupyter:
-#   jupytext:
-#     cell_metadata_filter: -all
-#     formats: py:percent,md
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
-#       jupytext_version: 1.17.3
-# ---
+---
+jupyter:
+  jupytext:
+    cell_metadata_filter: -all
+    formats: py:percent,md
+    main_language: python
+    text_representation:
+      extension: .md
+      format_name: markdown
+      format_version: '1.3'
+      jupytext_version: 1.17.3
+---
 
-# %% [markdown]
-# # 07 — Training on MNIST with **darnax** (JAX-first, CPU)
-#
-# This tutorial is for readers who want to **understand how darnax is used** in practice:
-# how a network is assembled from modules, how the **orchestrator** runs recurrent dynamics,
-# and how **local plasticity** integrates with Equinox/Optax to update parameters *without*
-# backpropagation.
-#
-# We’ll implement a compact, JAX-friendly training loop:
-#
-# - **Only the outer steps are `jit`-compiled**: `train_step`, `eval_step`.
-# - Recurrent dynamics use **`jax.lax.scan`** (no Python loops inside compiled code).
-# - The dataset iterator is **slice-based** (avoid `array_split`), better for accelerators and CPUs.
-# - We **stay on CPU** to keep the focus on design; the code is accelerator-ready.
+# 07 — Training on MNIST with **darnax** (JAX-first, CPU)
 
-# %%
+This tutorial is for readers who want to **understand how darnax is used** in practice:
+how a network is assembled from modules, how the **orchestrator** runs recurrent dynamics,
+and how **local plasticity** integrates with Equinox/Optax to update parameters *without*
+backpropagation.
+
+We’ll implement a compact, JAX-friendly training loop:
+
+- **Only the outer steps are `jit`-compiled**: `train_step`, `eval_step`.
+- Recurrent dynamics use **`jax.lax.scan`** (no Python loops inside compiled code).
+- The dataset iterator is **slice-based** (avoid `array_split`), better for accelerators and CPUs.
+- We **stay on CPU** to keep the focus on design; the code is accelerator-ready.
+
+```python
 # --- Imports ---------------------------------------------------------------
 from __future__ import annotations
 
@@ -51,61 +51,57 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+```
+
+## 1) What darnax gives you
+
+darnax decomposes a model into **modules** connected by a **LayerMap**. At runtime,
+an **orchestrator** applies a **message-passing schedule** over a **state** vector.
+
+- **Modules** (edges/diagonals) consume a sender buffer and emit a message to a receiver.
+  Some modules are trainable; some are frozen; some are “diagonal” (operate on a buffer itself).
+- The **LayerMap** defines the fixed topology: for each receiver row `i`, which senders `j`
+  contribute, and with which module.
+- The **SequentialOrchestrator** drives the update order (left→right, recurrent self, right→left
+  as needed) and exposes:
+  - `step`: full dynamics (all messages allowed).
+  - `step_inference`: inference dynamics (typically suppress “backward” messages).
+  - `backward`: compute **local** parameter deltas from the current state (no backprop).
+  - `predict`: produce output scores in the final buffer.
+- The **State** is a fixed-shape tuple of buffers `(input, hidden, output)`. You **clamp**
+  inputs (and possibly labels) by writing them into the state, then run dynamics to a fixed point.
 
 
-# %% [markdown]
-# ## 1) What darnax gives you
-#
-# darnax decomposes a model into **modules** connected by a **LayerMap**. At runtime,
-# an **orchestrator** applies a **message-passing schedule** over a **state** vector.
-#
-# - **Modules** (edges/diagonals) consume a sender buffer and emit a message to a receiver.
-#   Some modules are trainable; some are frozen; some are “diagonal” (operate on a buffer itself).
-# - The **LayerMap** defines the fixed topology: for each receiver row `i`, which senders `j`
-#   contribute, and with which module.
-# - The **SequentialOrchestrator** drives the update order (left→right, recurrent self, right→left
-#   as needed) and exposes:
-#   - `step`: full dynamics (all messages allowed).
-#   - `step_inference`: inference dynamics (typically suppress “backward” messages).
-#   - `backward`: compute **local** parameter deltas from the current state (no backprop).
-#   - `predict`: produce output scores in the final buffer.
-# - The **State** is a fixed-shape tuple of buffers `(input, hidden, output)`. You **clamp**
-#   inputs (and possibly labels) by writing them into the state, then run dynamics to a fixed point.
+## 2) A tiny metric helper
 
-# %% [markdown]
-# ## 2) A tiny metric helper
-#
-# Labels are One-Vs-All (OVA) in ±1. We decode predictions via `argmax`.
-#
+Labels are One-Vs-All (OVA) in ±1. We decode predictions via `argmax`.
 
 
-# %%
+```python
 def batch_accuracy(y_true: jnp.ndarray, y_pred: jnp.ndarray) -> float:
     """Accuracy with ±1 OVA labels (class = argmax along last dim)."""
     y_true_idx = jnp.argmax(y_true, axis=-1)
     y_pred_idx = jnp.argmax(y_pred, axis=-1)
     return jnp.mean((y_true_idx == y_pred_idx).astype(jnp.float32))
+```
+
+## 3) Dataset object designed for JAX
+
+We keep the data pipeline deliberately simple to highlight the model mechanics:
+
+- **Materialize once**: training subset and full test split live as device arrays.
+- **Shared projection**: an optional linear projection (same matrix for train/test) reduces
+  dimensionality and can be followed by a `sign` transform (Entangled-MNIST style).
+- **Slice-based batches**: iterators yield contiguous chunks; no list materialization or
+  `array_split`.
+- **Label scaling** (your original choice):
+  - true class → `+√C / 2`
+  - others → `−0.5`
+
+This scaling biases the output field to favor the target class during clamped dynamics.
 
 
-# %% [markdown]
-# ## 3) Dataset object designed for JAX
-#
-# We keep the data pipeline deliberately simple to highlight the model mechanics:
-#
-# - **Materialize once**: training subset and full test split live as device arrays.
-# - **Shared projection**: an optional linear projection (same matrix for train/test) reduces
-#   dimensionality and can be followed by a `sign` transform (Entangled-MNIST style).
-# - **Slice-based batches**: iterators yield contiguous chunks; no list materialization or
-#   `array_split`.
-# - **Label scaling** (your original choice):
-#   - true class → `+√C / 2`
-#   - others → `−0.5`
-#
-# This scaling biases the output field to favor the target class during clamped dynamics.
-#
-
-
-# %%
+```python
 class MNISTData:
     """MNIST dataset with optional linear projection and sign; slice-based iterators.
 
@@ -255,28 +251,27 @@ class MNISTData:
 
         # Convenience metadata.
         self.input_dim = int(self.x.shape[1])
+```
 
+## 4) Model topology as a LayerMap
 
-# %% [markdown]
-# ## 4) Model topology as a LayerMap
-#
-# We build a minimal network with **one hidden layer** and an **output sink**:
-#
-# - Receiver row **1 (hidden)** gets messages from:
-#   - **0 (input)** via `FullyConnected` (forward path)
-#   - **1 (itself)** via `RecurrentDiscrete` (internal recurrency)
-#   - **2 (labels)** via `FrozenFullyConnected` (backward/clamping path)
-# - Receiver row **2 (output)** gets:
-#   - **1 (hidden)** via `FullyConnected` (readout)
-#   - **2 (itself)** via `OutputLayer` (diagonal sink/aggregator, returns zeros)
-#
-# The **SequentialState** is `(input, hidden, output)` with fixed sizes.
-# The **SequentialOrchestrator** knows how to:
-# - aggregate edge messages for each receiver,
-# - apply diagonal modules,
-# - and run the chosen schedule (`step`, `step_inference`, `predict`, `backward`).
+We build a minimal network with **one hidden layer** and an **output sink**:
 
-# %%
+- Receiver row **1 (hidden)** gets messages from:
+  - **0 (input)** via `FullyConnected` (forward path)
+  - **1 (itself)** via `RecurrentDiscrete` (internal recurrency)
+  - **2 (labels)** via `FrozenFullyConnected` (backward/clamping path)
+- Receiver row **2 (output)** gets:
+  - **1 (hidden)** via `FullyConnected` (readout)
+  - **2 (itself)** via `OutputLayer` (diagonal sink/aggregator, returns zeros)
+
+The **SequentialState** is `(input, hidden, output)` with fixed sizes.
+The **SequentialOrchestrator** knows how to:
+- aggregate edge messages for each receiver,
+- apply diagonal modules,
+- and run the chosen schedule (`step`, `step_inference`, `predict`, `backward`).
+
+```python
 DIM_DATA = 100
 NUM_LABELS = MNISTData.NUM_CLASSES
 DIM_HIDDEN = 300
@@ -334,22 +329,22 @@ layer_map = LayerMap.from_dict(layer_map)
 # Trainable orchestrator built from the fixed topology.
 orchestrator = SequentialOrchestrator(layers=layer_map)
 logger.info("Model initialized with SequentialOrchestrator.")
+```
 
-# %% [markdown]
-# ## 5) Optimizer and the “no-backprop” update
-#
-# darnax does **not** use backpropagation here. Instead:
-#
-# 1. Run recurrent dynamics with the current batch **clamped** (inputs + labels in the state).
-# 2. Call `orchestrator.backward(state, rng)` to get **local** deltas for every trainable module.
-# 3. Apply those deltas using **Optax**—this gives you the familiar optimizer ergonomics.
-#
-# Notes for JAX compilation:
-# - We pass the **optimizer object** as an argument to the jitted functions.
-#   Under `eqx.filter_jit`, non-array args are **static**. Reusing the same instance prevents retracing.
-# - Only the **optimizer state** (arrays) flows through the jitted code.
+## 5) Optimizer and the “no-backprop” update
 
-# %%
+darnax does **not** use backpropagation here. Instead:
+
+1. Run recurrent dynamics with the current batch **clamped** (inputs + labels in the state).
+2. Call `orchestrator.backward(state, rng)` to get **local** deltas for every trainable module.
+3. Apply those deltas using **Optax**—this gives you the familiar optimizer ergonomics.
+
+Notes for JAX compilation:
+- We pass the **optimizer object** as an argument to the jitted functions.
+  Under `eqx.filter_jit`, non-array args are **static**. Reusing the same instance prevents retracing.
+- Only the **optimizer state** (arrays) flows through the jitted code.
+
+```python
 optimizer = optax.adam(2e-3)
 opt_state = optimizer.init(eqx.filter(orchestrator, eqx.is_inexact_array))
 
@@ -374,21 +369,19 @@ def _apply_update(
     updates, opt_state = optimizer.update(grads, opt_state, params=params)
     orch = eqx.apply_updates(orch, updates)
     return orch, opt_state
+```
+
+## 6) Dynamics with `lax.scan` (not jitted directly)
+
+The orchestrator exposes **one-step** transitions:
+- `step(s, rng)` → (s’, rng’): full dynamics (includes backward/label messages).
+- `step_inference(s, rng)` → (s’, rng’): inference-only dynamics (suppress backward messages).
+
+We wrap those into **scans**. These helpers are not jitted on their own; they are traced as
+part of the outer jitted steps. That keeps the code modular and the compiled graph clean.
 
 
-# %% [markdown]
-# ## 6) Dynamics with `lax.scan` (not jitted directly)
-#
-# The orchestrator exposes **one-step** transitions:
-# - `step(s, rng)` → (s’, rng’): full dynamics (includes backward/label messages).
-# - `step_inference(s, rng)` → (s’, rng’): inference-only dynamics (suppress backward messages).
-#
-# We wrap those into **scans**. These helpers are not jitted on their own; they are traced as
-# part of the outer jitted steps. That keeps the code modular and the compiled graph clean.
-#
-
-
-# %%
+```python
 def _scan_steps(fn, s: SequentialState, rng: jax.Array, steps: int):
     """Scan `steps` times a (s, rng)->(s, rng) transition."""
 
@@ -422,31 +415,29 @@ def run_dynamics_inference(
     """Inference-only relaxation to a fixed point."""
     s, rng = _scan_steps(orch.step_inference, s, rng, 2 * steps)
     return s, rng
+```
+
+## 7) Outer steps (the only `jit`-compiled functions)
+
+We jit **only** the functions that are called many times and represent the outer boundary
+of our computation:
+
+- **`train_step`** (per batch):
+  1) write `(x, y)` into the state (clamp),
+  2) run clamped + free dynamics,
+  3) compute local deltas and apply the Optax update.
+
+- **`eval_step`** (per batch):
+  1) write `x` only,
+  2) run free dynamics,
+  3) `predict` and compute accuracy.
+
+JIT boundary discipline:
+- **Static args** (optimizer object, Python ints like `t_train`) trigger retraces **only if** they
+  change. Keep them fixed during a run.
 
 
-# %% [markdown]
-# ## 7) Outer steps (the only `jit`-compiled functions)
-#
-# We jit **only** the functions that are called many times and represent the outer boundary
-# of our computation:
-#
-# - **`train_step`** (per batch):
-#   1) write `(x, y)` into the state (clamp),
-#   2) run clamped + free dynamics,
-#   3) compute local deltas and apply the Optax update.
-#
-# - **`eval_step`** (per batch):
-#   1) write `x` only,
-#   2) run free dynamics,
-#   3) `predict` and compute accuracy.
-#
-# JIT boundary discipline:
-# - **Static args** (optimizer object, Python ints like `t_train`) trigger retraces **only if** they
-#   change. Keep them fixed during a run.
-#
-
-
-# %%
+```python
 @eqx.filter_jit
 def train_step(
     orch: SequentialOrchestrator,
@@ -494,19 +485,18 @@ def eval_step(
     y_pred = s[-1]
     acc = batch_accuracy(y, y_pred)
     return acc, rng
+```
 
+## 8) Training loop (CPU)
 
-# %% [markdown]
-# ## 8) Training loop (CPU)
-#
-# The Python epoch loop shepherds data and RNG. All heavy lifting happens inside the two
-# jitted steps above. Practical guidance:
-#
-# - Keep **array shapes/dtypes** and the **pytrees’ structures** stable across calls.
-# - Reuse the **same optimizer instance**; pass its **state** through the jitted code.
-# - If you change `t_train`/`t_eval` between calls, expect a retrace (they are static).
+The Python epoch loop shepherds data and RNG. All heavy lifting happens inside the two
+jitted steps above. Practical guidance:
 
-# %%
+- Keep **array shapes/dtypes** and the **pytrees’ structures** stable across calls.
+- Reuse the **same optimizer instance**; pass its **state** through the jitted code.
+- If you change `t_train`/`t_eval` between calls, expect a retrace (they are static).
+
+```python
 # Experiment knobs
 NUM_IMAGES_PER_CLASS = 5400
 APPLY_SIGN_TRANSFORM = True
@@ -564,13 +554,13 @@ for epoch in range(1, EPOCHS + 1):
 
     acc_epoch = float(jnp.mean(jnp.array(accs)))
     print(f"Eval Accuracy = {acc_epoch:.3f}  |  epoch time: {time.time() - t0:.2f}s")
+```
 
-# %% [markdown]
-# ## 9) One-line final report
-#
-# This is just to have a single scalar you can grep from logs or compare across runs.
+## 9) One-line final report
 
-# %%
+This is just to have a single scalar you can grep from logs or compare across runs.
+
+```python
 final_accs = []
 for x_b, y_b in data.iter_eval():
     master_key, step_key = jax.random.split(master_key)
@@ -586,25 +576,25 @@ for x_b, y_b in data.iter_eval():
 
 print("\n=== Final evaluation summary ===")
 print(f"Accuracy = {float(jnp.mean(jnp.array(final_accs))):.3f}")
+```
 
-# %% [markdown]
-# ## 10) Recap & next steps
-#
-# You just trained a **recurrent, locally-plastic** network on MNIST using darnax:
-#
-# - You **declared** topology with a `LayerMap`, not a layer stack.
-# - A **state** of fixed buffers `(input, hidden, output)` was **clamped** and then
-#   relaxed to a fixed point by the **orchestrator**.
-# - You updated parameters using **local deltas** (`orchestrator.backward`) funneled through Optax.
-# - You **JIT-compiled the outer loop only**, using `lax.scan` for inner dynamics.
-#
-# If you’re serious about scaling this:
-#
-# - **Parallel orchestrators**: swap `SequentialOrchestrator` for a parallel flavor when your
-#   graphs grow (careful with data dependencies).
-# - **Topology as data**: generate `LayerMap` programmatically (e.g., blocks, conv-like bands).
-# - **Per-block scalings**: match initialization and LR magnitudes to each path’s fan-in/out.
-# - **Profiling**: dump HLO for `train_step`/`eval_step`, sanity-check fusion and shape stability.
-#
-# Don’t just accept the defaults—pressure-test the schedule and the rules. If a path doesn’t
-# pull its weight (e.g., backward clamp too weak/strong), instrument it and fix it.
+## 10) Recap & next steps
+
+You just trained a **recurrent, locally-plastic** network on MNIST using darnax:
+
+- You **declared** topology with a `LayerMap`, not a layer stack.
+- A **state** of fixed buffers `(input, hidden, output)` was **clamped** and then
+  relaxed to a fixed point by the **orchestrator**.
+- You updated parameters using **local deltas** (`orchestrator.backward`) funneled through Optax.
+- You **JIT-compiled the outer loop only**, using `lax.scan` for inner dynamics.
+
+If you’re serious about scaling this:
+
+- **Parallel orchestrators**: swap `SequentialOrchestrator` for a parallel flavor when your
+  graphs grow (careful with data dependencies).
+- **Topology as data**: generate `LayerMap` programmatically (e.g., blocks, conv-like bands).
+- **Per-block scalings**: match initialization and LR magnitudes to each path’s fan-in/out.
+- **Profiling**: dump HLO for `train_step`/`eval_step`, sanity-check fusion and shape stability.
+
+Don’t just accept the defaults—pressure-test the schedule and the rules. If a path doesn’t
+pull its weight (e.g., backward clamp too weak/strong), instrument it and fix it.
