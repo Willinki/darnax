@@ -346,6 +346,8 @@
       
         
       
+        
+      
     
     
     
@@ -527,6 +529,29 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../../tutorials/07_optimized_training_on_mnist/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    07 — Training on MNIST with darnax (JAX-first, CPU)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -673,15 +698,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#darnax.modules.fully_connected.FullyConnected.W" class="md-nav__link">
-    <span class="md-ellipsis">
-      W
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#darnax.modules.fully_connected.FullyConnected.strength" class="md-nav__link">
     <span class="md-ellipsis">
       strength
@@ -694,6 +710,15 @@
   <a href="#darnax.modules.fully_connected.FullyConnected.threshold" class="md-nav__link">
     <span class="md-ellipsis">
       threshold
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.fully_connected.FullyConnected.W" class="md-nav__link">
+    <span class="md-ellipsis">
+      W
     </span>
   </a>
   
@@ -847,7 +872,7 @@ that are <strong>not</strong> updated by :meth:<code>backward</code>.</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code><a class="autorefs autorefs-internal" title="W = jax.random.normal(key, (in_features, out_features), dtype=dtype) / jnp.sqrt(in_features)
+            <td><code><a class="autorefs autorefs-internal" title="W = jax.random.normal(key, (in_features, out_features), dtype=dtype) * self.strength / jnp.sqrt(in_features)
 
   
       instance-attribute
@@ -1068,26 +1093,6 @@ of the expected length.</p>
 
 
 
-<h3 id="darnax.modules.fully_connected.FullyConnected.W" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">W</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span> <span class="o">/</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">in_features</span><span class="p">)</span></code>
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
-  </span>
-
-<a href="#darnax.modules.fully_connected.FullyConnected.W" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
 <h3 id="darnax.modules.fully_connected.FullyConnected.strength" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">strength</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_shape</span><span class="p">(</span><span class="n">strength</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span></code>
 
@@ -1116,6 +1121,26 @@ of the expected length.</p>
   </span>
 
 <a href="#darnax.modules.fully_connected.FullyConnected.threshold" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.modules.fully_connected.FullyConnected.W" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">W</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">strength</span> <span class="o">/</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">in_features</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.modules.fully_connected.FullyConnected.W" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">

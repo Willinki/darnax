@@ -346,6 +346,8 @@
       
         
       
+        
+      
     
     
     
@@ -517,6 +519,29 @@
   
   <span class="md-ellipsis">
     06 — Simple Training Tutorial
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../../tutorials/07_optimized_training_on_mnist/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    07 — Training on MNIST with darnax (JAX-first, CPU)
     
   </span>
   
@@ -850,10 +875,9 @@ a per-class vector <code>(K,)</code>, or an array <code>(n, K)</code>.</p>
 <details class="note" open>
   <summary>Notes</summary>
   <ul>
-<li>Batch-size normalization: the update is divided by <code>n</code> so that its
+<li>Batch-size normalization: the update is divided by <code>n**0.5</code> so that its
   magnitude is invariant to the batch size.</li>
-<li>Fan-in/width normalization (<code>1/sqrt(d)</code>) is <strong>not</strong> applied here. If
-  desired, incorporate it at the call site for your specific model.</li>
+<li>Fan-in/width normalization (<code>1/sqrt(d)</code>) is applied here.</li>
 </ul>
 </details>
 
