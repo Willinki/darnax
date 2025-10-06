@@ -78,6 +78,7 @@ logger.setLevel(logging.INFO)
 # Labels are One-Vs-All (OVA) in ±1. We decode predictions via `argmax`.
 #
 
+
 # %%
 def batch_accuracy(y_true: jnp.ndarray, y_pred: jnp.ndarray) -> float:
     """Accuracy with ±1 OVA labels (class = argmax along last dim)."""
@@ -102,6 +103,7 @@ def batch_accuracy(y_true: jnp.ndarray, y_pred: jnp.ndarray) -> float:
 #
 # This scaling biases the output field to favor the target class during clamped dynamics.
 #
+
 
 # %%
 class MNISTData:
@@ -385,6 +387,7 @@ def _apply_update(
 # part of the outer jitted steps. That keeps the code modular and the compiled graph clean.
 #
 
+
 # %%
 def _scan_steps(fn, s: SequentialState, rng: jax.Array, steps: int):
     """Scan `steps` times a (s, rng)->(s, rng) transition."""
@@ -441,6 +444,7 @@ def run_dynamics_inference(
 # - **Static args** (optimizer object, Python ints like `t_train`) trigger retraces **only if** they
 #   change. Keep them fixed during a run.
 #
+
 
 # %%
 @eqx.filter_jit
