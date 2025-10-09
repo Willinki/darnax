@@ -31,7 +31,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 from jax.tree_util import register_pytree_node_class
 
@@ -269,7 +269,7 @@ class LayerMap:
         return MappingProxyType(self._data[i])
 
     def row_items(
-        self, skip_last: bool = False, forward_only: bool = False
+        self, skip_last: bool = False, subset: Literal["backward", "forward", "all"] = "all"
     ) -> Iterable[tuple[int, Mapping[int, AbstractModule]]]:
         """Iterate over rows with deterministic ordering and read-only views.
 
@@ -278,10 +278,13 @@ class LayerMap:
         skip_last : bool, default False
             If ``True``, omit the last receiver row (useful when the output row
             is sink-only).
-        forward_only : bool, default False
-            If ``True``, keep only edges ``(i, j)`` with ``j <= i`` (i.e.,
+        subset : ["backward", "forward", "all"], default "all
+            If ``forward``, keep only edges ``(i, j)`` with ``j <= i`` (i.e.,
             lower-triangular including the diagonal), which is a common
             “feed-forward” scheduling constraint.
+            If ``backward``, keep only edges ``(i, j)`` with ``j >= i`` (i.e.,
+            upper-triangular including the diagonal).
+
 
         Yields
         ------
@@ -294,8 +297,10 @@ class LayerMap:
             row_keys = row_keys[:-1]
         for r_idx in row_keys:
             data = self._data[r_idx]
-            if forward_only:
+            if subset == "forward":
                 data = {k: v for k, v in data.items() if k <= r_idx}
+            elif subset == "backward":
+                data = {k: v for k, v in data.items() if k >= r_idx}
             yield r_idx, MappingProxyType(data)
 
     def edge_items(self) -> Iterable[tuple[tuple[int, int], AbstractModule]]:

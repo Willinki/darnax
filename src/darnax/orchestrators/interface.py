@@ -31,7 +31,7 @@ tutorials/06_simple_net_on_artificial_data.md
 """
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Generic, Self, TypeVar
+from typing import TYPE_CHECKING, Generic, Literal, Self, TypeVar
 
 import equinox as eqx
 import jax
@@ -156,7 +156,14 @@ class AbstractOrchestrator(eqx.Module, Generic[StateT]):
         pass
 
     @abstractmethod
-    def backward(self, state: StateT, rng: KeyArray) -> Self:
+    def backward(
+        self,
+        state: StateT,
+        rng: KeyArray,
+        *,
+        filter_messages: Literal["all", "forward", "backward"] = "forward",
+        target_state: StateT | None = None,
+    ) -> Self:
         """Compute parameter updates aligned with the layermap structure.
 
         Parameters
@@ -166,6 +173,13 @@ class AbstractOrchestrator(eqx.Module, Generic[StateT]):
             local learning rules (e.g., perceptron updates).
         rng : jax.Array
             PRNG key to split for stochastic update rules.
+        filter_messages: Literal["all", "forward", "backward"]. Default: "forward",
+            Optionally, it is possible to decide to compute the local fields (the messages)
+            based on a different subset of the messages. Forward corresponds to the default
+            behaviour, where only forward messages contribute to the messages.
+        target_state: SequentialState | None. Default: None
+            Optionally, it is possible to mix states in the backward update rule. By
+            default, other_state is equal to state unless explicitely requested.
 
         Returns
         -------

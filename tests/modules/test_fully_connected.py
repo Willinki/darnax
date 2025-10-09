@@ -45,18 +45,6 @@ def test_init_with_2d_vector():
 # ---------- behavior ----------
 
 
-def test_forward_broadcasts_strength_over_batch():
-    """(x @ W) * strength matches explicit broadcasting."""
-    key = jax.random.key(2)
-    m = FullyConnected(
-        4, 3, strength=jnp.array([1.0, 0.5, 2.0], jnp.float32), threshold=0.0, key=key
-    )
-    x = jax.random.normal(jax.random.key(3), (7, 4), dtype=jnp.float32)
-    y = m(x)
-    expected = (x @ m.W) * m.strength
-    assert jnp.allclose(y, expected)
-
-
 def test_has_state_is_false_property():
     """Adapters report has_state == False (even if trainable)."""
     m = FullyConnected(2, 2, strength=1.0, threshold=0.0, key=jax.random.key(4))

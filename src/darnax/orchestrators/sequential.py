@@ -31,7 +31,8 @@ tutorials/06_simple_net_on_artificial_data.md
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import warnings
+from typing import TYPE_CHECKING, Literal
 
 import jax
 from jax import Array
@@ -89,6 +90,7 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         state: SequentialState,
         *,
         rng: KeyArray,
+        filter_messages: Literal["all", "forward", "backward"] = "all",
     ) -> tuple[SequentialState, KeyArray]:
         """Run one forward/update sweep for all receivers **except output**.
 
@@ -104,6 +106,10 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
             Current global state.
         rng : KeyArray
             PRNG key (split per receiver/sender).
+        filter_messages : Literal["all", "forward", "backward"]. Default: "all"
+            Only a subset of the messages are sent during the step. If forward,
+            only forward messages (lower-triangle and diagonal) are computed.
+            Same for backward. "All" computes all the messagesV
 
         Returns
         -------
@@ -113,7 +119,9 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         """
         # we avoid computing the update of the last state component,
         # since it is clamped.
-        for receiver_idx, senders_group in self.lmap.row_items(skip_last=True):
+        for receiver_idx, senders_group in self.lmap.row_items(
+            skip_last=True, subset=filter_messages
+        ):
             rng, sub = jax.random.split(rng)
             messages = self._compute_messages(senders_group, state, rng=sub)
             aggregated: Array = self.lmap[receiver_idx, receiver_idx].reduce(messages)  # type: ignore
@@ -145,15 +153,13 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
             Updated state (output unchanged) and an advanced RNG key.
 
         """
-        # we only consider forward messages, not backwards
-        # and we also skip the last element
-        for receiver_idx, senders_group in self.lmap.row_items(skip_last=True, forward_only=True):
-            rng, sub = jax.random.split(rng)
-            messages = self._compute_messages(senders_group, state, rng=sub)
-            aggregated: Array = self.lmap[receiver_idx, receiver_idx].reduce(messages)  # type: ignore
-            activated: Array = self.lmap[receiver_idx, receiver_idx].activation(aggregated)  # type: ignore
-            state = state.replace_val(receiver_idx, activated)
-        return state, rng
+        warnings.warn(
+            """step_inference has been deprecated and will be eliminated in
+        future versions. Use step() with filter_messages=\"forward\"""",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.step(state, rng=rng, filter_messages="forward")
 
     def predict(self, state: SequentialState, rng: KeyArray) -> tuple[SequentialState, KeyArray]:
         """Compute/refresh the **output** buffer ``state[-1]`` from current buffers.
@@ -180,7 +186,14 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         state = state.replace_val(-1, activated)
         return state, rng
 
-    def backward(self, state: SequentialState, rng: KeyArray) -> Self:
+    def backward(
+        self,
+        state: SequentialState,
+        rng: KeyArray,
+        *,
+        filter_messages: Literal["all", "forward", "backward"] = "forward",
+        target_state: SequentialState | None = None,
+    ) -> Self:
         """Compute per-edge parameter updates and return them as an orchestrator.
 
         Two-phase algorithm:
@@ -203,6 +216,13 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
             Current global state (provides inputs and targets for local rules).
         rng : KeyArray
             PRNG key (split per receiver/sender).
+        filter_messages: Literal["all", "forward", "backward"]. Default: "forward",
+            Optionally, it is possible to decide to compute the local fields (the messages)
+            based on a different subset of the messages. Forward corresponds to the default
+            behaviour, where only forward messages contribute to the messages.
+        target_state: SequentialState | None. Default: None
+            Optionally, it is possible to mix states in the backward update rule. By
+            default, other_state is equal to state unless explicitely requested.
 
         Returns
         -------
@@ -216,26 +236,35 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         messages (no right-going edges), matching the schedule used in inference.
 
         """
+        if target_state is None:
+            target_state = state
+        else:
+            assert len(state) == len(target_state)
+            assert all(
+                s.shape == other_s.shape
+                for s, other_s in zip(state.states, target_state.states, strict=True)
+            )
         # here we compute all activations (back, forth, and last), equivalent to h_i
         activations: SequentialState = state
-        for receiver_idx, senders_group in self.lmap.row_items(skip_last=False, forward_only=True):
+        for receiver_idx, senders_group in self.lmap.row_items(
+            skip_last=False, subset=filter_messages
+        ):
             rng, sub = jax.random.split(rng)
             msgs = self._compute_messages(senders_group, state, rng=sub)
             # Add the receiver's aggregated activation under its own key.
             # IMPORTANT: in the backward we dont consider backward messages when aggregating
+            # by default. you can change this with the subset option
             activations = activations.replace_val(
                 receiver_idx,
                 self.lmap[receiver_idx, receiver_idx].reduce(msgs),  # type: ignore
             )
         # Second pass: ask each module for its update.
-        return type(self)(layers=self._backward_direct(state, activations))
+        return type(self)(layers=self._backward_direct(state, activations, target_state))
 
     # ---------------------------- internals ----------------------------
 
     def _backward_direct(
-        self,
-        state: SequentialState,
-        activations: SequentialState,
+        self, state: SequentialState, activations: SequentialState, target_state: SequentialState
     ) -> LayerMap:
         """Assemble a LayerMap of per-edge updates from local rules.
 
@@ -245,6 +274,8 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
             Current global state (provides ``x=state[j]`` and ``y=state[i]``).
         activations : SequentialState
             TODO: correct documentation
+        target_state : SequentialState
+            Optional parameter for state mixing.
 
         Returns
         -------
@@ -258,7 +289,7 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
             if receiver_idx not in updates:
                 updates[receiver_idx] = {}
             updates[receiver_idx][sender_idx] = module.backward(
-                x=state[sender_idx], y=state[receiver_idx], y_hat=activations[receiver_idx]
+                x=state[sender_idx], y=target_state[receiver_idx], y_hat=activations[receiver_idx]
             )
         return LayerMap.from_dict(updates, require_diagonal=True)
 
