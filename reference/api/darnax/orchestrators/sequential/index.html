@@ -963,7 +963,7 @@ explicit and deterministic.</p>
 
 
 <h3 id="darnax.orchestrators.sequential.SequentialOrchestrator.step" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">step</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">step</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">filter_messages</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">)</span></code>
 
 <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.step" class="headerlink" title="Permanent link">&para;</a></h3>
 
@@ -1023,6 +1023,24 @@ explicit and deterministic.</p>
             </td>
             <td>
                 <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>filter_messages</code>
+            </td>
+            <td>
+                  <code>Literal[&#34;all&#34;, &#34;forward&#34;, &#34;backward&#34;]. Default: &#34;all&#34;</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Only a subset of the messages are sent during the step. If forward,
+only forward messages (lower-triangle and diagonal) are computed.
+Same for backward. "All" computes all the messagesV</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;all&#39;</code>
             </td>
           </tr>
       </tbody>
@@ -1246,7 +1264,7 @@ which filters neighbor edges to a forward schedule (commonly <code>j &lt;= i</co
 
 
 <h3 id="darnax.orchestrators.sequential.SequentialOrchestrator.backward" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">backward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">backward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">filter_messages</span><span class="o">=</span><span class="s1">&#39;forward&#39;</span><span class="p">,</span> <span class="n">target_state</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.backward" class="headerlink" title="Permanent link">&para;</a></h3>
 
@@ -1312,6 +1330,41 @@ be used directly with the returned PyTree.</p>
             </td>
             <td>
                 <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>filter_messages</code>
+            </td>
+            <td>
+                  <code><span title="typing.Literal">Literal</span>[&#39;all&#39;, &#39;forward&#39;, &#39;backward&#39;]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optionally, it is possible to decide to compute the local fields (the messages)
+based on a different subset of the messages. Forward corresponds to the default
+behaviour, where only forward messages contribute to the messages.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;forward&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>target_state</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="../../states/sequential/#darnax.states.sequential.SequentialState">SequentialState</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optionally, it is possible to mix states in the backward update rule. By
+default, other_state is equal to state unless explicitely requested.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
             </td>
           </tr>
       </tbody>
