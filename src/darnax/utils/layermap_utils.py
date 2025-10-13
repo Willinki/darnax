@@ -3,12 +3,16 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 import equinox as eqx
-import jax
 
 from darnax.layer_maps.sparse import LayerMap
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    import jax
+
+
+from jax.tree_util import tree_flatten, tree_unflatten
 
 
 def layermap_apply(
@@ -18,82 +22,112 @@ def layermap_apply(
 ) -> LayerMap:
     """Apply a transformation to *parameter arrays only* in selected modules of a LayerMap.
 
-    This variant first partitions the LayerMap into its trainable (array) and static
-    components using :func:`equinox.partition`, applies the function ``f`` exclusively
-    to arrays inside modules selected by ``select_idxs``, and finally re-combines the
-    two parts with :func:`equinox.combine`. Non-array leaves (e.g. constants, shapes,
-    callables, buffers, RNG keys) remain untouched and never enter the JAX tracing path.
+    This variant:
+      1. Partitions the LayerMap into its trainable (array) and static parts using
+         :func:`equinox.partition`.
+      2. Iterates over each module `(i, j)` in the LayerMap.
+      3. For selected modules (where ``select_idxs((i, j))`` is True):
+         - Flattens their parameter pytree into a list of array leaves.
+         - Applies ``f`` independently to each array leaf.
+         - Reconstructs the module with :func:`jax.tree_util.tree_unflatten`.
+      4. Reassembles the modified parameters with the untouched statics via
+         :func:`equinox.combine`.
+
+    This design is purely functional — no in-place edits, no side effects, and
+    full compatibility with JAX transformations when the structure is static.
 
     Parameters
     ----------
     f : Callable[[jax.Array], Any]
-        Function applied to every *array* leaf of selected modules. Must be
-        compatible with JAX transformations (e.g., pure and shape-preserving)
-        if you intend to ``jit`` the caller.
+        Function applied to each *array* leaf (parameter) of the selected modules.
+        Must be elementwise or shape-preserving if you plan to `jit` the caller.
+        The function can include arbitrary JAX operations.
 
     select_idxs : Callable[[tuple[int, int]], bool]
-        Predicate determining which modules to transform.
-        Receives a tuple ``(i, j)`` corresponding to the receiver and sender
+        Predicate that decides which modules are transformed.
+        Receives the coordinate pair ``(i, j)`` representing the receiver and sender
         indices in the LayerMap entry ``lmap[i][j]``.
-        It should return ``True`` for modules that should be transformed.
+        It must return ``True`` for modules that should be processed.
+
         Example::
-            lambda ij: ij[0] == ij[1]   # select only diagonal modules
+            lambda ij: ij[0] == ij[1]   # Select diagonal modules
+            lambda ij: ij[0] < ij[1]    # Select upper-triangular modules
 
     lmap : LayerMap
-        The LayerMap (a dict-of-dicts pytree) whose values are Equinox modules.
-        Its structure is typically static, so the transformation preserves the same
-        nested layout.
+        A LayerMap (dict-of-dicts pytree) whose values are Equinox modules.
+        Each module can itself contain submodules and arrays.
+        The structure is assumed to be *static* (not changing between calls).
 
     Returns
     -------
     LayerMap
-        A new LayerMap where ``f`` has been applied to all parameter arrays of each
-        selected module, while all non-selected modules and non-array leaves remain
-        unchanged. The original object is never mutated.
+        A new LayerMap in which the array leaves of selected modules have been
+        transformed by ``f``. Non-selected modules and all non-array leaves
+        (statics, metadata, etc.) remain unchanged.
 
     Notes
     -----
-    • The function is *purely functional* — it constructs and returns a new pytree.
-      The input ``lmap`` is left intact.
+    • Flattening and unflattening is done *per module*, not globally. This avoids
+      any structural mismatch between custom PyTree nodes (like LayerMap) and
+      standard dicts.
 
-    • Partitioning with :func:`equinox.partition` guarantees that only numerical
-      leaves are traversed by :func:`jax.tree_map`. This prevents Python objects or
-      static data from entering JIT-compiled traces.
+    • This approach offers explicit control over how transformations are applied
+      to leaves, while keeping the logic JAX-compatible and transparent.
 
-    • This pattern mirrors common Equinox practice for separating model parameters
-      from static state before optimization or device transfer.
+    • It is preferred over using :func:`jax.vmap` for this use case, since `vmap`
+      is designed for batching along array axes, not for traversing heterogeneous
+      pytree leaves with differing shapes or dtypes.
 
-    Examples
-    --------
+    • The function is side-effect free: the input ``lmap`` is never modified.
+
+    Example
+    -------
     >>> # Scale all parameters of diagonal modules by 0.5
-    >>> new_lmap = layermap_apply_params_only(
+    >>> new_lmap = layermap_apply_params_only_flat(
     ...     f=lambda x: 0.5 * x,
     ...     select_idxs=lambda ij: ij[0] == ij[1],
     ...     lmap=lmap,
     ... )
 
-    >>> # Move parameters of upper-triangular modules to float32
-    >>> new_lmap = layermap_apply_params_only(
+    >>> # Convert upper-triangular module parameters to float32
+    >>> new_lmap = layermap_apply_params_only_flat(
     ...     f=lambda x: x.astype(jnp.float32),
     ...     select_idxs=lambda ij: ij[0] < ij[1],
     ...     lmap=lmap,
     ... )
 
+    >>> # Add Gaussian noise to parameters of all modules
+    >>> key = jax.random.PRNGKey(0)
+    >>> def add_noise(x):
+    ...     noise = jax.random.normal(key, shape=x.shape) * 0.01
+    ...     return x + noise
+    ...
+    >>> new_lmap = layermap_apply_params_only_flat(add_noise, lambda ij: True, lmap)
+
     """
-    # 1) Separate numerical parameters from non-array statics.
+    # 1) Separate numeric (trainable) parameters from statics/state/meta.
     params, statics = eqx.partition(lmap, eqx.is_array)
 
-    # 2) Build a same-structure boolean mask marking selected modules.
-    mask = {i: {j: bool(select_idxs((i, j))) for j in row} for i, row in lmap.row_items()}
+    # 2) Apply transformation per-module.
+    new_params_data = {}
+    for i, row in params.row_items():
+        new_row = {}
+        for j, mod_params in row.items():
+            if select_idxs((i, j)):
+                # Flatten the module parameters into leaves.
+                leaves, treedef = tree_flatten(mod_params)
+                # Apply `f` independently to each array leaf.
+                new_leaves = [f(x) for x in leaves]
+                # Reconstruct the module with the same tree structure.
+                new_mod_params = tree_unflatten(treedef, new_leaves)
+            else:
+                new_mod_params = mod_params
+            new_row[j] = new_mod_params
+        new_params_data[i] = new_row
 
-    # 3) Transform parameter leaves only (statics untouched).
-    def _apply(x: Any, m: bool) -> Any:
-        # x: an array leaf from params
-        # m: bool at module level, broadcast to its leaves
-        return f(x) if m else x
+    # 3) Re-wrap as a LayerMap if necessary.
+    new_params = LayerMap.from_dict(new_params_data)
 
-    new_params = jax.tree.map(_apply, params, mask)
-
-    # 4) Recombine trainable and static components into a new LayerMap.
-    combined_params = eqx.combine(new_params, statics)
-    return LayerMap.from_dict(combined_params, require_diagonal=True)
+    # 4) Recombine transformed parameters with untouched statics.
+    combined: LayerMap = eqx.combine(new_params, statics)
+    return combined
