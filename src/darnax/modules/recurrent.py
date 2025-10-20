@@ -76,6 +76,7 @@ class RecurrentDiscrete(Layer):
     J: Array
     J_D: Array
     threshold: Array
+    strength: Array
     _mask: Array
 
     def __init__(
@@ -84,6 +85,7 @@ class RecurrentDiscrete(Layer):
         j_d: ArrayLike,
         threshold: ArrayLike,
         key: KeyArray,
+        strength: float = 1.0,
         dtype: DTypeLike = jnp.float32,
     ):
         """Construct the layer parameters.
@@ -105,6 +107,10 @@ class RecurrentDiscrete(Layer):
             length ``features``.
         key : KeyArray
             JAX PRNG key used to initialize the off-diagonal entries of ``J``.
+        strength: float, optional
+            Scalar that multiplies all couplings at initialization to increase layer
+            influence in the dynamics. Similar to strengths in fully connected
+            and ferromagnetic adapters.
         dtype : DTypeLike, optional
             Parameter dtype, by default ``jnp.float32``.
 
@@ -117,14 +123,20 @@ class RecurrentDiscrete(Layer):
         """
         j_d_vec = self._set_shape(j_d, features, dtype)
         thresh_vec = self._set_shape(threshold, features, dtype)
+        strength_vec = jnp.asarray(strength, dtype=dtype)
 
-        J = jax.random.normal(key, shape=(features, features), dtype=dtype) / jnp.sqrt(features)
+        J = (
+            jax.random.normal(key, shape=(features, features), dtype=dtype)
+            / jnp.sqrt(features)
+            * strength_vec
+        )
         diag = jnp.diag_indices(features)
         J = J.at[diag].set(j_d_vec)
 
         self.J = J
         self.J_D = j_d_vec
         self.threshold = thresh_vec
+        self.strength = strength_vec
         self._mask = 1 - jnp.eye(features, dtype=dtype)
 
     def activation(self, x: Array) -> Array:
