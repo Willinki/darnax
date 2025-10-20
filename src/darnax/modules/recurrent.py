@@ -67,6 +67,10 @@ class RecurrentDiscrete(Layer):
     threshold : Array
         Per-unit margin used by the local perceptron-style rule,
         shape ``(features,)``.
+    strength: float, default=1.0
+        Scalar that multiplies all couplings at initialization to increase layer
+        influence in the dynamics. Similar to strengths in fully connected
+        and ferromagnetic adapters.
     _mask : Array
         Binary matrix (``1 - I``) that zeroes the diagonal of ``ΔJ`` before
         applying updates. Same shape and dtype as ``J``.
