@@ -725,6 +725,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#darnax.modules.recurrent.RecurrentDiscrete.strength" class="md-nav__link">
+    <span class="md-ellipsis">
+      strength
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#darnax.modules.recurrent.RecurrentDiscrete.activation" class="md-nav__link">
     <span class="md-ellipsis">
       activation
@@ -858,7 +867,7 @@ darnax.utils.perceptron_rule.perceptron_rule_backward</p>
 
 
 <h2 id="darnax.modules.recurrent.RecurrentDiscrete" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">RecurrentDiscrete</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">j_d</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></code>
+              <code class="highlight language-python"><span class="n">RecurrentDiscrete</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">j_d</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">strength</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></code>
 
 <a href="#darnax.modules.recurrent.RecurrentDiscrete" class="headerlink" title="Permanent link">&para;</a></h2>
 
@@ -928,6 +937,23 @@ internal diagonal mask used to zero out self-updates during learning.</p>
               <div class="doc-md-description">
                 <p>Per-unit margin used by the local perceptron-style rule,
 shape <code>(features,)</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="strength = strength_vec
+
+  
+      instance-attribute
+   (darnax.modules.recurrent.RecurrentDiscrete.strength)" href="#darnax.modules.recurrent.RecurrentDiscrete.strength">strength</a></code></td>
+            <td>
+                  <code>float, default=1.0</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Scalar that multiplies all couplings at initialization to increase layer
+influence in the dynamics. Similar to strengths in fully connected
+and ferromagnetic adapters.</p>
               </div>
             </td>
           </tr>
@@ -1032,6 +1058,24 @@ length <code>features</code>.</p>
             </td>
             <td>
                 <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>strength</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Scalar that multiplies all couplings at initialization to increase layer
+influence in the dynamics. Similar to strengths in fully connected
+and ferromagnetic adapters.</p>
+              </div>
+            </td>
+            <td>
+                  <code>1.0</code>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -1147,6 +1191,26 @@ length <code>features</code>.</p>
   </span>
 
 <a href="#darnax.modules.recurrent.RecurrentDiscrete.threshold" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.modules.recurrent.RecurrentDiscrete.strength" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">strength</span> <span class="o">=</span> <span class="n">strength_vec</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.modules.recurrent.RecurrentDiscrete.strength" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
