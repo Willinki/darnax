@@ -209,6 +209,7 @@ class DefaultList(MutableSequence[T | None], Generic[T]):
 
     @overload
     def __getitem__(self, idx: int, /) -> T | None: ...
+
     @overload
     def __getitem__(self, idx: slice, /) -> MutableSequence[T | None]: ...
 
@@ -239,6 +240,7 @@ class DefaultList(MutableSequence[T | None], Generic[T]):
 
     @overload
     def __setitem__(self, idx: int, value: T | None, /) -> None: ...
+
     @overload
     def __setitem__(self, idx: slice, value: Iterable[T | None], /) -> None: ...
 
@@ -268,6 +270,7 @@ class DefaultList(MutableSequence[T | None], Generic[T]):
 
     @overload
     def __delitem__(self, idx: int, /) -> None: ...
+
     @overload
     def __delitem__(self, idx: slice, /) -> None: ...
 

@@ -202,6 +202,7 @@ class LayerMap:
 
     @overload
     def __getitem__(self, i: int) -> Mapping[int, AbstractModule]: ...
+
     @overload
     def __getitem__(self, ij: tuple[int, int]) -> AbstractModule: ...
 
