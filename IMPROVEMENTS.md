@@ -27,3 +27,5 @@ equinox partition/combine.
 - [ ] Improve docs in perceptron rule update docs to clear meaning and clarify J x against J s in the paper
 
 - [ ] Add system to mask parameters for optax
+
+- [ ] Find a way to obtain activations for inspection

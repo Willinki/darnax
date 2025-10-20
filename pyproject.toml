@@ -8,7 +8,7 @@ license = { text = "GPLv3" }
 authors = [{ name="Davide Badalotti", email="davide.badalotti@outlook.it"}]
 
 dependencies = [
-  "equinox>=0.11.12,<0.13",   # requires jax >= 0.4.38
+  "equinox>=0.11.12,<0.13", # requires jax >= 0.4.38
   "numpy>=1.26",
 ]
 
