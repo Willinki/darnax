@@ -6,7 +6,7 @@
 
 **Deep Asymmetric Recurrent Networks in JAX.**
 
-darnax is a research library for building and experimenting with asymmetric recurrent neural networks and their learning dynamics. Inspired by [recent work](https://arxiv.org/html/2509.05041v1) on local plasticity and representational manifolds, 
+darnax is a research library for building and experimenting with asymmetric recurrent neural networks and their learning dynamics. Inspired by [recent work](https://arxiv.org/html/2509.05041v1) on local plasticity and representational manifolds,
 it offers a lightweight, composable toolkit for studying distributed, gradient-free learning in deep recurrent models.
 
 ---
@@ -56,5 +56,3 @@ If you use **darnax** in your research, please cite the following work:
   year={2025}
 }
 ```
-
-
