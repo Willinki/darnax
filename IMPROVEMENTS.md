@@ -22,6 +22,8 @@ equinox partition/combine.
 
 - [ ] Orchestrator should be generic type in both state and layermap
 
+- [ ] Orchestrator should not be named orchestrator
+
 - [ ] Add Trainer object to remove further boilerplate
 
 - [ ] Improve docs in perceptron rule update docs to clear meaning and clarify J x against J s in the paper
