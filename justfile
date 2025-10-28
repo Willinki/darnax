@@ -12,6 +12,16 @@ fmt:
 lint:
     ruff check .
 
+fix:
+    ruff format .
+    black .
+    ruff check . --fix
+
+fix-unsafe:
+    ruff format .
+    black .
+    ruff check . --fix --unsafe-fixes
+
 type:
     mypy src
 
