@@ -10,6 +10,7 @@ authors = [{ name="Davide Badalotti", email="davide.badalotti@outlook.it"}]
 dependencies = [
   "equinox>=0.11.12,<0.13", # requires jax >= 0.4.38
   "numpy>=1.26",
+  "optax>=0.2.3,<0.3",
 ]
 
 [project.optional-dependencies]
@@ -31,7 +32,7 @@ dev = ["pytest>=8","pytest-cov","ruff>=0.5","black>=24","mypy>=1.10",
        "types-setuptools","pytest-benchmark","nbmake","pre-commit","pip-audit"]
 docs = ["mkdocs","mkdocs-material","mkdocstrings[python]","mkdocs-autorefs",
         "mkdocs-section-index","mkdocs-literate-nav","jupytext","mkdocs-gen-files"]
-add-ons = ["optax==0.2.3","tqdm>=4.0","datasets>=4.1.1","pillow>=11.3.0","matplotlib>=3.10.6"]
+add-ons = ["tqdm>=4.0","datasets>=4.1.1","pillow>=11.3.0","matplotlib>=3.10.6"]
 
 [build-system]
 requires = ["setuptools>=68","wheel"]
@@ -56,6 +57,10 @@ python_version = "3.11"
 strict = true
 plugins = []
 exclude = ["bench/","tests/","docs/"]
+
+[[tool.mypy.overrides]]
+module = "optax.*"
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 addopts = "-q --cov=src --cov-report=term-missing"
