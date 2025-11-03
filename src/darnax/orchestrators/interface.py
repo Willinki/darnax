@@ -77,7 +77,13 @@ class AbstractOrchestrator(eqx.Module, Generic[StateT]):
     lmap: LayerMap
 
     @abstractmethod
-    def step(self, state: StateT, *, rng: jax.Array) -> tuple[StateT, KeyArray]:
+    def step(
+        self,
+        state: StateT,
+        rng: jax.Array,
+        *,
+        filter_messages: Literal["all", "forward", "backward"] = "all",
+    ) -> tuple[StateT, KeyArray]:
         """Run one forward/update step **without** touching the output buffer.
 
         Typical use is inside a recurrent loop to evolve hidden buffers while
@@ -90,6 +96,10 @@ class AbstractOrchestrator(eqx.Module, Generic[StateT]):
         rng : jax.Array
             PRNG key for any stochastic modules. Implementations should split
             the key internally.
+        filter_messages : Literal["all", "forward", "backward"]. Default: "all"
+            Only a subset of the messages are sent during the step. If forward,
+            only forward messages (lower-triangle and diagonal) are computed.
+            Same for backward. "All" computes all the messagesV
 
         Returns
         -------
@@ -106,7 +116,7 @@ class AbstractOrchestrator(eqx.Module, Generic[StateT]):
         pass
 
     @abstractmethod
-    def step_inference(self, state: StateT, *, rng: jax.Array) -> tuple[StateT, KeyArray]:
+    def step_inference(self, state: StateT, rng: jax.Array) -> tuple[StateT, KeyArray]:
         """Run a cheaper, inference-oriented step (output unchanged).
 
         This variant avoids computing messages that travel “to the right”
