@@ -233,6 +233,11 @@ class SequentialState(State):
         new_self: Self = eqx.tree_at(lambda m: m.states, self, new_states)
         return new_self
 
+    @property
+    def readout(self) -> Array:
+        """Return the readout state."""
+        return self[-1]
+
     @staticmethod
     def _to_shape_tuple(s: tuple[int, ...] | int) -> tuple[int, ...]:
         """Validate and convert a size spec to a shape tuple.

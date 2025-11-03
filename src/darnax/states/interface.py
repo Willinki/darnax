@@ -13,7 +13,7 @@ in place).
 
 """
 
-from abc import abstractmethod
+from abc import abstractmethod, abstractproperty
 from typing import Any, Self
 
 import equinox as eqx
@@ -96,6 +96,10 @@ class State(eqx.Module):
         object with the appropriate slots populated.
 
         """
+
+    @abstractproperty
+    def readout(self) -> Array:
+        """Return the readout state."""
 
     @abstractmethod
     def replace(self, value: PyTree) -> Self:
