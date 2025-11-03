@@ -74,6 +74,7 @@ nav:
       - tutorials/05_orchestrators.md
       - tutorials/06_simple_net_on_artificial_data.md
       - tutorials/07_optimized_training_on_mnist.md
+      - tutorials/08_trainer_on_mnist.md
   - Reference:
       - reference/README.md
       - API: reference/api/index.md
