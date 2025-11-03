@@ -88,8 +88,8 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
     def step(
         self,
         state: SequentialState,
-        *,
         rng: KeyArray,
+        *,
         filter_messages: Literal["all", "forward", "backward"] = "all",
     ) -> tuple[SequentialState, KeyArray]:
         """Run one forward/update sweep for all receivers **except output**.
@@ -132,7 +132,6 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
     def step_inference(
         self,
         state: SequentialState,
-        *,
         rng: KeyArray,
     ) -> tuple[SequentialState, KeyArray]:
         """Run a **forward-only** sweep (skip output and right-going edges).
