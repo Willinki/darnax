@@ -1,226 +1,266 @@
-"""Dynamical trainer implementing two-phase learning."""
-
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, TypedDict
+from collections.abc import Mapping
+from typing import Any, Generic, TypeVar
 
 import equinox as eqx
-import jax
+import jax.numpy as jnp
+from jax import Array
+from optax import GradientTransformation
 
-from darnax.orchestrators.sequential import SequentialOrchestrator
-from darnax.states.sequential import SequentialState
+from darnax.orchestrators.interface import AbstractOrchestrator
+from darnax.states.interface import State
 from darnax.trainers.interface import Trainer
+from darnax.trainers.utils import batch_accuracy, scan_n
+from darnax.utils.typing import PyTree
 
-if TYPE_CHECKING:
-    import optax
-    from jax import Array
-
-
-class DynamicalExtras(TypedDict):
-    """Mutable training state for DynamicalTrainer."""
-
-    optimizer: optax.GradientTransformation
-    opt_state: optax.OptState
+StateT = TypeVar("StateT", bound=State)
+OrchestratorT = TypeVar("OrchestratorT", bound=AbstractOrchestrator[Any])
+Ctx = dict[str, Any]
 
 
-class DynamicalParams(TypedDict):
-    """Immutable hyperparameters for DynamicalTrainer."""
+class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, StateT]):
+    """Minimal trainer that implements the learning rule described in the main paper.
 
-    t_train: int
-    t_eval: int
+    This trainer wires together an orchestrator and a per-batch `State`,
+    performing warmup/clamped/free dynamics for training. Warmup/free
+    for evaluation. It assumes a local learning rule implemented by the
+    orchestrator and an Optax optimizer for parameter updates.
 
+    More specifically:
+    - Warmup: Initial dynamical phase (1 or 2 iterations) with only left fields
+    - Clamped: Dynamical phase with both left and right fields
+    - Free: Final dynamical phase where only the left fields are used
 
-class DynamicalTrainer(
-    Trainer[SequentialState, SequentialOrchestrator, DynamicalExtras, DynamicalParams]
-):
-    """Trainer for two-phase dynamical learning.
+    During evaluation only warmup+free is performed.
 
-    Implements clamped + free dynamics with local plasticity.
+    Parameters
+    ----------
+    orchestrator : AbstractOrchestrator[StateT]
+        The model/orchestrator. Treated as read-only during eval by convention.
+    state : StateT
+        Mutable per-batch state pytree (buffers, EMA, etc.).
+    optimizer : GradientTransformation
+        Optax transform (e.g., `optax.adam(...)`).
+    optimizer_state : PyTree
+        Optax optimizer state (from `optimizer.init(params)`).
+    warmup_n_iter : int, default=1
+        Number of warmup iterations per batch.
+    train_clamped_n_iter : int, default=7
+        Number of clamped iterations per batch (train only).
+    train_free_n_iter : int, default=7
+        Number of free iterations per batch (train only).
+    eval_n_iter : int, default=14
+        Number of free iterations per batch (eval).
+
+    Attributes
+    ----------
+    orchestrator : OrchestratorT
+        The current orchestrator/model.
+    state : StateT
+        The current mutable state.
+    ctx : dict[str, Any]
+        A context dictionary with optimizer, optimizer state, and iteration counts.
+        Keys are:
+        - "optimizer" : GradientTransformation
+        - "optimizer_state" : PyTree
+        - "warmup_iter" : int
+        - "clamped_iter" : int
+        - "free_iter" : int
+        - "eval_iter" : int
+
     """
+
+    orchestrator: OrchestratorT
+    state: StateT
+    ctx: Ctx
 
     def __init__(
         self,
-        orchestrator: SequentialOrchestrator,
-        state: SequentialState,
-        optimizer: optax.GradientTransformation,
-        t_train: int,
-        t_eval: int,
-    ):
-        """Initialize dynamical trainer.
-
-        Parameters
-        ----------
-        orchestrator : SequentialOrchestrator
-            Network orchestrator with LayerMap topology
-        state : SequentialState
-            State with buffer sizes matching the network topology
-        optimizer : optax.GradientTransformation
-            Optax optimizer (e.g., optax.adam(2e-3))
-        t_train : int, optional
-            Dynamics steps for training
-        t_eval : int, optional
-            Dynamics steps for evaluation
-
-        """
+        orchestrator: OrchestratorT,
+        state: StateT,
+        optimizer: GradientTransformation,
+        optimizer_state: PyTree,
+        warmup_n_iter: int = 1,
+        train_clamped_n_iter: int = 7,
+        train_free_n_iter: int = 7,
+        eval_n_iter: int = 14,
+    ) -> None:
+        """Initialize dynamical trainer."""
+        super().__init__()
         self.orchestrator = orchestrator
         self.state = state
-
-        opt_state = optimizer.init(eqx.filter(orchestrator, eqx.is_inexact_array))
-        self.extras: DynamicalExtras = {"optimizer": optimizer, "opt_state": opt_state}
-        self.params: DynamicalParams = {"t_train": t_train, "t_eval": t_eval}
+        self.ctx = {
+            "optimizer": optimizer,
+            "optimizer_state": optimizer_state,
+            "warmup_iter": warmup_n_iter,
+            "clamped_iter": train_clamped_n_iter,
+            "free_iter": train_free_n_iter,
+            "eval_iter": eval_n_iter,
+        }
+        self.ctx = self.validate_ctx(self.ctx)
 
     @staticmethod
     def _train_step_impl(
         x: Array,
         y: Array,
         rng: Array,
-        orch: SequentialOrchestrator,
-        s: SequentialState,
-        extras: DynamicalExtras,
-        params: DynamicalParams,
-    ) -> tuple[Array, SequentialOrchestrator, SequentialState, DynamicalExtras]:
-        """JIT-compiled training step with two-phase dynamics.
+        orchestrator: OrchestratorT,
+        state: StateT,
+        ctx: dict[str, Any],
+    ) -> tuple[Array, OrchestratorT, StateT, Ctx]:
+        """Pure training core: warmup → clamped → free, then optimizer step.
 
         Parameters
         ----------
         x : Array
-            Input batch
+            Input batch.
         y : Array
-            Target labels
+            Target labels.
         rng : Array
-            Random key
-        orch : SequentialOrchestrator
-            Current orchestrator
-        s : SequentialState
-            Current state
-        extras : DynamicalExtras
-            Mutable training state (optimizer, opt_state)
-        params : DynamicalParams
-            Immutable hyperparameters (t_train, t_eval)
+            RNG key.
+        orchestrator : OrchestratorT
+            Current orchestrator/model.
+        state : StateT
+            Current per-batch state.
+        ctx : Mapping[str, Any]
+            Read-only context (optimizer, optimizer_state, iteration counts).
 
         Returns
         -------
         rng : Array
-            Updated random key
-        orch : SequentialOrchestrator
-            Updated orchestrator
-        s : SequentialState
-            Updated state
-        extras : DynamicalExtras
-            Updated extras (new opt_state)
+            Updated RNG key.
+        orchestrator : OrchestratorT
+            Updated orchestrator after parameter updates.
+        state : StateT
+            Updated state after rollouts.
+        ctx : dict[str, Any]
+            New context with updated `"optimizer_state"`; other keys unchanged.
+
+        Notes
+        -----
+        This function must be pure; no in-place mutation of `ctx` or object attributes.
 
         """
-        optimizer = extras["optimizer"]
-        opt_state = extras["opt_state"]
-        t_train = params["t_train"]
+        # 1) per-batch init
+        state = state.init(x, y)
 
-        # 1) Clamp inputs + labels into state
-        s = s.init(x, y)
+        # 2) rollout phases
+        (state, rng), _ = scan_n(
+            orchestrator.step, (state, rng), n_iter=ctx["warmup_iter"], filter_messages="forward"
+        )
+        (state, rng), _ = scan_n(
+            orchestrator.step, (state, rng), n_iter=ctx["clamped_iter"], filter_messages="all"
+        )
+        (state, rng), _ = scan_n(
+            orchestrator.step, (state, rng), n_iter=ctx["free_iter"], filter_messages="forward"
+        )
 
-        # 2) Clamped phase: run full dynamics with labels
-        def step_clamped(
-            carry: tuple[SequentialState, Array], _: None
-        ) -> tuple[tuple[SequentialState, Array], None]:
-            state, key = carry
-            state, key = orch.step(state, rng=key)
-            return (state, key), None
+        # 3) local/backprop deltas shaped like orchestrator
+        grads = orchestrator.backward(state, rng=rng)
 
-        t_train_1 = t_train // 2
-        (s, rng), _ = jax.lax.scan(step_clamped, (s, rng), xs=None, length=t_train_1)
-
-        # 3) Free phase: run inference dynamics (no labels)
-        def step_free(
-            carry: tuple[SequentialState, Array], _: None
-        ) -> tuple[tuple[SequentialState, Array], None]:
-            state, key = carry
-            state, key = orch.step_inference(state, rng=key)
-            return (state, key), None
-
-        t_train_2 = t_train - t_train_1
-        (s, rng), _ = jax.lax.scan(step_free, (s, rng), xs=None, length=t_train_2)
-
-        # 4) Compute local deltas + Optax update
-        rng, update_key = jax.random.split(rng)
-        grads = orch.backward(s, rng=update_key)
-
-        # Filter to get only trainable params and grads
-        filtered_orch = eqx.filter(orch, eqx.is_inexact_array)
+        # 4) filter trainable leaves
+        params = eqx.filter(orchestrator, eqx.is_inexact_array)
         grads = eqx.filter(grads, eqx.is_inexact_array)
 
-        # Apply optimizer update
-        updates, opt_state = optimizer.update(grads, opt_state, params=filtered_orch)
-        orch = eqx.apply_updates(orch, updates)
+        # 5) optimizer step (consistent key: "optimizer_state")
+        updates, new_opt_state = ctx["optimizer"].update(
+            grads, ctx["optimizer_state"], params=params
+        )
+        new_orch = eqx.apply_updates(orchestrator, updates)
 
-        # Update extras with new opt_state
-        extras = {"optimizer": optimizer, "opt_state": opt_state}
-
-        return rng, orch, s, extras
+        # 6) return a NEW ctx (pure)
+        new_ctx: Ctx = eqx.tree_at(lambda d: d["optimizer_state"], ctx, new_opt_state)
+        return rng, new_orch, state, new_ctx
 
     @staticmethod
     def _eval_step_impl(
         x: Array,
         y: Array,
         rng: Array,
-        orch: SequentialOrchestrator,
-        s: SequentialState,
-        extras: DynamicalExtras,
-        params: DynamicalParams,
-    ) -> tuple[Array, SequentialOrchestrator, SequentialState, DynamicalExtras, Array]:
-        """JIT-compiled evaluation step with inference dynamics.
+        orchestrator: OrchestratorT,
+        state: StateT,
+        ctx: dict[str, Any],
+    ) -> tuple[Array, StateT, Mapping[str, Array]]:
+        """Pure evaluation core: warmup → free, then predict and compute metrics.
 
         Parameters
         ----------
         x : Array
-            Input batch
+            Input batch.
         y : Array
-            Target labels
+            Target labels.
         rng : Array
-            Random key
-        orch : SequentialOrchestrator
-            Current orchestrator (read-only)
-        s : SequentialState
-            Current state
-        extras : DynamicalExtras
-            Evaluation extras (unused but maintained for signature)
-        params : DynamicalParams
-            Immutable hyperparameters (t_eval)
+            RNG key.
+        orchestrator : OrchestratorT
+            Current orchestrator/model (read-only by convention).
+        state : StateT
+            Current per-batch state.
+        ctx : Mapping[str, Any]
+            Read-only context with iteration counts.
 
         Returns
         -------
         rng : Array
-            Updated random key
-        orch : SequentialOrchestrator
-            Orchestrator (unchanged)
-        s : SequentialState
-            Updated state
-        extras : DynamicalExtras
-            Extras (unchanged)
-        accuracy : Array
-            Batch accuracy
+            Updated RNG key.
+        state : StateT
+            Updated state after rollouts and prediction.
+        metrics : Mapping[str, Array]
+            Dictionary of evaluation metrics, at least ``{"accuracy": scalar}``.
+
+        Notes
+        -----
+        This function should not modify static objects; only `state` is updated.
 
         """
-        t_eval = params["t_eval"]
+        # 1) per-batch init
+        state = state.init(x, y)
 
-        # 1) Clamp inputs only (no labels)
-        s = s.init(x, None)
+        # 2) warmup + free eval dynamics
+        (state, rng), _ = scan_n(
+            orchestrator.step, (state, rng), n_iter=ctx["warmup_iter"], filter_messages="forward"
+        )
+        (state, rng), _ = scan_n(
+            orchestrator.step, (state, rng), n_iter=ctx["eval_iter"], filter_messages="forward"
+        )
 
-        # 2) Run inference dynamics
-        def step_fn(
-            carry: tuple[SequentialState, Array], _: None
-        ) -> tuple[tuple[SequentialState, Array], None]:
-            state, key = carry
-            state, key = orch.step_inference(state, rng=key)
-            return (state, key), None
+        # 3) prediction
+        state, rng = orchestrator.predict(state, rng=rng)
+        y_pred = state.readout
 
-        (s, rng), _ = jax.lax.scan(step_fn, (s, rng), xs=None, length=t_eval)
+        # 4) metrics
+        accuracy = batch_accuracy(y_true=jnp.asarray(y), y_pred=jnp.asarray(y_pred))
+        return rng, state, {"accuracy": accuracy}
 
-        # 3) Extract predictions
-        s, rng = orch.predict(s, rng)
-        y_hat = s[-1]  # Output is last element
+    @staticmethod
+    def validate_ctx(ctx: Ctx) -> Ctx:
+        """Validate and normalize the context dictionary.
 
-        # 4) Compute accuracy
-        predictions = jax.numpy.argmax(y_hat, axis=-1)
-        targets = jax.numpy.argmax(y, axis=-1)
-        accuracy = jax.numpy.mean(predictions == targets)
+        Ensures required keys are present and returns a normalized copy.
 
-        return rng, orch, s, extras, accuracy
+        Parameters
+        ----------
+        ctx : dict[str, Any]
+            Context dictionary supplied at construction.
+
+        Returns
+        -------
+        dict[str, Any]
+            Normalized context dictionary.
+
+        Raises
+        ------
+        ValueError
+            If any required key is missing.
+
+        """
+        required_keys = [
+            "optimizer",
+            "optimizer_state",
+            "warmup_iter",
+            "clamped_iter",
+            "free_iter",
+            "eval_iter",
+        ]
+        for key in required_keys:
+            if key not in ctx:
+                raise ValueError(f"ctx missing required key '{key}'")
+        return dict(ctx)
