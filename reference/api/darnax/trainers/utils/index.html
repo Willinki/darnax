@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://willinki.github.io/darnax/reference/api/darnax/orchestrators/sequential/">
+        <link rel="canonical" href="https://willinki.github.io/darnax/reference/api/darnax/trainers/utils/">
       
       
       
@@ -20,7 +20,7 @@
     
     
       
-        <title>darnax.orchestrators.sequential - Darnax</title>
+        <title>darnax.trainers.utils - Darnax</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#darnaxorchestratorssequential" class="md-skip">
+        <a href="#darnaxtrainersutils" class="md-skip">
           Skip to content
         </a>
       
@@ -108,7 +108,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              darnax.orchestrators.sequential
+              darnax.trainers.utils
             
           </span>
         </div>
@@ -670,80 +670,29 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#darnax.orchestrators.sequential" class="md-nav__link">
+  <a href="#darnax.trainers.utils" class="md-nav__link">
     <span class="md-ellipsis">
-      sequential
+      utils
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#darnax.orchestrators.sequential.KeyArray" class="md-nav__link">
+  <a href="#darnax.trainers.utils.scan_n" class="md-nav__link">
     <span class="md-ellipsis">
-      KeyArray
+      scan_n
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator" class="md-nav__link">
+  <a href="#darnax.trainers.utils.batch_accuracy" class="md-nav__link">
     <span class="md-ellipsis">
-      SequentialOrchestrator
+      batch_accuracy
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="SequentialOrchestrator">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.lmap" class="md-nav__link">
-    <span class="md-ellipsis">
-      lmap
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.step" class="md-nav__link">
-    <span class="md-ellipsis">
-      step
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.step_inference" class="md-nav__link">
-    <span class="md-ellipsis">
-      step_inference
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.predict" class="md-nav__link">
-    <span class="md-ellipsis">
-      predict
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.backward" class="md-nav__link">
-    <span class="md-ellipsis">
-      backward
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -763,49 +712,16 @@
 
 
 
-<h1 id="darnaxorchestratorssequential">darnax.orchestrators.sequential<a class="headerlink" href="#darnaxorchestratorssequential" title="Permanent link">&para;</a></h1>
+<h1 id="darnaxtrainersutils">darnax.trainers.utils<a class="headerlink" href="#darnaxtrainersutils" title="Permanent link">&para;</a></h1>
 
 
 <div class="doc doc-object doc-module">
 
 
 
-<a id="darnax.orchestrators.sequential"></a>
+<a id="darnax.trainers.utils"></a>
     <div class="doc doc-contents first">
 
-        <p>Sequential orchestrator for layered networks.</p>
-<p>This module provides :class:<code>SequentialOrchestrator</code>, a concrete implementation
-of the orchestrator contract that traverses a :class:<code>~darnax.layer_maps.sparse.LayerMap</code>
-row-by-row (deterministic order), computes messages along edges, reduces them
-at each receiver, and updates a :class:<code>~darnax.states.sequential.SequentialState</code>.</p>
-
-
-<details class="overview" open>
-  <summary>Overview</summary>
-  <ul>
-<li>:meth:<code>step</code> updates <strong>all receivers except the output row</strong> (keeps <code>state[-1]</code> unchanged).</li>
-<li>:meth:<code>step_inference</code> is like :meth:<code>step</code> but <strong>skips right-going edges</strong>
-  (uses a forward-only schedule; cheaper partial refresh).</li>
-<li>:meth:<code>predict</code> computes the <strong>output buffer</strong> from current internal buffers.</li>
-<li>:meth:<code>backward</code> builds a <strong>LayerMap-shaped PyTree of parameter updates</strong> by
-  calling each module’s local rule. The method returns a new orchestrator whose
-  <code>lmap</code> contains <em>updates</em> (not new parameters), so it can be fed directly
-  to Optax’s <code>apply_updates</code>.</li>
-</ul>
-</details>
-
-<details class="rng-handling" open>
-  <summary>RNG handling</summary>
-  <p>All public methods accept an RNG key and return a <strong>new</strong> key. Internally,
-keys are split <strong>per receiver</strong> and <strong>per sender</strong> to keep randomness
-reproducible and side-effect free.</p>
-</details>
-
-<details class="see-also" open>
-  <summary>See Also</summary>
-  <p>tutorials/05_orchestrators.md
-tutorials/06_simple_net_on_artificial_data.md</p>
-</details>
 
 
 
@@ -823,251 +739,192 @@ tutorials/06_simple_net_on_artificial_data.md</p>
 
 
 
-<div class="doc doc-object doc-attribute">
 
 
 
-<h2 id="darnax.orchestrators.sequential.KeyArray" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">KeyArray</span> <span class="o">=</span> <span class="n">Array</span></code>
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
-  </span>
-
-<a href="#darnax.orchestrators.sequential.KeyArray" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc doc-object doc-function">
 
 
-    <div class="doc doc-contents ">
+<h2 id="darnax.trainers.utils.scan_n" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">scan_n</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">init</span><span class="p">,</span> <span class="n">n_iter</span><span class="p">,</span> <span class="o">*</span><span class="n">f_args</span><span class="p">,</span> <span class="o">**</span><span class="n">f_kwargs</span><span class="p">)</span></code>
 
-    </div>
-
-</div>
-
-
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="darnax.orchestrators.sequential.SequentialOrchestrator" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">SequentialOrchestrator</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span></code>
-
-<a href="#darnax.orchestrators.sequential.SequentialOrchestrator" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#darnax.trainers.utils.scan_n" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
     <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="AbstractOrchestrator (darnax.orchestrators.interface.AbstractOrchestrator)" href="../interface/#darnax.orchestrators.interface.AbstractOrchestrator">AbstractOrchestrator</a>[<a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="../../states/sequential/#darnax.states.sequential.SequentialState">SequentialState</a>]</code></p>
+
+        <p>Run a step function for <code>n_iter</code> iterations using <code>jax.lax.scan</code>.</p>
+<p>The step function is called as <code>f(carry, *f_args, **f_kwargs)</code> each
+iteration. Its per-step outputs (the second return value) are stacked
+along a new leading time dimension by <code>lax.scan</code> and returned.</p>
 
 
-        <p>Sequential message-passing orchestrator.</p>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>f</code>
+            </td>
+            <td>
+                  <code><span title="callable">callable</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Step function with signature
+<code>f(carry, *f_args, **f_kwargs) -&gt; (new_carry, out)</code>.
+<code>carry</code> and <code>out</code> can be any pytrees of JAX arrays
+(e.g., tuples like <code>(rng, state)</code>, dictionaries, dataclasses).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>init</code>
+            </td>
+            <td>
+                  <code><span title="pytree">pytree</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Initial carry (pytree of arrays).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>n_iter</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of iterations to run.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>*f_args</code>
+            </td>
+            <td>
+                  <code><span title="typing.Any">Any</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Positional arguments forwarded to <code>f</code> on every step.</p>
+              </div>
+            </td>
+            <td>
+                  <code>()</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>**f_kwargs</code>
+            </td>
+            <td>
+                  <code><span title="typing.Any">Any</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Keyword arguments forwarded to <code>f</code> on every step.</p>
+              </div>
+            </td>
+            <td>
+                  <code>{}</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
-<details class="assumptions" open>
-  <summary>Assumptions</summary>
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>carry</code></td>            <td>
+                  <code><span title="pytree">pytree</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Final carry after <code>n_iter</code> steps (e.g., final <code>(rng, state)</code>).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+<td><code>outputs</code></td>            <td>
+                  <code><span title="pytree">pytree</span> or None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Time-stacked outputs from each step (leading dimension = <code>n_iter</code>).
+If <code>f</code> returns <code>None</code> as the output, this will be <code>None</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
   <ul>
-<li><code>lmap</code> has <strong>static structure</strong> (sorted integer keys); values are Equinox
-  modules that are PyTrees (parameters visible to JAX/Optax).</li>
-<li>For each receiver <code>i</code>, the diagonal module <code>lmap[i, i]</code> implements
-  <code>reduce(pytree_of_messages)</code> and <code>activation(Array) -&gt; Array</code>.</li>
-<li>Each edge module <code>lmap[i, j]</code> is callable as <code>module(x, rng=...) -&gt; Array</code>
-  and exposes <code>backward(x, y, y_hat) -&gt; AbstractModule</code> (same PyTree type).</li>
+<li>Implemented as <code>lax.scan(body, init, xs=None, length=n_iter)</code>.</li>
+<li>Non-array values in <code>f_args</code>/<code>f_kwargs</code> are treated as <strong>static</strong>;
+  changing their identity will retrace/JIT-recompile. Values that vary
+  should be JAX arrays.</li>
+<li><code>carry</code> may be any pytree, including tuples like <code>(rng, state)</code>.</li>
 </ul>
 </details>
 
-<details class="note" open>
-  <summary>Notes</summary>
-  <p>This orchestrator is <strong>pure</strong>: given a state and RNG, it returns a new state
-and a new RNG key. All scheduling choices (row order, forward-only mode) are
-explicit and deterministic.</p>
-</details>
-        <p>Initialize the orchestrator from a layermap.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>layers</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="LayerMap(_data, _rows, _ndim=2)
-
-  
-      dataclass
-   (darnax.layer_maps.sparse.LayerMap)" href="../../layer_maps/sparse/#darnax.layer_maps.sparse.LayerMap">LayerMap</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Static adjacency (rows/cols) with Equinox modules as values.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="darnax.orchestrators.sequential.SequentialOrchestrator.lmap" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">lmap</span> <span class="o">=</span> <span class="n">layers</span></code>
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
-  </span>
-
-<a href="#darnax.orchestrators.sequential.SequentialOrchestrator.lmap" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-
-    </div>
-
-</div>
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="darnax.orchestrators.sequential.SequentialOrchestrator.step" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">step</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">filter_messages</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">)</span></code>
-
-<a href="#darnax.orchestrators.sequential.SequentialOrchestrator.step" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Run one forward/update sweep for all receivers <strong>except output</strong>.</p>
-<p>For each receiver row <code>i</code> (excluding the last), the orchestrator:
-(1) computes messages from all neighbors <code>j</code> in <code>lmap[i]</code>,
-(2) reduces them via <code>lmap[i, i].reduce(messages)</code>,
-(3) applies <code>lmap[i, i].activation(...)</code>,
-(4) writes the result into <code>state[i]</code>.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>state</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="../../states/sequential/#darnax.states.sequential.SequentialState">SequentialState</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Current global state.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>rng</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="KeyArray = Array
-
-  
-      module-attribute
-   (darnax.orchestrators.sequential.KeyArray)" href="#darnax.orchestrators.sequential.KeyArray">KeyArray</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>PRNG key (split per receiver/sender).</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>filter_messages</code>
-            </td>
-            <td>
-                  <code>Literal[&#34;all&#34;, &#34;forward&#34;, &#34;backward&#34;]. Default: &#34;all&#34;</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Only a subset of the messages are sent during the step. If forward,
-only forward messages (lower-triangle and diagonal) are computed.
-Same for backward. "All" computes all the messagesV</p>
-              </div>
-            </td>
-            <td>
-                  <code>&#39;all&#39;</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code>(new_state, new_rng) : tuple[SequentialState, KeyArray]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Updated state (output unchanged) and an advanced RNG key.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
+<p><span class="doc-section-title">Examples:</span></p>
+    <p>Carry as <code>(rng, state)</code> where both are pytrees:</p>
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">random</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="c1"># toy &quot;state&quot; as a dict; in your code this is your State object/pytree</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="n">carry</span><span class="p">,</span> <span class="n">lr</span><span class="p">):</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="gp">... </span>    <span class="n">rng</span><span class="p">,</span> <span class="n">state</span> <span class="o">=</span> <span class="n">carry</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="gp">... </span>    <span class="n">rng</span><span class="p">,</span> <span class="n">sub</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="gp">... </span>    <span class="c1"># pretend &quot;state[&#39;w&#39;]&quot; is a parameter; do a dummy update</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="gp">... </span>    <span class="n">grad</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>         <span class="c1"># fake gradient</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="gp">... </span>    <span class="n">new_w</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;w&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">lr</span> <span class="o">*</span> <span class="n">grad</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="gp">... </span>    <span class="n">new_state</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;w&quot;</span><span class="p">:</span> <span class="n">new_w</span><span class="p">}</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="gp">... </span>    <span class="n">loss</span> <span class="o">=</span> <span class="n">new_w</span> <span class="o">**</span> <span class="mi">2</span>             <span class="c1"># fake loss to log</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="gp">... </span>    <span class="k">return</span> <span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="n">new_state</span><span class="p">),</span> <span class="n">loss</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="gp">...</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">init_rng</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">init_state</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;w&quot;</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">3.0</span><span class="p">)}</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">final_rng</span><span class="p">,</span> <span class="n">final_state</span><span class="p">),</span> <span class="n">losses</span> <span class="o">=</span> <span class="n">scan_n</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="p">(</span><span class="n">init_rng</span><span class="p">,</span> <span class="n">init_state</span><span class="p">),</span> <span class="n">n_iter</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">0.1</span><span class="p">))</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">final_state</span><span class="p">[</span><span class="s2">&quot;w&quot;</span><span class="p">]</span>  <span class="c1"># moved 5 steps of size 0.1 from 3.0</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="go">Array(2.5, dtype=float32)</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">losses</span><span class="o">.</span><span class="n">shape</span>  <span class="c1"># collected per-step outputs</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="go">(5,)</span>
+</code></pre></div>
 
 
     </div>
@@ -1077,342 +934,20 @@ Same for backward. "All" computes all the messagesV</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="darnax.orchestrators.sequential.SequentialOrchestrator.step_inference" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">step_inference</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span></code>
+<h2 id="darnax.trainers.utils.batch_accuracy" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">batch_accuracy</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">)</span></code>
 
-<a href="#darnax.orchestrators.sequential.SequentialOrchestrator.step_inference" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Run a <strong>forward-only</strong> sweep (skip output and right-going edges).</p>
-<p>Like :meth:<code>step</code>, but calls <code>row_items(skip_last=True, forward_only=True)</code>,
-which filters neighbor edges to a forward schedule (commonly <code>j &lt;= i</code>).</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>state</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="../../states/sequential/#darnax.states.sequential.SequentialState">SequentialState</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Current global state.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>rng</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="KeyArray = Array
-
-  
-      module-attribute
-   (darnax.orchestrators.sequential.KeyArray)" href="#darnax.orchestrators.sequential.KeyArray">KeyArray</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>PRNG key (split per receiver/sender).</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code>(new_state, new_rng) : tuple[SequentialState, KeyArray]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Updated state (output unchanged) and an advanced RNG key.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="darnax.orchestrators.sequential.SequentialOrchestrator.predict" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">predict</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span></code>
-
-<a href="#darnax.orchestrators.sequential.SequentialOrchestrator.predict" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.trainers.utils.batch_accuracy" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
     <div class="doc doc-contents ">
 
-        <p>Compute/refresh the <strong>output</strong> buffer <code>state[-1]</code> from current buffers.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>state</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="../../states/sequential/#darnax.states.sequential.SequentialState">SequentialState</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Current global state (uses existing upstream buffers).</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>rng</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="KeyArray = Array
-
-  
-      module-attribute
-   (darnax.orchestrators.sequential.KeyArray)" href="#darnax.orchestrators.sequential.KeyArray">KeyArray</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>PRNG key (split internally).</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code>(new_state, new_rng) : tuple[SequentialState, KeyArray]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>A state where the output buffer has been updated, and a fresh RNG key.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
+        <p>Compute accuracy with ±1 OVA labels (class = argmax along last dim).</p>
 
 
     </div>
 
 </div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="darnax.orchestrators.sequential.SequentialOrchestrator.backward" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">backward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">filter_messages</span><span class="o">=</span><span class="s1">&#39;forward&#39;</span><span class="p">,</span> <span class="n">target_state</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
-
-<a href="#darnax.orchestrators.sequential.SequentialOrchestrator.backward" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Compute per-edge parameter updates and return them as an orchestrator.</p>
-<p>Two-phase algorithm:</p>
-<p>1) <strong>Activation pass.</strong> For each receiver <code>i</code> (including the output),
-   compute messages <code>msg[j] = lmap[i, j](state[j], rng=...)</code> from
-   all neighbors, then compute the receiver’s aggregate <strong>using forward
-   messages only</strong> (e.g., <code>j &lt;= i</code>) and store it under <code>msg[i]</code>.
-2) <strong>Local rules.</strong> For every edge <code>(i, j)</code>, call
-   <code>lmap[i, j].backward(x=state[j], y=state[i], y_hat=msg[j])</code> and
-   assemble the results into a new LayerMap with the <strong>same key layout</strong>.</p>
-<p>The method returns <code>type(self)(layers=updates)</code> where <code>updates</code> is
-the LayerMap of per-edge updates. This allows <code>optax.apply_updates</code> to
-be used directly with the returned PyTree.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>state</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="../../states/sequential/#darnax.states.sequential.SequentialState">SequentialState</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Current global state (provides inputs and targets for local rules).</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>rng</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="KeyArray = Array
-
-  
-      module-attribute
-   (darnax.orchestrators.sequential.KeyArray)" href="#darnax.orchestrators.sequential.KeyArray">KeyArray</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>PRNG key (split per receiver/sender).</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>filter_messages</code>
-            </td>
-            <td>
-                  <code><span title="typing.Literal">Literal</span>[&#39;all&#39;, &#39;forward&#39;, &#39;backward&#39;]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Optionally, it is possible to decide to compute the local fields (the messages)
-based on a different subset of the messages. Forward corresponds to the default
-behaviour, where only forward messages contribute to the messages.</p>
-              </div>
-            </td>
-            <td>
-                  <code>&#39;forward&#39;</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>target_state</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="../../states/sequential/#darnax.states.sequential.SequentialState">SequentialState</a> | None</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Optionally, it is possible to mix states in the backward update rule. By
-default, other_state is equal to state unless explicitely requested.</p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="typing.Self">Self</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>An orchestrator whose <code>lmap</code> contains <strong>updates</strong> (not new params),
-mirroring the original layermap structure.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-<details class="note" open>
-  <summary>Notes</summary>
-  <p>The receiver aggregate used for learning is computed with <strong>forward-only</strong>
-messages (no right-going edges), matching the schedule used in inference.</p>
-</details>
-
-    </div>
-
-</div>
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
 
 
 

@@ -1022,7 +1022,7 @@ static for JIT stability.</p>
 
 
 <h3 id="darnax.orchestrators.interface.AbstractOrchestrator.step" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">step</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">step</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">filter_messages</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
@@ -1086,6 +1086,24 @@ the key internally.</p>
                 <em>required</em>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>filter_messages</code>
+            </td>
+            <td>
+                  <code>Literal[&#34;all&#34;, &#34;forward&#34;, &#34;backward&#34;]. Default: &#34;all&#34;</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Only a subset of the messages are sent during the step. If forward,
+only forward messages (lower-triangle and diagonal) are computed.
+Same for backward. "All" computes all the messagesV</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;all&#39;</code>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -1130,7 +1148,7 @@ the key internally.</p>
 
 
 <h3 id="darnax.orchestrators.interface.AbstractOrchestrator.step_inference" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">step_inference</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">step_inference</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>

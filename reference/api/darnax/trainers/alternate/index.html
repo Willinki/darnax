@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://willinki.github.io/darnax/reference/api/darnax/orchestrators/sequential/">
+        <link rel="canonical" href="https://willinki.github.io/darnax/reference/api/darnax/trainers/alternate/">
       
       
       
@@ -20,7 +20,7 @@
     
     
       
-        <title>darnax.orchestrators.sequential - Darnax</title>
+        <title>darnax.trainers.alternate - Darnax</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#darnaxorchestratorssequential" class="md-skip">
+        <a href="#darnaxtrainersalternate" class="md-skip">
           Skip to content
         </a>
       
@@ -108,7 +108,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              darnax.orchestrators.sequential
+              darnax.trainers.alternate
             
           </span>
         </div>
@@ -670,73 +670,82 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#darnax.orchestrators.sequential" class="md-nav__link">
+  <a href="#darnax.trainers.alternate" class="md-nav__link">
     <span class="md-ellipsis">
-      sequential
+      alternate
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#darnax.orchestrators.sequential.KeyArray" class="md-nav__link">
+  <a href="#darnax.trainers.alternate.StateT" class="md-nav__link">
     <span class="md-ellipsis">
-      KeyArray
+      StateT
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator" class="md-nav__link">
+  <a href="#darnax.trainers.alternate.OrchestratorT" class="md-nav__link">
     <span class="md-ellipsis">
-      SequentialOrchestrator
+      OrchestratorT
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="SequentialOrchestrator">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#darnax.trainers.alternate.Ctx" class="md-nav__link">
+    <span class="md-ellipsis">
+      Ctx
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#darnax.trainers.alternate.AltTrainer" class="md-nav__link">
+    <span class="md-ellipsis">
+      AltTrainer
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="AltTrainer">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.lmap" class="md-nav__link">
+  <a href="#darnax.trainers.alternate.AltTrainer.orchestrator" class="md-nav__link">
     <span class="md-ellipsis">
-      lmap
+      orchestrator
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.step" class="md-nav__link">
+  <a href="#darnax.trainers.alternate.AltTrainer.state" class="md-nav__link">
     <span class="md-ellipsis">
-      step
+      state
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.step_inference" class="md-nav__link">
+  <a href="#darnax.trainers.alternate.AltTrainer.ctx" class="md-nav__link">
     <span class="md-ellipsis">
-      step_inference
+      ctx
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.predict" class="md-nav__link">
+  <a href="#darnax.trainers.alternate.AltTrainer.validate_ctx" class="md-nav__link">
     <span class="md-ellipsis">
-      predict
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#darnax.orchestrators.sequential.SequentialOrchestrator.backward" class="md-nav__link">
-    <span class="md-ellipsis">
-      backward
+      validate_ctx
     </span>
   </a>
   
@@ -763,49 +772,16 @@
 
 
 
-<h1 id="darnaxorchestratorssequential">darnax.orchestrators.sequential<a class="headerlink" href="#darnaxorchestratorssequential" title="Permanent link">&para;</a></h1>
+<h1 id="darnaxtrainersalternate">darnax.trainers.alternate<a class="headerlink" href="#darnaxtrainersalternate" title="Permanent link">&para;</a></h1>
 
 
 <div class="doc doc-object doc-module">
 
 
 
-<a id="darnax.orchestrators.sequential"></a>
+<a id="darnax.trainers.alternate"></a>
     <div class="doc doc-contents first">
 
-        <p>Sequential orchestrator for layered networks.</p>
-<p>This module provides :class:<code>SequentialOrchestrator</code>, a concrete implementation
-of the orchestrator contract that traverses a :class:<code>~darnax.layer_maps.sparse.LayerMap</code>
-row-by-row (deterministic order), computes messages along edges, reduces them
-at each receiver, and updates a :class:<code>~darnax.states.sequential.SequentialState</code>.</p>
-
-
-<details class="overview" open>
-  <summary>Overview</summary>
-  <ul>
-<li>:meth:<code>step</code> updates <strong>all receivers except the output row</strong> (keeps <code>state[-1]</code> unchanged).</li>
-<li>:meth:<code>step_inference</code> is like :meth:<code>step</code> but <strong>skips right-going edges</strong>
-  (uses a forward-only schedule; cheaper partial refresh).</li>
-<li>:meth:<code>predict</code> computes the <strong>output buffer</strong> from current internal buffers.</li>
-<li>:meth:<code>backward</code> builds a <strong>LayerMap-shaped PyTree of parameter updates</strong> by
-  calling each module’s local rule. The method returns a new orchestrator whose
-  <code>lmap</code> contains <em>updates</em> (not new parameters), so it can be fed directly
-  to Optax’s <code>apply_updates</code>.</li>
-</ul>
-</details>
-
-<details class="rng-handling" open>
-  <summary>RNG handling</summary>
-  <p>All public methods accept an RNG key and return a <strong>new</strong> key. Internally,
-keys are split <strong>per receiver</strong> and <strong>per sender</strong> to keep randomness
-reproducible and side-effect free.</p>
-</details>
-
-<details class="see-also" open>
-  <summary>See Also</summary>
-  <p>tutorials/05_orchestrators.md
-tutorials/06_simple_net_on_artificial_data.md</p>
-</details>
 
 
 
@@ -827,14 +803,54 @@ tutorials/06_simple_net_on_artificial_data.md</p>
 
 
 
-<h2 id="darnax.orchestrators.sequential.KeyArray" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">KeyArray</span> <span class="o">=</span> <span class="n">Array</span></code>
+<h2 id="darnax.trainers.alternate.StateT" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">StateT</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;StateT&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">State</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
-<a href="#darnax.orchestrators.sequential.KeyArray" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#darnax.trainers.alternate.StateT" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="darnax.trainers.alternate.OrchestratorT" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">OrchestratorT</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;OrchestratorT&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="p">(</span><span class="n">AbstractOrchestrator</span><span class="p">[</span><span class="n">Any</span><span class="p">]))</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#darnax.trainers.alternate.OrchestratorT" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="darnax.trainers.alternate.Ctx" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">Ctx</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#darnax.trainers.alternate.Ctx" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
     <div class="doc doc-contents ">
@@ -849,39 +865,43 @@ tutorials/06_simple_net_on_artificial_data.md</p>
 
 
 
-<h2 id="darnax.orchestrators.sequential.SequentialOrchestrator" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">SequentialOrchestrator</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span></code>
+<h2 id="darnax.trainers.alternate.AltTrainer" class="doc doc-heading">
+              <code class="highlight language-python"><span class="n">AltTrainer</span><span class="p">(</span><span class="n">orchestrator</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">optimizer_state</span><span class="p">,</span> <span class="n">train_clamped_n_iter</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">train_free_n_iter</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">eval_n_iter</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span></code>
 
-<a href="#darnax.orchestrators.sequential.SequentialOrchestrator" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#darnax.trainers.alternate.AltTrainer" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="AbstractOrchestrator (darnax.orchestrators.interface.AbstractOrchestrator)" href="../interface/#darnax.orchestrators.interface.AbstractOrchestrator">AbstractOrchestrator</a>[<a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="../../states/sequential/#darnax.states.sequential.SequentialState">SequentialState</a>]</code></p>
+              Bases: <code><a class="autorefs autorefs-internal" title="Trainer() (darnax.trainers.interface.Trainer)" href="../interface/#darnax.trainers.interface.Trainer">Trainer</a>[<a class="autorefs autorefs-internal" title="OrchestratorT = TypeVar('OrchestratorT', bound=(AbstractOrchestrator[Any]))
+
+  
+      module-attribute
+   (darnax.trainers.alternate.OrchestratorT)" href="#darnax.trainers.alternate.OrchestratorT">OrchestratorT</a>, <a class="autorefs autorefs-internal" title="StateT = TypeVar('StateT', bound=State)
+
+  
+      module-attribute
+   (darnax.trainers.alternate.StateT)" href="#darnax.trainers.alternate.StateT">StateT</a>]</code>, <code><span title="typing.Generic">Generic</span>[<a class="autorefs autorefs-internal" title="OrchestratorT = TypeVar('OrchestratorT', bound=(AbstractOrchestrator[Any]))
+
+  
+      module-attribute
+   (darnax.trainers.alternate.OrchestratorT)" href="#darnax.trainers.alternate.OrchestratorT">OrchestratorT</a>, <a class="autorefs autorefs-internal" title="StateT = TypeVar('StateT', bound=State)
+
+  
+      module-attribute
+   (darnax.trainers.alternate.StateT)" href="#darnax.trainers.alternate.StateT">StateT</a>]</code></p>
 
 
-        <p>Sequential message-passing orchestrator.</p>
-
-
-<details class="assumptions" open>
-  <summary>Assumptions</summary>
-  <ul>
-<li><code>lmap</code> has <strong>static structure</strong> (sorted integer keys); values are Equinox
-  modules that are PyTrees (parameters visible to JAX/Optax).</li>
-<li>For each receiver <code>i</code>, the diagonal module <code>lmap[i, i]</code> implements
-  <code>reduce(pytree_of_messages)</code> and <code>activation(Array) -&gt; Array</code>.</li>
-<li>Each edge module <code>lmap[i, j]</code> is callable as <code>module(x, rng=...) -&gt; Array</code>
-  and exposes <code>backward(x, y, y_hat) -&gt; AbstractModule</code> (same PyTree type).</li>
-</ul>
-</details>
-
-<details class="note" open>
-  <summary>Notes</summary>
-  <p>This orchestrator is <strong>pure</strong>: given a state and RNG, it returns a new state
-and a new RNG key. All scheduling choices (row order, forward-only mode) are
-explicit and deterministic.</p>
-</details>
-        <p>Initialize the orchestrator from a layermap.</p>
+        <p>Minimal trainer that implements an alternated dynamical rule.</p>
+<p>This trainer wires together an orchestrator and a per-batch <code>State</code>,
+performing free/clamped dynamics. Only free
+for evaluation. It assumes a local learning rule implemented by the
+orchestrator and an Optax optimizer for parameter updates.</p>
+<p>More specifically:
+- Warmup: Initial dynamical phase (1 or 2 iterations) with only left fields
+- Clamped: Dynamical phase with both left and right fields
+- Free: Final dynamical phase where only the left fields are used</p>
+<p>During evaluation only free is performed.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -897,26 +917,221 @@ explicit and deterministic.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>layers</code>
+                <code>orchestrator</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="LayerMap(_data, _rows, _ndim=2)
+                  <code><a class="autorefs autorefs-internal" title="AbstractOrchestrator (darnax.orchestrators.interface.AbstractOrchestrator)" href="../../orchestrators/interface/#darnax.orchestrators.interface.AbstractOrchestrator">AbstractOrchestrator</a>[<a class="autorefs autorefs-internal" title="StateT = TypeVar('StateT', bound=State)
 
   
-      dataclass
-   (darnax.layer_maps.sparse.LayerMap)" href="../../layer_maps/sparse/#darnax.layer_maps.sparse.LayerMap">LayerMap</a></code>
+      module-attribute
+   (darnax.trainers.alternate.StateT)" href="#darnax.trainers.alternate.StateT">StateT</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Static adjacency (rows/cols) with Equinox modules as values.</p>
+                <p>The model/orchestrator. Treated as read-only during eval by convention.</p>
               </div>
             </td>
             <td>
                 <em>required</em>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>state</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="StateT = TypeVar('StateT', bound=State)
+
+  
+      module-attribute
+   (darnax.trainers.alternate.StateT)" href="#darnax.trainers.alternate.StateT">StateT</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Mutable per-batch state pytree (buffers, EMA, etc.).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>optimizer</code>
+            </td>
+            <td>
+                  <code><span title="optax.GradientTransformation">GradientTransformation</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optax transform (e.g., <code>optax.adam(...)</code>).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>optimizer_state</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="PyTree = Any
+
+  
+      module-attribute
+   (darnax.utils.typing.PyTree)" href="../../utils/typing/#darnax.utils.typing.PyTree">PyTree</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optax optimizer state (from <code>optimizer.init(params)</code>).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>warmup_n_iter</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of warmup iterations per batch.</p>
+              </div>
+            </td>
+            <td>
+                  <code>1</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>train_clamped_n_iter</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of clamped iterations per batch (train only).</p>
+              </div>
+            </td>
+            <td>
+                  <code>7</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>train_free_n_iter</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of free iterations per batch (train only).</p>
+              </div>
+            </td>
+            <td>
+                  <code>7</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>eval_n_iter</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of free iterations per batch (eval).</p>
+              </div>
+            </td>
+            <td>
+                  <code>14</code>
+            </td>
+          </tr>
       </tbody>
     </table>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="orchestrator = orchestrator
+
+  
+      instance-attribute
+   (darnax.trainers.alternate.AltTrainer.orchestrator)" href="#darnax.trainers.alternate.AltTrainer.orchestrator">orchestrator</a></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="OrchestratorT = TypeVar('OrchestratorT', bound=(AbstractOrchestrator[Any]))
+
+  
+      module-attribute
+   (darnax.trainers.alternate.OrchestratorT)" href="#darnax.trainers.alternate.OrchestratorT">OrchestratorT</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The current orchestrator/model.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="state = state
+
+  
+      instance-attribute
+   (darnax.trainers.alternate.AltTrainer.state)" href="#darnax.trainers.alternate.AltTrainer.state">state</a></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="StateT = TypeVar('StateT', bound=State)
+
+  
+      module-attribute
+   (darnax.trainers.alternate.StateT)" href="#darnax.trainers.alternate.StateT">StateT</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The current mutable state.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="ctx = self.validate_ctx(self.ctx)
+
+  
+      instance-attribute
+   (darnax.trainers.alternate.AltTrainer.ctx)" href="#darnax.trainers.alternate.AltTrainer.ctx">ctx</a></code></td>
+            <td>
+                  <code><span title="dict">dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A context dictionary with optimizer, optimizer state, and iteration counts.
+Keys are:
+- "optimizer" : GradientTransformation
+- "optimizer_state" : PyTree
+- "clamped_iter" : int
+- "free_iter" : int
+- "eval_iter" : int</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+        <p>Initialize dynamical trainer.</p>
 
 
 
@@ -940,14 +1155,54 @@ explicit and deterministic.</p>
 
 
 
-<h3 id="darnax.orchestrators.sequential.SequentialOrchestrator.lmap" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">lmap</span> <span class="o">=</span> <span class="n">layers</span></code>
+<h3 id="darnax.trainers.alternate.AltTrainer.orchestrator" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">orchestrator</span> <span class="o">=</span> <span class="n">orchestrator</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
-<a href="#darnax.orchestrators.sequential.SequentialOrchestrator.lmap" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.trainers.alternate.AltTrainer.orchestrator" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.trainers.alternate.AltTrainer.state" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">state</span> <span class="o">=</span> <span class="n">state</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.trainers.alternate.AltTrainer.state" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.trainers.alternate.AltTrainer.ctx" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">ctx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_ctx</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.trainers.alternate.AltTrainer.ctx" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -962,20 +1217,20 @@ explicit and deterministic.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="darnax.orchestrators.sequential.SequentialOrchestrator.step" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">step</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">filter_messages</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">)</span></code>
+<h3 id="darnax.trainers.alternate.AltTrainer.validate_ctx" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">validate_ctx</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span></code>
 
-<a href="#darnax.orchestrators.sequential.SequentialOrchestrator.step" class="headerlink" title="Permanent link">&para;</a></h3>
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+  </span>
+
+<a href="#darnax.trainers.alternate.AltTrainer.validate_ctx" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
 
-        <p>Run one forward/update sweep for all receivers <strong>except output</strong>.</p>
-<p>For each receiver row <code>i</code> (excluding the last), the orchestrator:
-(1) computes messages from all neighbors <code>j</code> in <code>lmap[i]</code>,
-(2) reduces them via <code>lmap[i, i].reduce(messages)</code>,
-(3) applies <code>lmap[i, i].activation(...)</code>,
-(4) writes the result into <code>state[i]</code>.</p>
+        <p>Validate and normalize the context dictionary.</p>
+<p>Ensures required keys are present and returns a normalized copy.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -991,146 +1246,14 @@ explicit and deterministic.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>state</code>
+                <code>ctx</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="../../states/sequential/#darnax.states.sequential.SequentialState">SequentialState</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Current global state.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>rng</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="KeyArray = Array
-
-  
-      module-attribute
-   (darnax.orchestrators.sequential.KeyArray)" href="#darnax.orchestrators.sequential.KeyArray">KeyArray</a></code>
+                  <code><span title="dict">dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>PRNG key (split per receiver/sender).</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>filter_messages</code>
-            </td>
-            <td>
-                  <code>Literal[&#34;all&#34;, &#34;forward&#34;, &#34;backward&#34;]. Default: &#34;all&#34;</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Only a subset of the messages are sent during the step. If forward,
-only forward messages (lower-triangle and diagonal) are computed.
-Same for backward. "All" computes all the messagesV</p>
-              </div>
-            </td>
-            <td>
-                  <code>&#39;all&#39;</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code>(new_state, new_rng) : tuple[SequentialState, KeyArray]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Updated state (output unchanged) and an advanced RNG key.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="darnax.orchestrators.sequential.SequentialOrchestrator.step_inference" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">step_inference</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span></code>
-
-<a href="#darnax.orchestrators.sequential.SequentialOrchestrator.step_inference" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Run a <strong>forward-only</strong> sweep (skip output and right-going edges).</p>
-<p>Like :meth:<code>step</code>, but calls <code>row_items(skip_last=True, forward_only=True)</code>,
-which filters neighbor edges to a forward schedule (commonly <code>j &lt;= i</code>).</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>state</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="../../states/sequential/#darnax.states.sequential.SequentialState">SequentialState</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Current global state.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>rng</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="KeyArray = Array
-
-  
-      module-attribute
-   (darnax.orchestrators.sequential.KeyArray)" href="#darnax.orchestrators.sequential.KeyArray">KeyArray</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>PRNG key (split per receiver/sender).</p>
+                <p>Context dictionary supplied at construction.</p>
               </div>
             </td>
             <td>
@@ -1152,11 +1275,11 @@ which filters neighbor edges to a forward schedule (commonly <code>j &lt;= i</co
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code>(new_state, new_rng) : tuple[SequentialState, KeyArray]</code>
+                  <code><span title="dict">dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Updated state (output unchanged) and an advanced RNG key.</p>
+                <p>Normalized context dictionary.</p>
               </div>
             </td>
           </tr>
@@ -1164,76 +1287,7 @@ which filters neighbor edges to a forward schedule (commonly <code>j &lt;= i</co
     </table>
 
 
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="darnax.orchestrators.sequential.SequentialOrchestrator.predict" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">predict</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span></code>
-
-<a href="#darnax.orchestrators.sequential.SequentialOrchestrator.predict" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Compute/refresh the <strong>output</strong> buffer <code>state[-1]</code> from current buffers.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>state</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="../../states/sequential/#darnax.states.sequential.SequentialState">SequentialState</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Current global state (uses existing upstream buffers).</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>rng</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="KeyArray = Array
-
-  
-      module-attribute
-   (darnax.orchestrators.sequential.KeyArray)" href="#darnax.orchestrators.sequential.KeyArray">KeyArray</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>PRNG key (split internally).</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
+<p><span class="doc-section-title">Raises:</span></p>
     <table>
       <thead>
         <tr>
@@ -1244,162 +1298,17 @@ which filters neighbor edges to a forward schedule (commonly <code>j &lt;= i</co
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code>(new_state, new_rng) : tuple[SequentialState, KeyArray]</code>
+                  <code><span title="ValueError">ValueError</span></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A state where the output buffer has been updated, and a fresh RNG key.</p>
+                <p>If any required key is missing.</p>
               </div>
             </td>
           </tr>
       </tbody>
     </table>
 
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="darnax.orchestrators.sequential.SequentialOrchestrator.backward" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">backward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">filter_messages</span><span class="o">=</span><span class="s1">&#39;forward&#39;</span><span class="p">,</span> <span class="n">target_state</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
-
-<a href="#darnax.orchestrators.sequential.SequentialOrchestrator.backward" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Compute per-edge parameter updates and return them as an orchestrator.</p>
-<p>Two-phase algorithm:</p>
-<p>1) <strong>Activation pass.</strong> For each receiver <code>i</code> (including the output),
-   compute messages <code>msg[j] = lmap[i, j](state[j], rng=...)</code> from
-   all neighbors, then compute the receiver’s aggregate <strong>using forward
-   messages only</strong> (e.g., <code>j &lt;= i</code>) and store it under <code>msg[i]</code>.
-2) <strong>Local rules.</strong> For every edge <code>(i, j)</code>, call
-   <code>lmap[i, j].backward(x=state[j], y=state[i], y_hat=msg[j])</code> and
-   assemble the results into a new LayerMap with the <strong>same key layout</strong>.</p>
-<p>The method returns <code>type(self)(layers=updates)</code> where <code>updates</code> is
-the LayerMap of per-edge updates. This allows <code>optax.apply_updates</code> to
-be used directly with the returned PyTree.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>state</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="../../states/sequential/#darnax.states.sequential.SequentialState">SequentialState</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Current global state (provides inputs and targets for local rules).</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>rng</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="KeyArray = Array
-
-  
-      module-attribute
-   (darnax.orchestrators.sequential.KeyArray)" href="#darnax.orchestrators.sequential.KeyArray">KeyArray</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>PRNG key (split per receiver/sender).</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>filter_messages</code>
-            </td>
-            <td>
-                  <code><span title="typing.Literal">Literal</span>[&#39;all&#39;, &#39;forward&#39;, &#39;backward&#39;]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Optionally, it is possible to decide to compute the local fields (the messages)
-based on a different subset of the messages. Forward corresponds to the default
-behaviour, where only forward messages contribute to the messages.</p>
-              </div>
-            </td>
-            <td>
-                  <code>&#39;forward&#39;</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>target_state</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="SequentialState(sizes, dtype=jnp.float32) (darnax.states.sequential.SequentialState)" href="../../states/sequential/#darnax.states.sequential.SequentialState">SequentialState</a> | None</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Optionally, it is possible to mix states in the backward update rule. By
-default, other_state is equal to state unless explicitely requested.</p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="typing.Self">Self</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>An orchestrator whose <code>lmap</code> contains <strong>updates</strong> (not new params),
-mirroring the original layermap structure.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-<details class="note" open>
-  <summary>Notes</summary>
-  <p>The receiver aggregate used for learning is computed with <strong>forward-only</strong>
-messages (no right-going edges), matching the schedule used in inference.</p>
-</details>
 
     </div>
 
