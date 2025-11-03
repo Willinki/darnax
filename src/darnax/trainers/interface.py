@@ -1,96 +1,152 @@
-"""Trainer interface with stateful API and pure functional core."""
-
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from collections.abc import Callable, Mapping
+from typing import Any, Generic, TypeVar, cast
 
+import jax.numpy as jnp
 from equinox import filter_jit
+from jax import Array
 
+from darnax.orchestrators.interface import AbstractOrchestrator
 from darnax.states.interface import State
 
-if TYPE_CHECKING:
-    from jax import Array
-
-    from darnax.orchestrators.interface import AbstractOrchestrator
-
 StateT = TypeVar("StateT", bound=State)
-OrchestratorT = TypeVar("OrchestratorT", bound="AbstractOrchestrator[Any]")
-ExtrasT = TypeVar("ExtrasT", bound=Mapping[str, Any])
-ParamsT = TypeVar("ParamsT", bound=Mapping[str, Any])
+OrchestratorT = TypeVar("OrchestratorT", bound=AbstractOrchestrator[Any])
+Ctx = dict[str, Any]
+
+TrainCore = Callable[
+    [Array, Array, Array, OrchestratorT, StateT, dict[str, Any]],
+    tuple[Array, OrchestratorT, StateT, Ctx],
+]
+EvalCore = Callable[
+    [Array, Array, Array, OrchestratorT, StateT, dict[str, Any]],
+    tuple[Array, StateT, Mapping[str, Array]],
+]
 
 
-class Trainer(ABC, Generic[StateT, OrchestratorT, ExtrasT, ParamsT]):
-    """Stateful trainer wrapping a pure functional JAX core.
+class Trainer(ABC, Generic[OrchestratorT, StateT]):
+    r"""Two-step trainer with a single context dictionary.
 
-    Stateful methods mutate in-place, pure methods are JIT-compiled.
+    This class exposes a minimal, stateful API (``train_step``, ``eval_step``)
+    wrapping pure, JIT-compiled static methods (``_train_step_impl``, ``_eval_step_impl``).
+    The class mutates its attributes by rebinding after each pure call.
+
+    Parameters
+    ----------
+    orchestrator : AbstractOrchestrator
+        The model/orchestrator object. Treated as read-only inside eval by convention.
+    state : State
+        A mutable state pytree used by the step functions (e.g., buffers, EMA, counters).
+    ctx : dict[str, Any]
+        A single "bag" of step requirements:
+        - Required:
+            - ``"optimizer"`` : object with update semantics (e.g., optax transform)
+            - ``"opt_state"`` : optimizer state pytree
+        - Optional/common (conventions):
+            - ``"t"`` : global step counter (int or JAX scalar). If provided as int, it is
+              normalized to a JAX scalar once in :meth:`validate_ctx`.
+            - Any other immutable/static knobs (callables, Python scalars) that **do not change**
+              identity across steps.
+            - Any mutable arrays/pytree values needed by the steps (e.g., schedulers' internal
+              state) should be JAX arrays so they can change without recompilation.
+
+    Notes
+    -----
+    - ``ctx`` must keep a **stable set of keys** to avoid retraces.
+    - Non-array objects in ``ctx`` are treated as **static** under ``filter_jit``; changing
+      their identity causes recompilation.
+    - Arrays (and pytrees of arrays) in ``ctx`` may change freely across steps without
+      triggering recompilation.
+
+    Attributes
+    ----------
+    orchestrator : AbstractOrchestrator
+    state : State
+    ctx : dict[str, Any]
+
     """
 
     orchestrator: OrchestratorT
     state: StateT
-    extras: ExtrasT
-    params: ParamsT
+    ctx: Ctx
 
-    def train_step(
-        self,
-        x: Array,
-        y: Array,
-        rng: Array,
-    ) -> Array:
-        """Call the pure JIT-compiled training step, mutating trainer in-place.
+    def __init__(self) -> None:
+        """Initialize the jittable cores as None."""
+        self._jit_train: TrainCore[OrchestratorT, StateT] | None = None
+        self._jit_eval: EvalCore[OrchestratorT, StateT] | None = None
+
+    def train_step(self, x: Array, y: Array, rng: Array) -> Array:
+        r"""Run one training step.
+
+        Calls the pure, JIT-compiled :meth:`_train_step_impl`, then rebinds
+        ``orchestrator``, ``state``, and ``ctx`` with the returned values.
 
         Parameters
         ----------
         x : Array
-            Input batch
+            Input batch.
         y : Array
-            Target labels
+            Target labels.
         rng : Array
-            Random key
+            Random key.
 
         Returns
         -------
-        rng : Array
-            Updated random key
+        Array
+            Updated random key.
+
+        Notes
+        -----
+        This method may update:
+        - ``orchestrator`` (model parameters),
+        - ``state`` (mutable buffers, EMA, etc.),
+        - ``ctx`` (e.g., ``"opt_state"``, schedulers, counters).
 
         """
-        jit_train_step_impl = filter_jit(self._train_step_impl)
-        rng, self.orchestrator, self.state, self.extras = jit_train_step_impl(
-            x, y, rng, self.orchestrator, self.state, self.extras, self.params
-        )
+        if self._jit_train is None:
+            core = type(self)._train_step_impl
+            self._jit_train = cast("TrainCore[OrchestratorT, StateT]", filter_jit(core))
+
+        rng, orch, st, ctx = self._jit_train(x, y, rng, self.orchestrator, self.state, self.ctx)
+        self.orchestrator, self.state, self.ctx = orch, st, ctx
         return rng
 
-    def eval_step(
-        self,
-        x: Array,
-        y: Array,
-        rng: Array,
-    ) -> tuple[Array, Array]:
-        """Evaluate on one batch, mutating state only.
+    def eval_step(self, x: Array, y: Array, rng: Array) -> tuple[Array, Mapping[str, Array]]:
+        r"""Evaluate on one batch.
+
+        Calls the pure, JIT-compiled :meth:`_eval_step_impl`, then rebinds ``state``.
+        Returns a mapping of metrics that are **not** stored in :attr:`ctx`.
 
         Parameters
         ----------
         x : Array
-            Input batch
+            Input batch.
         y : Array
-            Target labels
+            Target labels.
         rng : Array
-            Random key
+            Random key.
 
         Returns
         -------
         rng : Array
-            Updated random key
-        accuracy : Array
-            Evaluation accuracy
+            Updated random key.
+        metrics : Mapping[str, Array]
+            Dictionary of metric arrays computed on this batch.
+
+        Notes
+        -----
+        By convention, evaluation treats the orchestrator and static pieces as read-only.
+        Only ``state`` may be updated (e.g., running statistics).
 
         """
-        jit_eval_step_impl = filter_jit(self._eval_step_impl)
-        rng, self.orchestrator, self.state, self.extras, accuracy = jit_eval_step_impl(
-            x, y, rng, self.orchestrator, self.state, self.extras, self.params
-        )
-        return rng, accuracy
+        if self._jit_eval is None:
+            core = type(self)._eval_step_impl
+            self._jit_eval = cast("EvalCore[OrchestratorT, StateT]", filter_jit(core))
+
+        rng, st, metrics = self._jit_eval(x, y, rng, self.orchestrator, self.state, self.ctx)
+        self.state = st
+        return rng, metrics
+
+    # -------------------- Pure cores --------------------
 
     @staticmethod
     @abstractmethod
@@ -100,43 +156,41 @@ class Trainer(ABC, Generic[StateT, OrchestratorT, ExtrasT, ParamsT]):
         rng: Array,
         orchestrator: OrchestratorT,
         state: StateT,
-        extras: ExtrasT,
-        params: ParamsT,
-    ) -> tuple[Array, OrchestratorT, StateT, ExtrasT]:
-        """Pure training step to be JIT-compiled.
+        ctx: dict[str, Any],
+    ) -> tuple[Array, OrchestratorT, StateT, Ctx]:
+        r"""Pure training step to be JIT-compiled.
 
-        Should be a static method.
+        This function must be **pure**: it receives pytrees and returns new pytrees
+        without side effects. The outer :meth:`train_step` handles in-place rebinding.
 
         Parameters
         ----------
         x : Array
-            Input batch
+            Input batch.
         y : Array
-            Target labels
+            Target labels.
         rng : Array
-            Random key
-        orchestrator : OrchestratorT
-            Current model
-        state : StateT
-            Current state
-        extras : ExtrasT
-            Additional arguments to be updated (e.g., opt_state, optimizer)
-        params : ParamsT
-            Training parameters (e.g., t_train)
+            Random key.
+        orchestrator : AbstractOrchestrator
+            Current model/orchestrator.
+        state : State
+            Current mutable state.
+        ctx : dict[str, Any]
+            Context dict with optimizer, opt_state, counters, and any other requirements.
 
         Returns
         -------
         rng : Array
-            Updated random key
-        orchestrator : OrchestratorT
-            Updated orchestrator
-        state : StateT
-            Updated state
-        extras : ExtrasT
-            Updated extras
+            Updated random key.
+        orchestrator : AbstractOrchestrator
+            Updated orchestrator.
+        state : State
+            Updated state.
+        ctx : dict[str, Any]
+            Updated context dictionary.
 
         """
-        pass
+        raise NotImplementedError
 
     @staticmethod
     @abstractmethod
@@ -146,42 +200,75 @@ class Trainer(ABC, Generic[StateT, OrchestratorT, ExtrasT, ParamsT]):
         rng: Array,
         orchestrator: OrchestratorT,
         state: StateT,
-        extras: ExtrasT,
-        params: ParamsT,
-    ) -> tuple[Array, OrchestratorT, StateT, ExtrasT, Array]:
-        """Pure evaluation step to be JIT-compiled.
+        ctx: dict[str, Any],
+    ) -> tuple[Array, StateT, Mapping[str, Array]]:
+        r"""Pure evaluation step to be JIT-compiled.
 
-        Should be a static method.
+        This function must be **pure** and should not modify static objects.
+        It may update ``state`` (e.g., running statistics).
 
         Parameters
         ----------
         x : Array
-            Input batch
+            Input batch.
         y : Array
-            Target labels
+            Target labels.
         rng : Array
-            Random key
-        orchestrator : OrchestratorT
-            Current model (read-only)
-        state : StateT
-            Current state
-        extras : ExtrasT
-            Additional arguments to be updated (e.g., opt_state, optimizer)
-        params : ParamsT
-            Training parameters (e.g., t_train)
+            Random key.
+        orchestrator : AbstractOrchestrator
+            Current model/orchestrator (read-only by convention).
+        state : State
+            Current mutable state.
+        ctx : dict[str, Any]
+            Context dict (read-only by convention during eval).
 
         Returns
         -------
         rng : Array
-            Updated random key
-        orchestrator : OrchestratorT
-            Orchestrator (unchanged)
-        state : StateT
-            Updated state
-        extras : ExtrasT
-            Extras dict (unchanged)
-        accuracy : Array
-            Evaluation accuracy
+            Updated random key.
+        state : State
+            Updated state.
+        metrics : Mapping[str, Array]
+            Dictionary of evaluation metrics.
 
         """
-        pass
+        raise NotImplementedError
+
+    # -------------------- One-time validation --------------------
+
+    @staticmethod
+    def validate_ctx(ctx: Ctx) -> Ctx:
+        r"""Validate and normalize the context dictionary.
+
+        Called once in ``__init__`` to fail fast and to normalize counters.
+
+        Parameters
+        ----------
+        ctx : dict[str, Any]
+            User-provided context dictionary.
+
+        Returns
+        -------
+        dict[str, Any]
+            A normalized copy of the context dictionary.
+
+        Raises
+        ------
+        ValueError
+            If required keys are missing.
+
+        Notes
+        -----
+        - Ensures that ``"optimizer"`` and ``"opt_state"`` are present.
+        - Converts ``ctx["t"]`` to a JAX scalar if it is a Python integer.
+        - Returns a plain ``dict`` to keep structure explicit and stable.
+
+        """
+        for k in ("optimizer", "opt_state"):
+            if k not in ctx:
+                raise ValueError(f"ctx missing required key '{k}'")
+
+        out = dict(ctx)
+        if "t" in out and not hasattr(out["t"], "dtype"):
+            out["t"] = jnp.asarray(out["t"], dtype=jnp.int32)
+        return out
