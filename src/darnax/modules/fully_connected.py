@@ -100,11 +100,8 @@ class FullyConnected(Adapter):
         """
         self.strength = self._set_shape(strength, out_features, dtype)
         self.threshold = self._set_shape(threshold, out_features, dtype)
-        self.W = (
-            jax.random.normal(key, (in_features, out_features), dtype=dtype)
-            * self.strength
-            / jnp.sqrt(in_features)
-        )
+        initializer = jax.nn.initializers.glorot_uniform()
+        self.W = initializer(key, shape=(in_features, out_features), dtype=dtype)
 
     def __call__(self, x: Array, rng: KeyArray | None = None) -> Array:
         """Compute ``y = (x @ W) * strength`` (broadcast on last dim).

@@ -129,11 +129,8 @@ class RecurrentDiscrete(Layer):
         thresh_vec = self._set_shape(threshold, features, dtype)
         strength_vec = jnp.asarray(strength, dtype=dtype)
 
-        J = (
-            jax.random.normal(key, shape=(features, features), dtype=dtype)
-            / jnp.sqrt(features)
-            * strength_vec
-        )
+        initializer = jax.nn.initializers.glorot_uniform()
+        J = initializer(key, shape=(features, features), dtype=dtype)
         diag = jnp.diag_indices(features)
         J = J.at[diag].set(j_d_vec)
 
