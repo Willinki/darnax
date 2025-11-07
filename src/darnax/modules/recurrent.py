@@ -130,7 +130,7 @@ class RecurrentDiscrete(Layer):
         strength_vec = jnp.asarray(strength, dtype=dtype)
 
         initializer = jax.nn.initializers.glorot_uniform()
-        J = initializer(key, shape=(features, features), dtype=dtype)
+        J = initializer(key, shape=(features, features), dtype=dtype) * strength_vec
         diag = jnp.diag_indices(features)
         J = J.at[diag].set(j_d_vec)
 
