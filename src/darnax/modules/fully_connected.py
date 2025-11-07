@@ -195,6 +195,47 @@ class FrozenFullyConnected(FullyConnected):
     or to ablate learning of a particular edge type in a graph.
     """
 
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        strength: float | ArrayLike,
+        threshold: float | ArrayLike,
+        key: Array,
+        dtype: DTypeLike = jnp.float32,
+    ):
+        """Initialize weights and per-output scale/threshold.
+
+        Parameters
+        ----------
+        in_features : int
+            Input dimensionality.
+        out_features : int
+            Output dimensionality.
+        strength : float or ArrayLike
+            Scalar (broadcast to ``(out_features,)``) or a vector of
+            length ``out_features`` providing the per-output scaling.
+        threshold : float or ArrayLike
+            Scalar or vector of length ``out_features`` with the per-output
+            margins used by the local update rule.
+        key : Array
+            JAX PRNG key to initialize ``W`` with Gaussian entries scaled by
+            ``1/sqrt(in_features)``.
+        dtype : DTypeLike, optional
+            Dtype for parameters (default: ``jnp.float32``).
+
+        Raises
+        ------
+        ValueError
+            If ``strength`` or ``threshold`` is neither a scalar nor a 1D array
+            of the expected length.
+
+        """
+        self.strength = self._set_shape(strength, out_features, dtype)
+        self.threshold = self._set_shape(threshold, out_features, dtype)
+        initializer = jax.nn.initializers.normal(stddev=1 / jnp.sqrt(in_features))
+        self.W = initializer(key, shape=(in_features, out_features), dtype=dtype) * self.strength
+
     def backward(self, x: Array, y: Array, y_hat: Array) -> Self:
         """Return zero update for all parameters.
 
