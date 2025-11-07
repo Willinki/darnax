@@ -80,5 +80,5 @@ def perceptron_rule_backward(
         raise ValueError("y and y_hat must have the same (n, K) shape.")
     m = y * y_hat  # (n, K)
     mistake = (m <= margin).astype(x.dtype)  # (n, K)
-    update: jax.Array = (x.T @ (mistake * y)) / (n**0.5 * d**0.5)  # (d, K)
+    update: jax.Array = (x.T @ (mistake * y)) / n  # (d, K)
     return -update
