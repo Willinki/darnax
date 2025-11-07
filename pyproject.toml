@@ -15,8 +15,18 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest>=8","pytest-cov","ruff>=0.5","black>=24","mypy>=1.10",
-       "types-setuptools","pytest-benchmark","nbmake","pre-commit","pip-audit"]
+dev = [
+    "pytest>=8",
+    "pytest-cov",
+    "ruff>=0.5",
+    "black==25.1.0",
+    "mypy>=1.10",
+    "types-setuptools",
+    "pytest-benchmark",
+    "nbmake",
+    "pre-commit",
+    "pip-audit",
+]
 docs = ["mkdocs","mkdocs-material","mkdocstrings[python]","mkdocs-autorefs",
         "mkdocs-section-index","mkdocs-literate-nav","jupytext","mkdocs-gen-files"]
 
