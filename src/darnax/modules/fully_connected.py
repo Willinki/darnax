@@ -233,7 +233,7 @@ class FrozenFullyConnected(FullyConnected):
         """
         self.strength = self._set_shape(strength, out_features, dtype)
         self.threshold = self._set_shape(threshold, out_features, dtype)
-        initializer = jax.nn.initializers.normal(stddev=1 / jnp.sqrt(in_features))
+        initializer = jax.nn.initializers.uniform(scale=1 / jnp.sqrt(in_features))
         self.W = initializer(key, shape=(in_features, out_features), dtype=dtype) * self.strength
 
     def backward(self, x: Array, y: Array, y_hat: Array) -> Self:
