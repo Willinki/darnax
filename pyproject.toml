@@ -11,7 +11,24 @@ dependencies = [
   "equinox>=0.11.12,<0.13", # requires jax >= 0.4.38
   "numpy>=1.26",
   "optax>=0.2.3,<0.3",
+  "datasets>=4.1.1",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-cov",
+    "ruff>=0.5",
+    "black==25.1.0",
+    "mypy>=1.10",
+    "types-setuptools",
+    "pytest-benchmark",
+    "nbmake",
+    "pre-commit",
+    "pip-audit",
+]
+docs = ["mkdocs","mkdocs-material","mkdocstrings[python]","mkdocs-autorefs",
+        "mkdocs-section-index","mkdocs-literate-nav","jupytext","mkdocs-gen-files"]
 
 [project.optional-dependencies]
 jax-cpu = [
@@ -27,12 +44,11 @@ jax-metal = [
   "jaxlib==0.4.38",
   "jax-metal==0.1.0; platform_system=='Darwin' and platform_machine=='arm64'",
 ]
-
-dev = ["pytest>=8","pytest-cov","ruff>=0.5","black>=24","mypy>=1.10",
-       "types-setuptools","pytest-benchmark","nbmake","pre-commit","pip-audit"]
-docs = ["mkdocs","mkdocs-material","mkdocstrings[python]","mkdocs-autorefs",
-        "mkdocs-section-index","mkdocs-literate-nav","jupytext","mkdocs-gen-files"]
-add-ons = ["tqdm>=4.0","datasets>=4.1.1","pillow>=11.3.0","matplotlib>=3.10.6"]
+add-ons = [
+  "tqdm>=4.0",
+  "pillow>=11.3.0",
+  "matplotlib>=3.10.6"
+]
 
 [build-system]
 requires = ["setuptools>=68","wheel"]
