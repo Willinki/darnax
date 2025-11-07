@@ -56,8 +56,8 @@ class Cifar10FeaturesSmall(ClassificationDataset):
         linear_projection: int | None = None,
         num_images_per_class: int | None = None,
         label_mode: Literal["pm1", "ooe", "c-rescale"] = "c-rescale",
-        validation_fraction: float = 0.0,
         x_transform: Literal["sign", "identity"] = "identity",
+        validation_fraction: float = 0.0,
     ) -> None:
         """Initilize Cifar10Features data.
 
