@@ -242,8 +242,7 @@ class Cifar10FeaturesSmall(ClassificationDataset):
 
     # --------------------------- Internal Helpers ---------------------------
 
-    @staticmethod
-    def _load_split(split: str) -> tuple[jax.Array, jax.Array]:
+    def _load_split(self, split: str) -> tuple[jax.Array, jax.Array]:
         """Load a split and return (x, y) as JAX tensors.
 
         Expects exact columns:
@@ -251,17 +250,15 @@ class Cifar10FeaturesSmall(ClassificationDataset):
             - 'y': int32 labels of shape [N]
         """
         data_naxis = 2
-        ds = load_dataset(Cifar10FeaturesSmall.HF_REPO, split=split, trust_remote_code=True)
+        ds = load_dataset(self.HF_REPO, split=split, trust_remote_code=True)
         if "x" not in ds.column_names or "y" not in ds.column_names:
             raise KeyError(
                 f"Split {split!r} must contain 'x' and 'y' columns. Found: {ds.column_names}."
             )
         x = jnp.asarray(ds["x"], dtype=jnp.float32)
         y = jnp.asarray(ds["y"], dtype=jnp.int32)
-        if x.ndim != data_naxis or x.shape[1] != Cifar10FeaturesSmall.FEAT_DIM:
-            raise ValueError(
-                f"Expected x shape [N,{Cifar10FeaturesSmall.FEAT_DIM}], got {tuple(x.shape)}."
-            )
+        if x.ndim != data_naxis or x.shape[1] != self.FEAT_DIM:
+            raise ValueError(f"Expected x shape [N,{self.FEAT_DIM}], got {tuple(x.shape)}.")
         if y.ndim != 1 or y.shape[0] != x.shape[0]:
             raise ValueError("Label vector must be [N] and match features.")
         return x, y
