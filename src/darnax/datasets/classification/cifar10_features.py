@@ -292,15 +292,15 @@ class Cifar10FeaturesSmall(ClassificationDataset):
         # identity
         return x
 
-    @staticmethod
+    @classmethod
     def _subsample_per_class(
-        key: jax.Array, x: jax.Array, y: jax.Array, k: int
+        cls, key: jax.Array, x: jax.Array, y: jax.Array, k: int
     ) -> tuple[jax.Array, jax.Array]:
         """Uniform-by-class sampling of up to k examples per class."""
         xs, ys = [], []
-        for cls in range(Cifar10FeaturesSmall.NUM_CLASSES):
+        for c in range(cls.NUM_CLASSES):
             key, sub = jax.random.split(key)
-            idx = jnp.where(y == cls)[0]
+            idx = jnp.where(y == c)[0]
             n = min(k, int(idx.shape[0]))
             if n == 0:
                 continue
