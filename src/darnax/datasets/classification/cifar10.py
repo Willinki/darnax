@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class CIFAR10(ClassificationDataset):
+class Cifar10(ClassificationDataset):
     """CIFAR-10 dataset with configurable preprocessing.
 
     Parameters.
