@@ -12,6 +12,7 @@ dependencies = [
   "numpy>=1.26",
   "optax>=0.2.3,<0.3",
   "datasets>=4.1.1",
+  "pillow>=12.0.0",
 ]
 
 [dependency-groups]
@@ -19,7 +20,7 @@ dev = [
     "pytest>=8",
     "pytest-cov",
     "ruff>=0.5",
-    "black==25.1.0",
+    "black>=25.0.0",
     "mypy>=1.10",
     "types-setuptools",
     "pytest-benchmark",
@@ -60,7 +61,7 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E","F","I","UP","B","D","N","ARG","SIM","PL","TCH"]
-ignore = ["D100","D104","D213","D203","E501","N806","ARG002","E203"]
+ignore = ["D100","D104","D213","D203","E501","N806","ARG002","E203", "PLR2004"]
 
 [tool.ruff.lint.pylint]
 max-args = 10
