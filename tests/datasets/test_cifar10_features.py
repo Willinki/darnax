@@ -22,7 +22,7 @@ def test_cifar_projection_transform_and_subsample():
     x_many = jnp.vstack(
         [jnp.full((ds.FEAT_DIM,), float(i), dtype=jnp.float32) for i in range(10) for _ in range(2)]
     )
-    x_sub, y_sub = Cifar10FeaturesSmall._subsample_per_class(key, x_many, y, k=1)
+    x_sub, y_sub = ds._subsample_per_class(key, x_many, y, k=1)
     bsize = 10
     assert x_sub.shape[0] == bsize
     assert x_sub.shape[1] == ds.FEAT_DIM

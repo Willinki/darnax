@@ -58,29 +58,6 @@ def test_fashion_generate_and_encode():
     assert len(bounds) == -(-11 // ds.batch_size)
 
 
-def test_cifar_projection_transform_and_subsample():
-    """Apply projection, x-transform and subsampling for CIFAR features."""
-    ds = Cifar10FeaturesSmall(batch_size=4, x_transform="sign", linear_projection=16)
-    key = jax.random.PRNGKey(2)
-    w = ds._generate_random_projection(key, 16, ds.FEAT_DIM)
-    x = jnp.zeros((3, ds.FEAT_DIM), dtype=jnp.float32)
-    x_proj = ds._apply_projection(w, x)
-    assert x_proj.shape == (3, 16)
-    x_tr = ds._apply_x_transform(x_proj)
-    assert jnp.all(x_tr == -1.0)
-    # create two examples per class
-    y = jnp.repeat(jnp.arange(10, dtype=jnp.int32), 2)
-    x_many = jnp.vstack(
-        [jnp.full((ds.FEAT_DIM,), float(i), dtype=jnp.float32) for i in range(10) for _ in range(2)]
-    )
-    x_sub, y_sub = Cifar10FeaturesSmall._subsample_per_class(key, x_many, y, k=1)
-    bsize = 10
-    assert x_sub.shape[0] == bsize
-    assert x_sub.shape[1] == ds.FEAT_DIM or ds.linear_projection is not None
-    y_enc = ds._encode_labels(y_sub)
-    assert y_enc.shape[1] == Cifar10FeaturesSmall.NUM_CLASSES
-
-
 def test_cifar_large_inherits_behavior():
     """Large features class should inherit shape constants from small variant."""
     assert Cifar10FeaturesLarge.FEAT_DIM != Cifar10FeaturesSmall.FEAT_DIM
