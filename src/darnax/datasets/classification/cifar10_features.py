@@ -333,3 +333,10 @@ class Cifar10FeaturesLarge(Cifar10FeaturesSmall):
 
     FEAT_DIM = 4096
     HF_REPO = "willinki/cifar10-features-l"
+
+
+class Cifar10FeaturesVit(Cifar10FeaturesSmall):
+    """Instead of extracting from VGG11, we extract from a vision transformer."""
+
+    FEAT_DIM = 192
+    HF_REPO = "willinki/cifar10-features-vit"
