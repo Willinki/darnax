@@ -359,9 +359,9 @@ class FashionMnist(ClassificationDataset):
         y: jax.Array = jnp.asarray(ds["label"], dtype=jnp.int32)
         return x, y
 
-    @staticmethod
+    @classmethod
     def _subsample_per_class(
-        key: jax.Array, x: jax.Array, y: jax.Array, k: int
+        cls, key: jax.Array, x: jax.Array, y: jax.Array, k: int
     ) -> tuple[jax.Array, jax.Array]:
         """Uniformly subsample up to ``k`` items per class from ``(x, y)``.
 
@@ -383,9 +383,9 @@ class FashionMnist(ClassificationDataset):
 
         """
         xs, ys = [], []
-        for cls in range(FashionMnist.NUM_CLASSES):
+        for c in range(cls.NUM_CLASSES):
             key, sub = jax.random.split(key)
-            idx = jnp.where(y == cls)[0]
+            idx = jnp.where(y == c)[0]
             n = min(k, int(idx.shape[0]))
             perm = jax.random.permutation(sub, idx.shape[0])
             xs.append(x[idx[perm[:n]]])

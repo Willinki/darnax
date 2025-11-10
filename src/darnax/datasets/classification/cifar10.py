@@ -1,5 +1,3 @@
-"""MNIST dataset implementation for darnax."""
-
 from __future__ import annotations
 
 import logging
@@ -17,15 +15,15 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class Mnist(ClassificationDataset):
-    """MNIST dataset with configurable preprocessing.
+class Cifar10(ClassificationDataset):
+    """CIFAR-10 dataset with configurable preprocessing.
 
-    Parameters
+    Parameters.
     ----------
     batch_size : int, default=64
         Batch size for iterators.
     linear_projection : int or None, default=100
-        Output dimension for random projection. If None, uses full 784 dimensions.
+        Output dimension for random projection. If None, uses full 3072 dimensions.
     num_images_per_class : int or None, default=None
         Maximum training images per class. If None, uses full training set.
     label_mode : {"pm1", "ooe", "c-rescale"}, default="c-rescale"
@@ -35,10 +33,15 @@ class Mnist(ClassificationDataset):
     validation_fraction : float, default=0.0
         Fraction of training data for validation (0.0 to 1.0).
 
+    References
+    ----------
+        - https://www.cs.toronto.edu/~kriz/cifar.html
+        - https://huggingface.co/datasets/cifar10
+
     """
 
     NUM_CLASSES = 10
-    FLAT_DIM = 28 * 28
+    FLAT_DIM = 32 * 32 * 3  # CIFAR-10 images are 32x32 RGB
 
     def __init__(
         self,
@@ -49,7 +52,7 @@ class Mnist(ClassificationDataset):
         x_transform: Literal["sign", "tanh", "identity"] = "sign",
         validation_fraction: float = 0.0,
     ) -> None:
-        """Initialize MNIST dataset configuration."""
+        """Initialize CIFAR-10 dataset configuration."""
         if not (linear_projection is None or isinstance(linear_projection, int)):
             raise TypeError("`linear_projection` must be `None` or `int`.")
         if batch_size <= 1:
@@ -79,7 +82,7 @@ class Mnist(ClassificationDataset):
         self._test_bounds: list[tuple[int, int]] = []
 
     def build(self, key: jax.Array) -> None:
-        """Load, preprocess, and prepare MNIST splits."""
+        """Load, preprocess, and prepare CIFAR-10 splits."""
         key_sample, key_proj, key_split, key_shuf = jax.random.split(key, 4)
 
         x_tr_all, y_tr_all = self._load_split("train")
@@ -168,18 +171,18 @@ class Mnist(ClassificationDataset):
         return {
             "x_shape": (self.input_dim,),
             "x_dtype": self.x_train.dtype,
-            "y_shape": (self.num_classes,),
+            "y_shape": (self.NUM_CLASSES,),
             "y_dtype": self.y_train.dtype,
-            "num_classes": self.num_classes,
+            "num_classes": self.NUM_CLASSES,
             "label_encoding": self.label_mode,
             "projected_dim": self.input_dim if self.linear_projection else None,
         }
 
     @staticmethod
     def _load_split(split: str) -> tuple[jax.Array, jax.Array]:
-        """Load MNIST split from HuggingFace datasets."""
-        ds = load_dataset("mnist", split=split, trust_remote_code=True)
-        x_raw = jnp.asarray([jnp.array(im) for im in ds["image"]], dtype=jnp.float32)
+        """Load CIFAR10 split from HuggingFace datasets."""
+        ds = load_dataset("cifar10", split=split, trust_remote_code=True)
+        x_raw = jnp.asarray([jnp.array(im) for im in ds["img"]], dtype=jnp.float32)
         x: jax.Array = (x_raw / 255.0).astype(jnp.float32)
         y: jax.Array = jnp.asarray(ds["label"], dtype=jnp.int32)
         return x, y
