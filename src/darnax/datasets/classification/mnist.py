@@ -34,7 +34,9 @@ class Mnist(ClassificationDataset):
         Input transform: "sign" (±1), "tanh", "identity" (no transform).
     validation_fraction : float, default=0.0
         Fraction of training data for validation (0.0 to 1.0).
-
+    flatten : bool, default = True
+        If True, flatten inputs to (B, 784) and (optionally) apply random projection.
+        If False, keep inputs as (B, 28, 28) and disable random projection.
     """
 
     NUM_CLASSES = 10
@@ -43,11 +45,12 @@ class Mnist(ClassificationDataset):
     def __init__(
         self,
         batch_size: int = 64,
-        linear_projection: int | None = 100,
+        linear_projection: int | None = None,
         num_images_per_class: int | None = None,
         label_mode: Literal["pm1", "ooe", "c-rescale"] = "c-rescale",
         x_transform: Literal["sign", "tanh", "identity"] = "sign",
         validation_fraction: float = 0.0,
+        flatten: bool = True,
     ) -> None:
         """Initialize MNIST dataset configuration."""
         if not (linear_projection is None or isinstance(linear_projection, int)):
@@ -65,6 +68,7 @@ class Mnist(ClassificationDataset):
         self.label_mode = label_mode
         self.x_transform = x_transform
         self.validation_fraction = validation_fraction
+        self.flatten = bool(flatten)
 
         self.input_dim: int | None = None
         self.num_classes: int = self.NUM_CLASSES
@@ -102,9 +106,13 @@ class Mnist(ClassificationDataset):
         else:
             x_va, y_va = None, None
 
+        # Projection only makes sense on flattened vectors.
+        if self.linear_projection is not None and not self.flatten:
+            raise ValueError("`linear_projection` requires `flatten=True`.")
+
         w = (
             self._generate_random_projection(key_proj, int(self.linear_projection), self.FLAT_DIM)
-            if self.linear_projection is not None
+            if (self.linear_projection is not None and self.flatten)
             else None
         )
 
@@ -123,7 +131,8 @@ class Mnist(ClassificationDataset):
         if x_va is not None and y_va is not None:
             self.x_valid, self.y_valid = x_va, y_va
 
-        self.input_dim = int(self.x_train.shape[1])
+        # Total feature count (flattened size or product of spatial dims).
+        self.input_dim = int(jnp.prod(jnp.array(self.x_train.shape[1:], dtype=jnp.int32)))
 
         self._train_bounds = self._compute_bounds(self.x_train.shape[0])
         self._test_bounds = self._compute_bounds(self.x_test.shape[0])
@@ -165,14 +174,21 @@ class Mnist(ClassificationDataset):
         if self.x_train is None or self.y_train is None or self.input_dim is None:
             raise RuntimeError("Dataset not built. Call `build()` first.")
 
+        if self.flatten:
+            x_shape: tuple[int, ...] = (self.input_dim,)
+            projected_dim = self.input_dim if self.linear_projection else None
+        else:
+            x_shape = tuple(self.x_train.shape[1:])  # e.g., (28, 28)
+            projected_dim = None
+
         return {
-            "x_shape": (self.input_dim,),
+            "x_shape": x_shape,
             "x_dtype": self.x_train.dtype,
             "y_shape": (self.num_classes,),
             "y_dtype": self.y_train.dtype,
             "num_classes": self.num_classes,
             "label_encoding": self.label_mode,
-            "projected_dim": self.input_dim if self.linear_projection else None,
+            "projected_dim": projected_dim,
         }
 
     @staticmethod
@@ -184,15 +200,15 @@ class Mnist(ClassificationDataset):
         y: jax.Array = jnp.asarray(ds["label"], dtype=jnp.int32)
         return x, y
 
-    @classmethod
+    @staticmethod
     def _subsample_per_class(
-        cls, key: jax.Array, x: jax.Array, y: jax.Array, k: int
+        key: jax.Array, x: jax.Array, y: jax.Array, k: int
     ) -> tuple[jax.Array, jax.Array]:
         """Sample up to k examples per class."""
         xs, ys = [], []
-        for c in range(cls.NUM_CLASSES):
+        for cls in range(Mnist.NUM_CLASSES):
             key, sub = jax.random.split(key)
-            idx = jnp.where(y == c)[0]
+            idx = jnp.where(y == cls)[0]
             n = min(k, int(idx.shape[0]))
             perm = jax.random.permutation(sub, idx.shape[0])
             xs.append(x[idx[perm[:n]]])
@@ -205,10 +221,14 @@ class Mnist(ClassificationDataset):
         return jax.random.normal(key, (out_dim, in_dim), dtype=jnp.float32) / jnp.sqrt(in_dim)
 
     def _preprocess(self, w: jax.Array | None, x: jax.Array) -> jax.Array:
-        """Flatten, project, and transform inputs."""
-        x = jnp.reshape(x, (x.shape[0], -1))
-        if w is not None:
-            x = (x @ w.T).astype(jnp.float32)
+        """Flatten, project, and transform inputs (flattening optional)."""
+        if self.flatten:
+            x = jnp.reshape(x, (x.shape[0], -1))
+            if w is not None:
+                x = (x @ w.T).astype(jnp.float32)
+        else:
+            # Keep shape as (B, 28, 28); projection is disabled by build() when flatten=False.
+            pass
 
         if self.x_transform == "sign":
             sgn = jnp.sign(x)
