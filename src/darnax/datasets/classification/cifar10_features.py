@@ -127,9 +127,9 @@ class Cifar10FeaturesSmall(ClassificationDataset):
 
     # ----------------------------- Public API -----------------------------
 
-    def build(self, key: jax.Array) -> None:
+    def build(self, key: jax.Array) -> jax.Array:
         """Load, optionally subsample, optionally project, transform, encode labels, split."""
-        key_sample, key_proj, key_split, key_shuf = jax.random.split(key, 4)
+        key_sample, key_proj, key_split, key_shuf, rng = jax.random.split(key, 5)
 
         # HF "validation" split is the TEST set for this repo.
         x_tr_all, y_tr_all = self._load_split("train")
@@ -195,6 +195,9 @@ class Cifar10FeaturesSmall(ClassificationDataset):
         self._test_bounds = self._compute_bounds(self.x_test.shape[0])
         if self.x_valid is not None:
             self._valid_bounds = self._compute_bounds(self.x_valid.shape[0])
+
+        rng_out: jax.Array = rng
+        return rng_out
 
     def __iter__(self) -> Iterator[tuple[jax.Array, jax.Array]]:
         """Iterate over training batches."""

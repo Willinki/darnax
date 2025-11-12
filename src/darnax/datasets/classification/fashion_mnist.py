@@ -37,6 +37,7 @@ class FashionMnist(ClassificationDataset):
     flatten : bool, default = True
         If True, flatten inputs to (B, 784) and (optionally) apply random projection.
         If False, keep inputs as (B, 28, 28) and disable random projection.
+
     """
 
     NUM_CLASSES = 10
@@ -52,6 +53,7 @@ class FashionMnist(ClassificationDataset):
         validation_fraction: float = 0.0,
         flatten: bool = True,
     ) -> None:
+        """Initialize Fashion-MNIST dataset configuration."""
         if not (linear_projection is None or isinstance(linear_projection, int)):
             raise TypeError("`linear_projection` must be `None` or `int`.")
         if batch_size <= 1:
@@ -85,8 +87,9 @@ class FashionMnist(ClassificationDataset):
 
     # ------------------------------- Build ------------------------------- #
 
-    def build(self, key: jax.Array) -> None:
-        key_sample, key_proj, key_split, key_shuf = jax.random.split(key, 4)
+    def build(self, key: jax.Array) -> jax.Array:
+        """Load, preprocess, and prepare Fashion-MNIST splits."""
+        key_sample, key_proj, key_split, key_shuf, rng = jax.random.split(key, 5)
 
         x_tr_all, y_tr_all = self._load_split("train")
         x_te_all, y_te_all = self._load_split("test")
@@ -108,7 +111,7 @@ class FashionMnist(ClassificationDataset):
             y_tr, y_va = y_tr[:-n_valid], y_tr[-n_valid:]
         else:
             x_va, y_va = None, None
-        
+
         # Projection only makes sense on flattened vectors.
         if self.linear_projection is not None and not self.flatten:
             raise ValueError("`linear_projection` requires `flatten=True`.")
@@ -137,7 +140,6 @@ class FashionMnist(ClassificationDataset):
         if x_va is not None and y_va is not None:
             self.x_valid, self.y_valid = x_va, y_va
 
-        
         # For compatibility, store the total feature count (flattened size or product of spatial dims).
         self.input_dim = int(jnp.prod(jnp.array(self.x_train.shape[1:], dtype=jnp.int32)))
 
@@ -147,21 +149,27 @@ class FashionMnist(ClassificationDataset):
         if self.x_valid is not None:
             self._valid_bounds = self._compute_bounds(self.x_valid.shape[0])
 
+        rng_out: jax.Array = rng
+        return rng_out
+
     # ------------------------------- Iterators ------------------------------- #
 
     def __iter__(self) -> Iterator[tuple[jax.Array, jax.Array]]:
+        """Iterate over training batches."""
         if self.x_train is None or self.y_train is None:
             raise RuntimeError("Dataset not built. Call `build()` first.")
         for lo, hi in self._train_bounds:
             yield self.x_train[lo:hi], self.y_train[lo:hi]
 
     def iter_test(self) -> Iterator[tuple[jax.Array, jax.Array]]:
+        """Iterate over test batches."""
         if self.x_test is None or self.y_test is None:
             raise RuntimeError("Dataset not built. Call `build()` first.")
         for lo, hi in self._test_bounds:
             yield self.x_test[lo:hi], self.y_test[lo:hi]
 
     def iter_valid(self) -> Iterator[tuple[jax.Array, jax.Array]]:
+        """Iterate over validation batches."""
         if self.x_valid is None or self.y_valid is None:
             raise NotImplementedError(
                 f"{self.__class__.__name__} has no validation split. "
@@ -171,11 +179,13 @@ class FashionMnist(ClassificationDataset):
             yield self.x_valid[lo:hi], self.y_valid[lo:hi]
 
     def __len__(self) -> int:
+        """Return number of training batches."""
         if not self._train_bounds:
             raise RuntimeError("Dataset not built. Call `build()` first.")
         return len(self._train_bounds)
 
     def spec(self) -> dict[str, Any]:
+        """Return dataset specification."""
         if self.x_train is None or self.y_train is None or self.input_dim is None:
             raise RuntimeError("Dataset not built. Call `build()` first.")
         if self.flatten:
@@ -184,7 +194,7 @@ class FashionMnist(ClassificationDataset):
         else:
             x_shape = tuple(self.x_train.shape[1:])  # e.g., (28, 28)
             projected_dim = None
-        
+
         return {
             "x_shape": x_shape,
             "x_dtype": self.x_train.dtype,
@@ -224,14 +234,13 @@ class FashionMnist(ClassificationDataset):
         return jax.random.normal(key, (out_dim, in_dim), dtype=jnp.float32) / jnp.sqrt(in_dim)
 
     def _preprocess(self, w: jax.Array | None, x: jax.Array) -> jax.Array:
-        
         if self.flatten:
             x = jnp.reshape(x, (x.shape[0], -1))
             if w is not None:
                 x = (x @ w.T).astype(jnp.float32)
         else:
             # Keep shape as (B, 28, 28); projection is disabled by build() when flatten=False.
-            pass 
+            pass
 
         if self.x_transform == "sign":
             sgn = jnp.sign(x)
@@ -244,9 +253,11 @@ class FashionMnist(ClassificationDataset):
     def _encode_labels(self, y: jax.Array) -> jax.Array:
         one_hot: jax.Array = jax.nn.one_hot(y, self.NUM_CLASSES, dtype=jnp.float32)
         if self.label_mode == "c-rescale":
-            return one_hot * (self.NUM_CLASSES**0.5 / 2.0) - 0.5
+            result: jax.Array = one_hot * (self.NUM_CLASSES**0.5 / 2.0) - 0.5
+            return result
         elif self.label_mode == "pm1":
-            return one_hot * 2.0 - 1.0
+            result = one_hot * 2.0 - 1.0
+            return result
         else:
             return one_hot
 
