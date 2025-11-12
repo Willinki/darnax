@@ -83,6 +83,7 @@ class AbstractOrchestrator(eqx.Module, Generic[StateT]):
         rng: jax.Array,
         *,
         filter_messages: Literal["all", "forward", "backward"] = "all",
+        skip_output_state: bool = True,
     ) -> tuple[StateT, KeyArray]:
         """Run one forward/update step **without** touching the output buffer.
 
@@ -100,6 +101,10 @@ class AbstractOrchestrator(eqx.Module, Generic[StateT]):
             Only a subset of the messages are sent during the step. If forward,
             only forward messages (lower-triangle and diagonal) are computed.
             Same for backward. "All" computes all the messagesV
+        skip_output_state : bool. Deafault: true.
+            If true, we only update internal states (we exclude output state).
+            The idea is that somehow the output is clamped and in some learning phases
+            updating it is useless.
 
         Returns
         -------
@@ -108,7 +113,6 @@ class AbstractOrchestrator(eqx.Module, Generic[StateT]):
 
         Notes
         -----
-        - Must **not** modify ``state[-1]`` (the output buffer).
         - Scheduling is defined by the subclass (e.g., process edges with
           ``j <= i`` only, or a full sweep excluding output).
 
