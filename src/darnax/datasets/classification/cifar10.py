@@ -81,9 +81,9 @@ class Cifar10(ClassificationDataset):
         self._valid_bounds: list[tuple[int, int]] = []
         self._test_bounds: list[tuple[int, int]] = []
 
-    def build(self, key: jax.Array) -> None:
+    def build(self, key: jax.Array) -> jax.Array:
         """Load, preprocess, and prepare CIFAR-10 splits."""
-        key_sample, key_proj, key_split, key_shuf = jax.random.split(key, 4)
+        key_sample, key_proj, key_split, key_shuf, rng = jax.random.split(key, 5)
 
         x_tr_all, y_tr_all = self._load_split("train")
         x_te_all, y_te_all = self._load_split("test")
@@ -132,6 +132,9 @@ class Cifar10(ClassificationDataset):
         self._test_bounds = self._compute_bounds(self.x_test.shape[0])
         if self.x_valid is not None:
             self._valid_bounds = self._compute_bounds(self.x_valid.shape[0])
+
+        rng_out: jax.Array = rng
+        return rng_out
 
     def __iter__(self) -> Iterator[tuple[jax.Array, jax.Array]]:
         """Iterate over training batches."""

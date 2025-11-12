@@ -30,7 +30,7 @@ class ClassificationDataset(ABC):
     """
 
     @abstractmethod
-    def build(self, key: jax.Array) -> None:
+    def build(self, key: jax.Array) -> jax.Array:
         """Load, preprocess, and prepare dataset splits."""
         pass
 

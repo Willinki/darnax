@@ -37,6 +37,7 @@ class Mnist(ClassificationDataset):
     flatten : bool, default = True
         If True, flatten inputs to (B, 784) and (optionally) apply random projection.
         If False, keep inputs as (B, 28, 28) and disable random projection.
+
     """
 
     NUM_CLASSES = 10
@@ -82,9 +83,9 @@ class Mnist(ClassificationDataset):
         self._valid_bounds: list[tuple[int, int]] = []
         self._test_bounds: list[tuple[int, int]] = []
 
-    def build(self, key: jax.Array) -> None:
+    def build(self, key: jax.Array) -> jax.Array:
         """Load, preprocess, and prepare MNIST splits."""
-        key_sample, key_proj, key_split, key_shuf = jax.random.split(key, 4)
+        key_sample, key_proj, key_split, key_shuf, rng = jax.random.split(key, 5)
 
         x_tr_all, y_tr_all = self._load_split("train")
         x_te_all, y_te_all = self._load_split("test")
@@ -138,6 +139,9 @@ class Mnist(ClassificationDataset):
         self._test_bounds = self._compute_bounds(self.x_test.shape[0])
         if self.x_valid is not None:
             self._valid_bounds = self._compute_bounds(self.x_valid.shape[0])
+
+        rng_out: jax.Array = rng
+        return rng_out
 
     def __iter__(self) -> Iterator[tuple[jax.Array, jax.Array]]:
         """Iterate over training batches."""
