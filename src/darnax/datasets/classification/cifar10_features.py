@@ -350,7 +350,7 @@ class Cifar10FeaturesSmall(ClassificationDataset):
     def _generate_and_cache_split(
         cls, split: str, cache_file: Path | None
     ) -> tuple[np.ndarray, np.ndarray]:
-        ds = load_dataset(cls.HF_REPO, split=split, trust_remote_code=True)
+        ds = load_dataset(cls.HF_REPO, split=split)
         if "x" not in ds.column_names or "y" not in ds.column_names:
             raise KeyError(
                 f"Split {split!r} must contain 'x' and 'y' columns. Found: {ds.column_names}."
