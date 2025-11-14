@@ -36,7 +36,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from datasets import config as hf_config  # type: ignore[import-untyped]
-from datasets import load_dataset  # type: ignore[import-untyped]
+from datasets import load_dataset
 
 from darnax.datasets.classification.interface import ClassificationDataset
 
@@ -393,3 +393,11 @@ class Cifar10FeaturesLarge(Cifar10FeaturesSmall):
     FEAT_DIM = 4096
     HF_REPO = "willinki/cifar10-features-l"
     CACHE_SUBDIR = "darnax/cifar10_features_large"
+
+
+class Cifar10FeaturesVit(Cifar10FeaturesSmall):
+    """Instead of extracting from VGG11, we extract from a vision transformer."""
+
+    FEAT_DIM = 192
+    HF_REPO = "willinki/cifar10-features-vit"
+    CACHE_SUBDIR = "darnax/cifar10_features_vit"

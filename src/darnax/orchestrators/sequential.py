@@ -91,6 +91,7 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         rng: KeyArray,
         *,
         filter_messages: Literal["all", "forward", "backward"] = "all",
+        skip_output_state: bool = True,
     ) -> tuple[SequentialState, KeyArray]:
         """Run one forward/update sweep for all receivers **except output**.
 
@@ -109,7 +110,11 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         filter_messages : Literal["all", "forward", "backward"]. Default: "all"
             Only a subset of the messages are sent during the step. If forward,
             only forward messages (lower-triangle and diagonal) are computed.
-            Same for backward. "All" computes all the messagesV
+            Same for backward. "All" computes all the messages.
+        skip_output_state : bool. Default: true.
+            If true, we only update internal states (we exclude output state (-1)).
+            The idea is that somehow the output is clamped and in some learning phases
+            updating it is useless. By setting skip_readout=True we avoid the computation.
 
         Returns
         -------
@@ -117,10 +122,8 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
             Updated state (output unchanged) and an advanced RNG key.
 
         """
-        # we avoid computing the update of the last state component,
-        # since it is clamped.
         for receiver_idx, senders_group in self.lmap.row_items(
-            skip_last=True, subset=filter_messages
+            skip_last=skip_output_state, subset=filter_messages
         ):
             rng, sub = jax.random.split(rng)
             messages = self._compute_messages(senders_group, state, rng=sub)

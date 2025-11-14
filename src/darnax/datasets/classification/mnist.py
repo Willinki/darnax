@@ -11,7 +11,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from datasets import config as hf_config  # type: ignore[import-untyped]
-from datasets import load_dataset  # type: ignore[import-untyped]
+from datasets import load_dataset
 
 from darnax.datasets.classification.interface import ClassificationDataset
 
