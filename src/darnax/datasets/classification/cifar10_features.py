@@ -28,10 +28,14 @@ Post-build shapes:
 from __future__ import annotations
 
 import logging
+import os
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 import jax
 import jax.numpy as jnp
+import numpy as np
+from datasets import config as hf_config  # type: ignore[import-untyped]
 from datasets import load_dataset  # type: ignore[import-untyped]
 
 from darnax.datasets.classification.interface import ClassificationDataset
@@ -49,6 +53,7 @@ class Cifar10FeaturesSmall(ClassificationDataset):
     FEAT_DIM = 512
     SHAPE_DIM = 2
     HF_REPO = "willinki/cifar10-features-s"
+    CACHE_SUBDIR = "darnax/cifar10_features_small"
 
     def __init__(
         self,
@@ -253,13 +258,9 @@ class Cifar10FeaturesSmall(ClassificationDataset):
             - 'y': int32 labels of shape [N]
         """
         data_naxis = 2
-        ds = load_dataset(self.HF_REPO, split=split, trust_remote_code=True)
-        if "x" not in ds.column_names or "y" not in ds.column_names:
-            raise KeyError(
-                f"Split {split!r} must contain 'x' and 'y' columns. Found: {ds.column_names}."
-            )
-        x = jnp.asarray(ds["x"], dtype=jnp.float32)
-        y = jnp.asarray(ds["y"], dtype=jnp.int32)
+        x_np, y_np = type(self)._load_split_numpy(split)
+        x = jnp.asarray(x_np, dtype=jnp.float32)
+        y = jnp.asarray(y_np, dtype=jnp.int32)
         if x.ndim != data_naxis or x.shape[1] != self.FEAT_DIM:
             raise ValueError(f"Expected x shape [N,{self.FEAT_DIM}], got {tuple(x.shape)}.")
         if y.ndim != 1 or y.shape[0] != x.shape[0]:
@@ -328,6 +329,60 @@ class Cifar10FeaturesSmall(ClassificationDataset):
         n_batches = -(-n // self.batch_size)
         return [(i * self.batch_size, min((i + 1) * self.batch_size, n)) for i in range(n_batches)]
 
+    @classmethod
+    def _load_split_numpy(cls, split: str) -> tuple[np.ndarray, np.ndarray]:
+        cache_file = cls._preprocessed_cache_path(split)
+        if cache_file is not None and cache_file.exists():
+            try:
+                with np.load(cache_file, allow_pickle=False) as data:
+                    x_np = data["x"]
+                    y_np = data["y"]
+            except Exception:  # pragma: no cover - fall back when cache is corrupt
+                logger.warning(
+                    "Failed to read cached CIFAR-10 features split %s; regenerating.", split
+                )
+                x_np, y_np = cls._generate_and_cache_split(split, cache_file)
+        else:
+            x_np, y_np = cls._generate_and_cache_split(split, cache_file)
+        return x_np, y_np
+
+    @classmethod
+    def _generate_and_cache_split(
+        cls, split: str, cache_file: Path | None
+    ) -> tuple[np.ndarray, np.ndarray]:
+        ds = load_dataset(cls.HF_REPO, split=split, trust_remote_code=True)
+        if "x" not in ds.column_names or "y" not in ds.column_names:
+            raise KeyError(
+                f"Split {split!r} must contain 'x' and 'y' columns. Found: {ds.column_names}."
+            )
+        ds.set_format(type="numpy", columns=["x", "y"])
+        batch = ds[:]
+        x_np = batch["x"].astype(np.float32)
+        y_np = batch["y"].astype(np.int32)
+
+        if cache_file is not None:
+            try:
+                cache_file.parent.mkdir(parents=True, exist_ok=True)
+                tmp_path = cache_file.with_suffix(".tmp.npz")
+                np.savez(tmp_path, x=x_np, y=y_np)
+                os.replace(tmp_path, cache_file)
+            except Exception:  # pragma: no cover - cache failures should not block loading
+                logger.warning("Unable to write CIFAR-10 features cache for split %s", split)
+
+        return x_np, y_np
+
+    @classmethod
+    def _preprocessed_cache_path(cls, split: str) -> Path | None:
+        base = os.environ.get("DARNAX_DATASET_CACHE")
+        if base is None:
+            base = os.environ.get("HF_DATASETS_CACHE")
+        if base is None:
+            base = getattr(hf_config, "HF_DATASETS_CACHE", None)
+        if base is None:
+            return None
+        cache_root = Path(base) / cls.CACHE_SUBDIR
+        return cache_root / f"{split}.npz"
+
 
 # ---- Large variant remains trivial ----------------------------------------
 
@@ -337,3 +392,4 @@ class Cifar10FeaturesLarge(Cifar10FeaturesSmall):
 
     FEAT_DIM = 4096
     HF_REPO = "willinki/cifar10-features-l"
+    CACHE_SUBDIR = "darnax/cifar10_features_large"

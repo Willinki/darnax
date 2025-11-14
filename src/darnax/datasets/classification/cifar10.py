@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import logging
+import os
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 import jax
 import jax.numpy as jnp
+import numpy as np
+from datasets import config as hf_config  # type: ignore[import-untyped]
 from datasets import load_dataset  # type: ignore[import-untyped]
 
 from darnax.datasets.classification.interface import ClassificationDataset
@@ -42,6 +46,7 @@ class Cifar10(ClassificationDataset):
 
     NUM_CLASSES = 10
     FLAT_DIM = 32 * 32 * 3  # CIFAR-10 images are 32x32 RGB
+    CACHE_SUBDIR = "darnax/cifar10"
 
     def __init__(
         self,
@@ -181,14 +186,60 @@ class Cifar10(ClassificationDataset):
             "projected_dim": self.input_dim if self.linear_projection else None,
         }
 
-    @staticmethod
-    def _load_split(split: str) -> tuple[jax.Array, jax.Array]:
-        """Load CIFAR10 split from HuggingFace datasets."""
-        ds = load_dataset("cifar10", split=split, trust_remote_code=True)
-        x_raw = jnp.asarray([jnp.array(im) for im in ds["img"]], dtype=jnp.float32)
-        x: jax.Array = (x_raw / 255.0).astype(jnp.float32)
-        y: jax.Array = jnp.asarray(ds["label"], dtype=jnp.int32)
+    @classmethod
+    def _load_split(cls, split: str) -> tuple[jax.Array, jax.Array]:
+        """Load CIFAR10 split from HuggingFace datasets with optional preprocessing cache."""
+        cache_file = cls._preprocessed_cache_path(split)
+        if cache_file is not None and cache_file.exists():
+            try:
+                with np.load(cache_file, allow_pickle=False) as data:
+                    x_np = data["x"]
+                    y_np = data["y"]
+            except Exception:  # pragma: no cover - corrupt cache falls back to regeneration
+                logger.warning("Failed to read cached CIFAR-10 split %s; regenerating.", split)
+                x_np, y_np = cls._generate_and_cache_split(split, cache_file)
+        else:
+            x_np, y_np = cls._generate_and_cache_split(split, cache_file)
+
+        x = jnp.asarray(x_np)
+        y = jnp.asarray(y_np)
         return x, y
+
+    @classmethod
+    def _generate_and_cache_split(
+        cls, split: str, cache_file: Path | None
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Generate preprocessing output and optionally persist it."""
+        ds = load_dataset("cifar10", split=split)
+        ds.set_format(type="numpy", columns=["img", "label"])
+
+        x_np: np.ndarray = ds[:]["img"].astype(np.float32) / 255.0
+        y_np: np.ndarray = ds[:]["label"].astype(np.int32)
+
+        if cache_file is not None:
+            try:
+                cache_file.parent.mkdir(parents=True, exist_ok=True)
+                tmp_path = cache_file.with_suffix(".tmp.npz")
+                np.savez(tmp_path, x=x_np, y=y_np)
+                os.replace(tmp_path, cache_file)
+            except Exception:  # pragma: no cover - cache failures should not break loading
+                logger.warning("Unable to write CIFAR-10 cache for split %s", split)
+
+        return x_np, y_np
+
+    @classmethod
+    def _preprocessed_cache_path(cls, split: str) -> Path | None:
+        """Return path for cached preprocessed arrays if caching is possible."""
+        base = os.environ.get("DARNAX_DATASET_CACHE")
+        if base is None:
+            base = os.environ.get("HF_DATASETS_CACHE")
+        if base is None:
+            base = getattr(hf_config, "HF_DATASETS_CACHE", None)
+        if base is None:
+            return None
+
+        cache_root = Path(base) / cls.CACHE_SUBDIR
+        return cache_root / f"{split}.npz"
 
     @classmethod
     def _subsample_per_class(
