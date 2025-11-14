@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import logging
+import os
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 import jax
 import jax.numpy as jnp
-from datasets import load_dataset  # type: ignore[import-untyped]
+import numpy as np
+from datasets import config as hf_config  # type: ignore[import-untyped]
+from datasets import load_dataset
 
 from darnax.datasets.classification.interface import ClassificationDataset
 
@@ -42,6 +46,7 @@ class Mnist(ClassificationDataset):
 
     NUM_CLASSES = 10
     FLAT_DIM = 28 * 28
+    CACHE_SUBDIR = "darnax/mnist"
 
     def __init__(
         self,
@@ -195,13 +200,22 @@ class Mnist(ClassificationDataset):
             "projected_dim": projected_dim,
         }
 
-    @staticmethod
-    def _load_split(split: str) -> tuple[jax.Array, jax.Array]:
-        """Load MNIST split from HuggingFace datasets."""
-        ds = load_dataset("mnist", split=split, trust_remote_code=True)
-        x_raw = jnp.asarray([jnp.array(im) for im in ds["image"]], dtype=jnp.float32)
-        x: jax.Array = (x_raw / 255.0).astype(jnp.float32)
-        y: jax.Array = jnp.asarray(ds["label"], dtype=jnp.int32)
+    @classmethod
+    def _load_split(cls, split: str) -> tuple[jax.Array, jax.Array]:
+        cache_file = cls._preprocessed_cache_path(split)
+        if cache_file is not None and cache_file.exists():
+            try:
+                with np.load(cache_file, allow_pickle=False) as data:
+                    x_np = data["x"]
+                    y_np = data["y"]
+            except Exception:  # pragma: no cover - fall back when cache is corrupt
+                logger.warning("Failed to read cached MNIST split %s; regenerating.", split)
+                x_np, y_np = cls._generate_and_cache_split(split, cache_file)
+        else:
+            x_np, y_np = cls._generate_and_cache_split(split, cache_file)
+
+        x: jax.Array = jnp.asarray(x_np)
+        y: jax.Array = jnp.asarray(y_np)
         return x, y
 
     @staticmethod
@@ -258,3 +272,36 @@ class Mnist(ClassificationDataset):
         """Compute batch boundaries."""
         n_batches = -(-n // self.batch_size)
         return [(i * self.batch_size, min((i + 1) * self.batch_size, n)) for i in range(n_batches)]
+
+    @classmethod
+    def _generate_and_cache_split(
+        cls, split: str, cache_file: Path | None
+    ) -> tuple[np.ndarray, np.ndarray]:
+        ds = load_dataset("mnist", split=split)
+        ds.set_format(type="numpy", columns=["image", "label"])
+        batch = ds[:]
+        x_np = batch["image"].astype(np.float32) / 255.0
+        y_np = batch["label"].astype(np.int32)
+
+        if cache_file is not None:
+            try:
+                cache_file.parent.mkdir(parents=True, exist_ok=True)
+                tmp_path = cache_file.with_suffix(".tmp.npz")
+                np.savez(tmp_path, x=x_np, y=y_np)
+                os.replace(tmp_path, cache_file)
+            except Exception:  # pragma: no cover - cache failures should not block loading
+                logger.warning("Unable to write MNIST cache for split %s", split)
+
+        return x_np, y_np
+
+    @classmethod
+    def _preprocessed_cache_path(cls, split: str) -> Path | None:
+        base = os.environ.get("DARNAX_DATASET_CACHE")
+        if base is None:
+            base = os.environ.get("HF_DATASETS_CACHE")
+        if base is None:
+            base = getattr(hf_config, "HF_DATASETS_CACHE", None)
+        if base is None:
+            return None
+        cache_root = Path(base) / cls.CACHE_SUBDIR
+        return cache_root / f"{split}.npz"
