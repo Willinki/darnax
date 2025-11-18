@@ -83,6 +83,7 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
         train_clamped_n_iter: int = 7,
         train_free_n_iter: int = 7,
         eval_n_iter: int = 14,
+        momentum: float = 0.0,
     ) -> None:
         """Initialize dynamical trainer."""
         super().__init__()
@@ -95,6 +96,7 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
             "clamped_iter": train_clamped_n_iter,
             "free_iter": train_free_n_iter,
             "eval_iter": eval_n_iter,
+            "momentum": momentum,
         }
         self.ctx = self.validate_ctx(self.ctx)
 
@@ -145,13 +147,25 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
 
         # 2) rollout phases
         (state, rng), _ = scan_n(
-            orchestrator.step, (state, rng), n_iter=ctx["warmup_iter"], filter_messages="forward"
+            orchestrator.step,
+            (state, rng),
+            n_iter=ctx["warmup_iter"],
+            filter_messages="forward",
+            momentum=ctx["momentum"],
         )
         (state, rng), _ = scan_n(
-            orchestrator.step, (state, rng), n_iter=ctx["clamped_iter"], filter_messages="all"
+            orchestrator.step,
+            (state, rng),
+            n_iter=ctx["clamped_iter"],
+            filter_messages="all",
+            momentum=ctx["momentum"],
         )
         (state, rng), _ = scan_n(
-            orchestrator.step, (state, rng), n_iter=ctx["free_iter"], filter_messages="forward"
+            orchestrator.step,
+            (state, rng),
+            n_iter=ctx["free_iter"],
+            filter_messages="forward",
+            momentum=ctx["momentum"],
         )
 
         # 3) local/backprop deltas shaped like orchestrator
@@ -216,10 +230,18 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
 
         # 2) warmup + free eval dynamics
         (state, rng), _ = scan_n(
-            orchestrator.step, (state, rng), n_iter=ctx["warmup_iter"], filter_messages="forward"
+            orchestrator.step,
+            (state, rng),
+            n_iter=ctx["warmup_iter"],
+            filter_messages="forward",
+            momentum=ctx["momentum"],
         )
         (state, rng), _ = scan_n(
-            orchestrator.step, (state, rng), n_iter=ctx["eval_iter"], filter_messages="forward"
+            orchestrator.step,
+            (state, rng),
+            n_iter=ctx["eval_iter"],
+            filter_messages="forward",
+            momentum=ctx["momentum"],
         )
 
         # 3) prediction

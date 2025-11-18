@@ -92,3 +92,18 @@ def batch_accuracy(y_true: Array, y_pred: Array) -> Array:
     y_true_idx = jnp.argmax(y_true, axis=-1)
     y_pred_idx = jnp.argmax(y_pred, axis=-1)
     return jnp.mean((y_true_idx == y_pred_idx).astype(jnp.float32))
+
+
+def misclassified_indexes(y_true: Array, y_pred: Array) -> Array:
+    """Return the batch indices of misclassified examples.
+
+    Both ``y_true`` and ``y_pred`` are expected to be one-hot/OVA arrays or
+    score vectors with the class dimension on the last axis. The function
+    compares argmax(y_true, -1) to argmax(y_pred, -1) and returns the indices
+    along the batch axis where they differ. If there are no misclassifications
+    an empty int array of shape (0,) is returned.
+    """
+    y_true_idx = jnp.argmax(y_true, axis=-1)
+    y_pred_idx = jnp.argmax(y_pred, axis=-1)
+    mask = y_true_idx != y_pred_idx
+    return jnp.where(mask)[0]

@@ -84,6 +84,7 @@ class AbstractOrchestrator(eqx.Module, Generic[StateT]):
         *,
         filter_messages: Literal["all", "forward", "backward"] = "all",
         skip_output_state: bool = True,
+        momentum: float = 0.0,
     ) -> tuple[StateT, KeyArray]:
         """Run one forward/update step **without** touching the output buffer.
 

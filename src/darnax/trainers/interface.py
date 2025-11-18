@@ -9,6 +9,9 @@ from jax import Array
 from darnax.orchestrators.interface import AbstractOrchestrator
 from darnax.states.interface import State
 
+import wandb
+import numpy as np
+
 StateT = TypeVar("StateT", bound=State)
 OrchestratorT = TypeVar("OrchestratorT", bound=AbstractOrchestrator[Any])
 Ctx = dict[str, Any]
@@ -106,11 +109,41 @@ class Trainer(ABC, Generic[OrchestratorT, StateT]):
             core = type(self)._train_step_impl
             self._jit_train = cast("TrainCore[OrchestratorT, StateT]", filter_jit(core))
 
-        rng, orch, st, ctx = self._jit_train(x, y, rng, self.orchestrator, self.state, self.ctx)
+        rng, orch, st, ctx = self._jit_train(
+            x, y, rng, self.orchestrator, self.state, self.ctx
+        )
+
+        if np.random.rand() < 0.01:
+            fraction_updated_win = (
+                np.abs(self.orchestrator.lmap[1][0].W - orch.lmap[1][0].W) > 0.0001
+            ).mean()
+            fraction_updated_J = (
+                np.abs(self.orchestrator.lmap[1][1].J - orch.lmap[1][1].J) > 0.0001
+            ).mean()
+            fraction_updated_wout = (
+                np.abs(self.orchestrator.lmap[2][1].W - orch.lmap[2][1].W) > 0.0001
+            ).mean()
+
+            avg_magnitude_win = np.abs(orch.lmap[1][0].W).mean()
+            avg_magnitude_J = np.abs(orch.lmap[1][1].J).mean()
+            avg_magnitude_wout = np.abs(orch.lmap[2][1].W).mean()
+            
+            logs = {
+                "fraction_updated/W_in": fraction_updated_win,
+                "fraction_updated/J": fraction_updated_J,
+                "fraction_updated/W_out": fraction_updated_wout,
+                "avg_magnitude/W_in": avg_magnitude_win,
+                "avg_magnitude/J": avg_magnitude_J,
+                "avg_magnitude/W_out": avg_magnitude_wout,
+            }
+            wandb.log(logs, commit=False)
+
         self.orchestrator, self.state, self.ctx = orch, st, ctx
         return rng
 
-    def eval_step(self, x: Array, y: Array, rng: Array) -> tuple[Array, Mapping[str, Array]]:
+    def eval_step(
+        self, x: Array, y: Array, rng: Array
+    ) -> tuple[Array, Mapping[str, Array]]:
         r"""Evaluate on one batch.
 
         Calls the pure, JIT-compiled :meth:`_eval_step_impl`, then rebinds ``state``.
@@ -142,7 +175,9 @@ class Trainer(ABC, Generic[OrchestratorT, StateT]):
             core = type(self)._eval_step_impl
             self._jit_eval = cast("EvalCore[OrchestratorT, StateT]", filter_jit(core))
 
-        rng, st, metrics = self._jit_eval(x, y, rng, self.orchestrator, self.state, self.ctx)
+        rng, st, metrics = self._jit_eval(
+            x, y, rng, self.orchestrator, self.state, self.ctx
+        )
         self.state = st
         return rng, metrics
 

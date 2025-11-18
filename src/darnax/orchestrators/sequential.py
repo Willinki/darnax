@@ -93,6 +93,7 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         *,
         filter_messages: Literal["all", "forward", "backward"] = "all",
         skip_output_state: bool = True,
+        momentum: float = 0.0,
     ) -> tuple[SequentialState, KeyArray]:
         """Run one forward/update sweep for all receivers **except output**.
 
@@ -129,7 +130,10 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
             rng, sub = jax.random.split(rng)
             messages = self._compute_messages(senders_group, state, rng=sub)
             aggregated: Array = self.lmap[receiver_idx, receiver_idx].reduce(messages)  # type: ignore
-            activated: Array = self.lmap[receiver_idx, receiver_idx].activation(aggregated)  # type: ignore
+            old_msg = state.messages[receiver_idx]
+            updated_msg = momentum * old_msg + (1.0 - momentum) * aggregated
+            state = state.replace_message_val(receiver_idx, updated_msg)
+            activated: Array = self.lmap[receiver_idx, receiver_idx].activation(updated_msg)  # type: ignore
             state = state.replace_val(receiver_idx, activated)
         return state, rng
 

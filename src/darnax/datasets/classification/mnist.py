@@ -246,13 +246,22 @@ class Mnist(ClassificationDataset):
         """Encode labels according to label_mode."""
         one_hot: jax.Array = jax.nn.one_hot(y, self.NUM_CLASSES, dtype=jnp.float32)
         if self.label_mode == "c-rescale":
-            result: jax.Array = one_hot * (self.NUM_CLASSES**0.5 / 2.0) - 0.5
-            return result
+            result: jax.Array = jnp.where(
+                one_hot > 0,
+                jnp.array(self.NUM_CLASSES**0.5 / 2.0, dtype=one_hot.dtype),
+                jnp.array(-0.5, dtype=one_hot.dtype),
+            )
+        elif self.label_mode == "new":
+            result: jax.Array = jnp.where(
+                one_hot > 0,
+                jnp.array(1.0, dtype=one_hot.dtype),
+                jnp.array(-1.0 / (self.NUM_CLASSES - 1), dtype=one_hot.dtype),
+            )
         elif self.label_mode == "pm1":
             result = one_hot * 2.0 - 1.0
-            return result
         else:
-            return one_hot
+            result = one_hot
+        return result
 
     def _compute_bounds(self, n: int) -> list[tuple[int, int]]:
         """Compute batch boundaries."""
