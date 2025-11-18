@@ -107,7 +107,7 @@ class OutputLayer(Layer):
         """
         return x
 
-    def backward(self, x: Array, y: Array, y_hat: Array) -> Self:
+    def backward(self, x: Array, y: Array, y_hat: Array, gate: Array | None = None) -> Self:
         """No-op local update.
 
         This layer has no trainable parameters, so it returns itself unchanged.
@@ -120,6 +120,8 @@ class OutputLayer(Layer):
             Target/supervision (unused).
         y_hat : Array
             Prediction (unused).
+        gate : Array
+            Multiplicative gate (unused).
 
         Returns
         -------

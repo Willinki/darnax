@@ -126,7 +126,7 @@ class FullyConnected(Adapter):
         """
         return x @ self.W
 
-    def backward(self, x: Array, y: Array, y_hat: Array) -> Self:
+    def backward(self, x: Array, y: Array, y_hat: Array, gate: Array | None = None) -> Self:
         """Return a module-shaped local update where only ``ΔW`` is set.
 
         Parameters
@@ -137,6 +137,8 @@ class FullyConnected(Adapter):
             Supervision signal/targets, broadcast-compatible with ``y_hat``.
         y_hat : Array
             Current prediction/logits, broadcast-compatible with ``y``.
+        gate : Array
+            Multiplicative gate applied to the update, default is ``1.0``.
 
         Returns
         -------
@@ -151,7 +153,9 @@ class FullyConnected(Adapter):
         with the stored per-output ``threshold``.
 
         """
-        dW = perceptron_rule_backward(x, y, y_hat, self.threshold)
+        if gate is None:
+            gate = jnp.array(1.0)
+        dW = perceptron_rule_backward(x, y, y_hat, self.threshold, gate)
         zero_update = jax.tree.map(jnp.zeros_like, self)
         new_self: Self = eqx.tree_at(lambda m: m.W, zero_update, dW)
         return new_self
@@ -198,7 +202,7 @@ class FrozenFullyConnected(FullyConnected):
     or to ablate learning of a particular edge type in a graph.
     """
 
-    def backward(self, x: Array, y: Array, y_hat: Array) -> Self:
+    def backward(self, x: Array, y: Array, y_hat: Array, gate: Array | None = None) -> Self:
         """Return zero update for all parameters.
 
         Parameters
@@ -209,6 +213,8 @@ class FrozenFullyConnected(FullyConnected):
             Target/supervision (unused).
         y_hat : Array
             Prediction/logits (unused).
+        gate : Array
+            Multiplicative gate (unused).
 
         Returns
         -------

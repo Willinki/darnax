@@ -177,6 +177,7 @@ class AbstractOrchestrator(eqx.Module, Generic[StateT]):
         *,
         filter_messages: Literal["all", "forward", "backward"] = "forward",
         target_state: StateT | None = None,
+        gate: jax.Array | None = None,
     ) -> Self:
         """Compute parameter updates aligned with the layermap structure.
 
@@ -194,6 +195,8 @@ class AbstractOrchestrator(eqx.Module, Generic[StateT]):
         target_state: SequentialState | None. Default: None
             Optionally, it is possible to mix states in the backward update rule. By
             default, other_state is equal to state unless explicitely requested.
+        gate : jax.Array
+            A multiplicative gate applied to all local updates.
 
         Returns
         -------
