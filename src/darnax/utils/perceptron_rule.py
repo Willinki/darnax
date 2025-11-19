@@ -50,7 +50,6 @@ def perceptron_rule_backward(
         a per-class vector ``(K,)``, or an array ``(n, K)``.
     gate: jax.Array
         Multiplicative gate applied to the update, default is ``1.0``.
-        Should have shape broadcastable to x shape.
 
     Returns
     -------
@@ -85,6 +84,6 @@ def perceptron_rule_backward(
     if y.shape != y_hat.shape or y.shape[0] != n:
         raise ValueError("y and y_hat must have the same (n, K) shape.")
     m = y * y_hat  # (n, K)
-    mistake = (m <= margin).astype(x.dtype)  # (n, K)
-    update: jax.Array = (x.T * gate.T @ (mistake * y)) / (n**0.5 * d**0.5)  # (d, K)
+    mistake = (m <= margin).astype(x.dtype) # (n, K)
+    update: jax.Array = ((x.T * gate.T) @ (mistake * y)) / (n**0.5 * d**0.5)  # (d, K)
     return -update

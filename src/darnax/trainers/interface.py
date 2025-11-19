@@ -77,7 +77,7 @@ class Trainer(ABC, Generic[OrchestratorT, StateT]):
         self._jit_train: TrainCore[OrchestratorT, StateT] | None = None
         self._jit_eval: EvalCore[OrchestratorT, StateT] | None = None
 
-    def train_step(self, x: Array, y: Array, rng: Array) -> Array:
+    def train_step(self, x: Array, y: Array, rng: Array, use_gating: bool) -> Array:
         r"""Run one training step.
 
         Calls the pure, JIT-compiled :meth:`_train_step_impl`, then rebinds
@@ -109,37 +109,35 @@ class Trainer(ABC, Generic[OrchestratorT, StateT]):
             core = type(self)._train_step_impl
             self._jit_train = cast("TrainCore[OrchestratorT, StateT]", filter_jit(core))
 
-        rng, orch, st, ctx = self._jit_train(
-            x, y, rng, self.orchestrator, self.state, self.ctx
+        rng, orch, st, ctx, logs = self._jit_train(
+            x, y, rng, self.orchestrator, self.state, self.ctx, use_gating
         )
 
-        if np.random.rand() < 0.01:
-            fraction_updated_win = (
-                np.abs(self.orchestrator.lmap[1][0].W - orch.lmap[1][0].W) > 0.0001
-            ).mean()
-            fraction_updated_J = (
-                np.abs(self.orchestrator.lmap[1][1].J - orch.lmap[1][1].J) > 0.0001
-            ).mean()
-            fraction_updated_wout = (
-                np.abs(self.orchestrator.lmap[2][1].W - orch.lmap[2][1].W) > 0.0001
-            ).mean()
+        fraction_updated_win = (
+            np.abs(self.orchestrator.lmap[1][0].W - orch.lmap[1][0].W) > 0.0001
+        ).mean()
+        fraction_updated_J = (
+            np.abs(self.orchestrator.lmap[1][1].J - orch.lmap[1][1].J) > 0.0001
+        ).mean()
+        fraction_updated_wout = (
+            np.abs(self.orchestrator.lmap[2][1].W - orch.lmap[2][1].W) > 0.0001
+        ).mean()
 
-            avg_magnitude_win = np.abs(orch.lmap[1][0].W).mean()
-            avg_magnitude_J = np.abs(orch.lmap[1][1].J).mean()
-            avg_magnitude_wout = np.abs(orch.lmap[2][1].W).mean()
+        avg_magnitude_win = np.abs(orch.lmap[1][0].W).mean()
+        avg_magnitude_J = np.abs(orch.lmap[1][1].J).mean()
+        avg_magnitude_wout = np.abs(orch.lmap[2][1].W).mean()
             
-            logs = {
-                "fraction_updated/W_in": fraction_updated_win,
-                "fraction_updated/J": fraction_updated_J,
-                "fraction_updated/W_out": fraction_updated_wout,
-                "avg_magnitude/W_in": avg_magnitude_win,
-                "avg_magnitude/J": avg_magnitude_J,
-                "avg_magnitude/W_out": avg_magnitude_wout,
-            }
-            wandb.log(logs, commit=False)
+        logs.update({
+            "fraction_updated/W_in": fraction_updated_win,
+            "fraction_updated/J": fraction_updated_J,
+            "fraction_updated/W_out": fraction_updated_wout,
+            "avg_magnitude/W_in": avg_magnitude_win,
+            "avg_magnitude/J": avg_magnitude_J,
+            "avg_magnitude/W_out": avg_magnitude_wout,
+        })
 
         self.orchestrator, self.state, self.ctx = orch, st, ctx
-        return rng
+        return rng, logs
 
     def eval_step(
         self, x: Array, y: Array, rng: Array
@@ -192,6 +190,7 @@ class Trainer(ABC, Generic[OrchestratorT, StateT]):
         orchestrator: OrchestratorT,
         state: StateT,
         ctx: dict[str, Any],
+        use_gating: bool,
     ) -> tuple[Array, OrchestratorT, StateT, Ctx]:
         r"""Pure training step to be JIT-compiled.
 
