@@ -180,6 +180,7 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
         state: StateT,
         ctx: dict[str, Any],
         use_gating: bool,
+        gating_shift: float,
     ) -> tuple[Array, OrchestratorT, StateT, Ctx]:
         """Pure training core: warmup → clamped → free, then optimizer step.
 
@@ -275,7 +276,7 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
             1 - probas[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)]
         )  # shape (B,)
         probas_masked = probas.at[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)].set(0)
-        gate = 0.5 + (1 - gate_3) - jnp.max(probas_masked, axis=-1)
+        gate = gating_shift + (1 - gate_3) - jnp.max(probas_masked, axis=-1)
         state = state.replace_val(-1, y)
         logs["phase3/avg_gate"] = gate_3.mean()
         logs["phase3/std_gate"] = gate_3.std()
@@ -289,8 +290,7 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
         logs["final/max_gate"] = gate.max()
 
         # 3) local/backprop deltas shaped like orchestrator
-        # grads = orchestrator.backward(state, rng=rng)
-        gate = gate if use_gating else None
+        gate = gate if use_gating else jnp.array(1.0)
         grads = orchestrator.backward(state, rng=rng, gate=gate)
 
         # 4) filter trainable leaves

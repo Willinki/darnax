@@ -308,6 +308,8 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         for (receiver_idx, sender_idx), module in self.lmap.edge_items():
             if receiver_idx not in updates:
                 updates[receiver_idx] = {}
+            if receiver_idx == self.lmap.rows()[-1]:
+                gate = jnp.array(1.0)  # no gating on output layer
             updates[receiver_idx][sender_idx] = module.backward(
                 x=state[sender_idx],
                 y=target_state[receiver_idx],
