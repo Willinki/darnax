@@ -35,6 +35,7 @@ import warnings
 from typing import TYPE_CHECKING, Literal
 
 import jax
+import jax.numpy as jnp
 from jax import Array
 
 from darnax.layer_maps.sparse import LayerMap
@@ -195,6 +196,7 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         *,
         filter_messages: Literal["all", "forward", "backward"] = "forward",
         target_state: SequentialState | None = None,
+        gate: jax.Array | None = None,
     ) -> Self:
         """Compute per-edge parameter updates and return them as an orchestrator.
 
@@ -225,6 +227,9 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         target_state: SequentialState | None. Default: None
             Optionally, it is possible to mix states in the backward update rule. By
             default, other_state is equal to state unless explicitely requested.
+        gate : jax.Array
+            A multiplicative gate applied to all local updates.
+            Shape must be broadcastable to x shapes.
 
         Returns
         -------
@@ -238,6 +243,8 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         messages (no right-going edges), matching the schedule used in inference.
 
         """
+        if gate is None:
+            gate = jnp.array(1.0)
         if target_state is None:
             target_state = state
         else:
@@ -261,12 +268,16 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
                 self.lmap[receiver_idx, receiver_idx].reduce(msgs),  # type: ignore
             )
         # Second pass: ask each module for its update.
-        return type(self)(layers=self._backward_direct(state, activations, target_state))
+        return type(self)(layers=self._backward_direct(state, activations, target_state, gate))
 
     # ---------------------------- internals ----------------------------
 
     def _backward_direct(
-        self, state: SequentialState, activations: SequentialState, target_state: SequentialState
+        self,
+        state: SequentialState,
+        activations: SequentialState,
+        target_state: SequentialState,
+        gate: jax.Array,
     ) -> LayerMap:
         """Assemble a LayerMap of per-edge updates from local rules.
 
@@ -278,6 +289,9 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
             TODO: correct documentation
         target_state : SequentialState
             Optional parameter for state mixing.
+        gate : jax.Array
+            A multiplicative gate applied to all local updates.
+            Shape must be broadcastable to x shapes.
 
         Returns
         -------
@@ -291,7 +305,10 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
             if receiver_idx not in updates:
                 updates[receiver_idx] = {}
             updates[receiver_idx][sender_idx] = module.backward(
-                x=state[sender_idx], y=target_state[receiver_idx], y_hat=activations[receiver_idx]
+                x=state[sender_idx],
+                y=target_state[receiver_idx],
+                y_hat=activations[receiver_idx],
+                gate=gate,
             )
         return LayerMap.from_dict(updates, require_diagonal=True)
 

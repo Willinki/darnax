@@ -86,7 +86,7 @@ class AbstractModule(eqx.Module, ABC):
         ...
 
     @abstractmethod
-    def backward(self, x: Array, y: Array, y_hat: Array) -> Self:
+    def backward(self, x: Array, y: Array, y_hat: Array, gate: Array | None) -> Self:
         """Compute a local parameter update (same PyTree structure).
 
         This method implements a **local plasticity rule** that produces a
@@ -103,6 +103,9 @@ class AbstractModule(eqx.Module, ABC):
             Shape must be compatible with the module's output space.
         y_hat : Array
             The module's (or readout's) current prediction.
+        gate : Array (optional)
+            A multiplicative gate applied to the update. Shape must be
+            broadcastable to x shapes.
 
         Returns
         -------

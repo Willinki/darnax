@@ -63,7 +63,7 @@ def scan_n(
     ...     rng, state = carry
     ...     rng, sub = random.split(rng)
     ...     # pretend "state['w']" is a parameter; do a dummy update
-    ...     grad = jnp.array(1.0)         # fake gradient
+    ...     grad | None = None         # fake gradient
     ...     new_w = state["w"] - lr * grad
     ...     new_state = {"w": new_w}
     ...     loss = new_w ** 2             # fake loss to log

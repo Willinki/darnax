@@ -209,7 +209,7 @@ class RecurrentDiscrete(Layer):
         """
         return jnp.asarray(tree_reduce(operator.add, h))
 
-    def backward(self, x: Array, y: Array, y_hat: Array) -> Self:
+    def backward(self, x: Array, y: Array, y_hat: Array, gate: Array | None = None) -> Self:
         """Compute a module-shaped local update.
 
         Produces a PyTree of updates where only ``J`` receives a nonzero
@@ -225,6 +225,9 @@ class RecurrentDiscrete(Layer):
             Supervision signal/targets, broadcast-compatible with ``y_hat``.
         y_hat : Array
             Current prediction/logits, broadcast-compatible with ``y``.
+        gate : Array
+            A multiplicative gate applied to the update. Shape must be
+            broadcastable to x shapes.
 
         Returns
         -------
@@ -245,7 +248,9 @@ class RecurrentDiscrete(Layer):
         >>> new_params = eqx.tree_at(lambda m: m.J, layer, layer.J + lr * upd.J)
 
         """
-        dJ = perceptron_rule_backward(x, y, y_hat, self.threshold)
+        if gate is None:
+            gate = jnp.array(1.0)
+        dJ = perceptron_rule_backward(x, y, y_hat, self.threshold, gate)
         dJ = dJ * self._mask
         zero_update = jax.tree.map(jnp.zeros_like, self)
         new_self: Self = eqx.tree_at(lambda m: m.J, zero_update, dJ)

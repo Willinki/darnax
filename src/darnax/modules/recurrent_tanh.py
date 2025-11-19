@@ -213,7 +213,7 @@ class RecurrentTanh(Layer):
         """
         return jnp.asarray(tree_reduce(operator.add, h))
 
-    def backward(self, x: Array, y: Array, y_hat: Array) -> Self:
+    def backward(self, x: Array, y: Array, y_hat: Array, gate: Array | None = None) -> Self:
         """Compute a module-shaped local update.
 
         Produces a PyTree of updates where only ``J`` receives a nonzero
@@ -229,6 +229,8 @@ class RecurrentTanh(Layer):
             Supervision signal/targets, broadcast-compatible with ``y_hat``.
         y_hat : Array
             Current prediction/logits, broadcast-compatible with ``y``.
+        gate: Array | None
+            Multiplicative gate applied to the update, default is ``1.0``.
 
         Returns
         -------
@@ -249,6 +251,8 @@ class RecurrentTanh(Layer):
         >>> new_params = eqx.tree_at(lambda m: m.J, layer, layer.J + lr * upd.J)
 
         """
+        if gate is None:
+            gate = jnp.array(1.0)
         dJ = tanh_perceptron_rule_backward(x, y, y_hat, self.tolerance)
         dJ = dJ * self._mask
         zero_update = jax.tree.map(jnp.zeros_like, self)
@@ -383,7 +387,7 @@ class RecurrentTanhTruncated(RecurrentTanh):
         threshold_vec = self._set_shape(threshold, features, dtype)
         self.threshold = threshold_vec
 
-    def backward(self, x: Array, y: Array, y_hat: Array) -> Self:
+    def backward(self, x: Array, y: Array, y_hat: Array, gate: Array | None = None) -> Self:
         """Compute a module-shaped local update.
 
         Produces a PyTree of updates where only ``J`` receives a nonzero
@@ -399,6 +403,8 @@ class RecurrentTanhTruncated(RecurrentTanh):
             Supervision signal/targets, broadcast-compatible with ``y_hat``.
         y_hat : Array
             Current prediction/logits, broadcast-compatible with ``y``.
+        gate: Array | None
+            Multiplicative gate applied to the update, default is ``1.0``.
 
         Returns
         -------
@@ -420,6 +426,8 @@ class RecurrentTanhTruncated(RecurrentTanh):
         >>> new_params = eqx.tree_at(lambda m: m.J, layer, layer.J + lr * upd.J)
 
         """
+        if gate is None:
+            gate = jnp.array(1.0)
         dJ = tanh_truncated_perceptron_rule_backward(x, y, y_hat, self.threshold, self.tolerance)
         dJ = dJ * self._mask
         zero_update = jax.tree.map(jnp.zeros_like, self)

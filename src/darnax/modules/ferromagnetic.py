@@ -77,7 +77,7 @@ class Ferromagnetic(Adapter):
         """
         return x * self.strength
 
-    def backward(self, x: Array, y: Array, y_hat: Array) -> Self:
+    def backward(self, x: Array, y: Array, y_hat: Array, gate: Array | None = None) -> Self:
         """Return a zero update to indicate non-trainability.
 
         Parameters
@@ -88,6 +88,8 @@ class Ferromagnetic(Adapter):
             Target/supervision (unused).
         y_hat : Array
             Prediction (unused).
+        gate : Array
+            Multiplicative gate (unused).
 
         Returns
         -------
@@ -95,6 +97,8 @@ class Ferromagnetic(Adapter):
             A PyTree matching ``self`` where all leaves are zeros.
 
         """
+        if gate is None:
+            gate = jnp.array(1.0)
         new_self: Self = tree_map(jnp.zeros_like, self)
         return new_self
 

@@ -114,7 +114,7 @@ class DebugLayer(Layer):
         """
         return jnp.asarray(jax.tree_util.tree_reduce(operator.add, h))
 
-    def backward(self, x: Array, y: Array, y_hat: Array) -> Self:
+    def backward(self, x: Array, y: Array, y_hat: Array, gate: Array | None = None) -> Self:
         """Return a no-op parameter update.
 
         Parameters
@@ -125,6 +125,8 @@ class DebugLayer(Layer):
             Target/supervision (unused).
         y_hat : Array
             Prediction (unused).
+        gate: Array | None
+            Multiplicative gate (unused).
 
         Returns
         -------
@@ -182,7 +184,7 @@ class DebugAdapter(Adapter):
         """
         return self.w * x
 
-    def backward(self, x: Array, y: Array, y_hat: Array) -> Self:
+    def backward(self, x: Array, y: Array, y_hat: Array, gate: Array | None = None) -> Self:
         """Return a no-op parameter update.
 
         Parameters
@@ -193,6 +195,8 @@ class DebugAdapter(Adapter):
             Target/supervision (unused).
         y_hat : Array
             Prediction (unused).
+        gate: Array | None
+            Multiplicative gate (unused).
 
         Returns
         -------

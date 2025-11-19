@@ -29,6 +29,7 @@ def perceptron_rule_backward(
     y: jax.Array,
     y_hat: jax.Array,
     margin: jax.Array,
+    gate: jax.Array | None = None,
 ) -> jax.Array:
     """Multiclass (OVA) perceptron update (no learning rate).
 
@@ -47,6 +48,9 @@ def perceptron_rule_backward(
     margin : jax.Array
         Margin threshold, **broadcastable** to ``(n, K)``; e.g. a scalar,
         a per-class vector ``(K,)``, or an array ``(n, K)``.
+    gate: jax.Array
+        Multiplicative gate applied to the update, default is ``1.0``.
+        Should have shape broadcastable to x shape.
 
     Returns
     -------
@@ -71,6 +75,8 @@ def perceptron_rule_backward(
     (2, 2)
 
     """
+    if gate is None:
+        gate = jnp.array(1.0)
     x = jnp.atleast_2d(x)  # (n, d)
     y = jnp.atleast_2d(y)  # (n, K)
     y_hat = jnp.atleast_2d(y_hat)  # (n, K)
@@ -80,5 +86,5 @@ def perceptron_rule_backward(
         raise ValueError("y and y_hat must have the same (n, K) shape.")
     m = y * y_hat  # (n, K)
     mistake = (m <= margin).astype(x.dtype)  # (n, K)
-    update: jax.Array = (x.T @ (mistake * y)) / (n**0.5 * d**0.5)  # (d, K)
+    update: jax.Array = (x.T * gate.T @ (mistake * y)) / (n**0.5 * d**0.5)  # (d, K)
     return -update
