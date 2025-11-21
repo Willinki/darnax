@@ -77,7 +77,7 @@ class Trainer(ABC, Generic[OrchestratorT, StateT]):
         self._jit_train: TrainCore[OrchestratorT, StateT] | None = None
         self._jit_eval: EvalCore[OrchestratorT, StateT] | None = None
 
-    def train_step(self, x: Array, y: Array, rng: Array, use_gating: bool, gating_shift: float = 1.0) -> Array:
+    def train_step(self, x: Array, y: Array, rng: Array, use_gating: bool = False, gating_shift: float = 1.0, fake_dynamics: bool = False, fake_dynamics_k: float = 0.25, fake_dynamics_vanilla: bool = True, double_dynamics: bool = True) -> Array:
         r"""Run one training step.
 
         Calls the pure, JIT-compiled :meth:`_train_step_impl`, then rebinds
@@ -110,7 +110,7 @@ class Trainer(ABC, Generic[OrchestratorT, StateT]):
             self._jit_train = cast("TrainCore[OrchestratorT, StateT]", filter_jit(core))
 
         rng, orch, st, ctx, logs = self._jit_train(
-            x, y, rng, self.orchestrator, self.state, self.ctx, use_gating, gating_shift
+            x, y, rng, self.orchestrator, self.state, self.ctx, use_gating=use_gating, gating_shift=gating_shift, fake_dynamics=fake_dynamics, fake_dynamics_k=fake_dynamics_k, fake_dynamics_vanilla=fake_dynamics_vanilla, double_dynamics=double_dynamics,
         )
 
         fraction_updated_win = (

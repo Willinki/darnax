@@ -14,7 +14,7 @@ from darnax.utils.typing import PyTree
 
 import jax
 from jax.nn import softmax
-import numpy as np
+from jax import lax
 
 StateT = TypeVar("StateT", bound=State)
 OrchestratorT = TypeVar("OrchestratorT", bound=AbstractOrchestrator[Any])
@@ -26,27 +26,31 @@ def greedy_iterative_supervision(
     state: StateT,
     y: Array,
     rng: Array,
+    k: float = 0.25,
+    vanilla: bool = True,
 ) -> tuple[StateT, Array]:
-    k = 0.25
-
     internal_state = state[1]               # (B, H)
     B, H = internal_state.shape
     n_steps = int(H * k)                    # static, ok for jit if H is static
 
     prototypes = orchestrator.lmap[1][2].W.T  # (H, C)
     correct_class = jnp.argmax(y, axis=-1)    # (B,)
+    wback_fields_binarized = (y @ prototypes.T > 0).astype(jnp.float32)  # (B, H)
 
     # mask[b, i] = True if spin i in batch b has already been set
     mask0 = jnp.zeros_like(internal_state, dtype=bool)  # (B, H)
 
-    # Pre-split RNGs for each step
-    rngs = jax.random.split(rng, n_steps)
+    # Pre-split RNGs: reserve one key as the updated RNG and use the rest
+    # as per-step subkeys. This ensures we return a valid PRNG key and do
+    # not accidentally return internal state arrays as RNGs.
+    rngs_all = jax.random.split(rng, n_steps + 1)
+    rng, rngs = rngs_all[0], rngs_all[1:]
 
     def iter_step(carry, rng_i):
         state, mask = carry
 
         # Compute fields
-        fields = orchestrator._compute_messages(orchestrator.lmap[1], state, rng_i)
+        fields = orchestrator._compute_messages(orchestrator.lmap[1], state, rng=rng_i)
         inference_local_field = fields[0] + fields[1]  # (B, H)
         internal_state = state[1]                      # (B, H)
 
@@ -59,11 +63,13 @@ def greedy_iterative_supervision(
         # prototypes: (H, C)
         # correct_class: (B,)
         # -> proto_for_cls: (H, B) then (B, H)
-        proto_for_cls = prototypes[:, correct_class]   # (H, B) via advanced indexing
-        proto_for_cls = proto_for_cls.T               # (B, H)
-
         batch_idx = jnp.arange(B)
-        new_values = proto_for_cls[batch_idx, most_indecisive_idx]  # (B,)
+        if vanilla:
+            proto_for_cls = prototypes[:, correct_class]   # (H, B) via advanced indexing
+            proto_for_cls = proto_for_cls.T               # (B, H)
+            new_values = proto_for_cls[batch_idx, most_indecisive_idx]  # (B,)
+        else:
+            new_values = wback_fields_binarized[batch_idx, most_indecisive_idx]  # (B,)
 
         # Update internal state at the chosen indices
         internal_state = internal_state.at[batch_idx, most_indecisive_idx].set(new_values)
@@ -82,8 +88,8 @@ def greedy_iterative_supervision(
         rngs,
     )
 
-    # Return new state and internal_state for convenience
-    return state_final, state_final[1]
+    # Return new state and an advanced RNG key
+    return state_final, rng
 
 
 
@@ -181,6 +187,10 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
         ctx: dict[str, Any],
         use_gating: bool,
         gating_shift: float,
+        fake_dynamics: bool,
+        fake_dynamics_k: float,
+        fake_dynamics_vanilla: bool,
+        double_dynamics: bool,
     ) -> tuple[Array, OrchestratorT, StateT, Ctx]:
         """Pure training core: warmup → clamped → free, then optimizer step.
 
@@ -221,6 +231,8 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
         state = state.init(x, y)
 
         # 2) rollout phases
+
+        # 2.a) free warmup phase
         (state, rng), _ = scan_n(
             orchestrator.step,
             (state, rng),
@@ -228,7 +240,6 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
             filter_messages="forward",
             momentum=ctx["momentum"],
         )
-
         state_prediction, rng = orchestrator.predict(state, rng=rng)
         probas = softmax(state_prediction.readout, axis=-1)
         gate_1 = (
@@ -241,15 +252,17 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
         logs["phase1/min_gate"] = gate_1.min()
         logs["phase1/max_gate"] = gate_1.max()
 
-        (state, rng), _ = scan_n(
-            orchestrator.step,
-            (state, rng),
-            n_iter=ctx["clamped_iter"],
-            filter_messages="all",
-            momentum=ctx["momentum"],
-        )
-        # state, rng = greedy_iterative_supervision(orchestrator, state, y, rng)
-
+        # 2.b) supervised phase
+        if fake_dynamics:
+            state, rng = greedy_iterative_supervision(orchestrator, state, y, rng, fake_dynamics_k, fake_dynamics_vanilla)
+        else:
+            (state, rng), _ = scan_n(
+                orchestrator.step,
+                (state, rng),
+                n_iter=ctx["clamped_iter"],
+                filter_messages="all",
+                momentum=ctx["momentum"],
+            )
         state_prediction, rng = orchestrator.predict(state, rng=rng)
         probas = softmax(state_prediction.readout, axis=-1)
         gate_2 = (
@@ -262,27 +275,33 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
         logs["phase2/min_gate"] = gate_2.min()
         logs["phase2/max_gate"] = gate_2.max()
 
-        (state, rng), _ = scan_n(
-            orchestrator.step,
-            (state, rng),
-            n_iter=ctx["free_iter"],
-            filter_messages="forward",
-            momentum=ctx["momentum"],
-        )
+        # 2.c) final free phase
+        if double_dynamics:
+            (state, rng), _ = scan_n(
+                orchestrator.step,
+                (state, rng),
+                n_iter=ctx["free_iter"],
+                filter_messages="forward",
+                momentum=ctx["momentum"],
+            )
+            state_prediction, rng = orchestrator.predict(state, rng=rng)
+            probas = softmax(state_prediction.readout, axis=-1)
+            gate_3 = (
+                1 - probas[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)]
+            )  # shape (B,)
+            state = state.replace_val(-1, y)
+            logs["phase3/avg_gate"] = gate_3.mean()
+            logs["phase3/std_gate"] = gate_3.std()
+            logs["phase3/median_gate"] = jnp.median(gate_3)
+            logs["phase3/min_gate"] = gate_3.min()
+            logs["phase3/max_gate"] = gate_3.max()
+            gate_final = gate_3
+        else:
+            gate_final = gate_2
 
-        state_prediction, rng = orchestrator.predict(state, rng=rng)
-        probas = softmax(state_prediction.readout, axis=-1)
-        gate_3 = (
-            1 - probas[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)]
-        )  # shape (B,)
+        # 2.d) gating
         probas_masked = probas.at[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)].set(0)
-        gate = gating_shift + (1 - gate_3) - jnp.max(probas_masked, axis=-1)
-        state = state.replace_val(-1, y)
-        logs["phase3/avg_gate"] = gate_3.mean()
-        logs["phase3/std_gate"] = gate_3.std()
-        logs["phase3/median_gate"] = jnp.median(gate_3)
-        logs["phase3/min_gate"] = gate_3.min()
-        logs["phase3/max_gate"] = gate_3.max()
+        gate = gating_shift + (1 - gate_final) - jnp.max(probas_masked, axis=-1)
         logs["final/avg_gate"] = gate.mean()
         logs["final/std_gate"] = gate.std()
         logs["final/median_gate"] = jnp.median(gate)
