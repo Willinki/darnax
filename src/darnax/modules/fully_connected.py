@@ -153,8 +153,6 @@ class FullyConnected(Adapter):
         with the stored per-output ``threshold``.
 
         """
-        if gate is None:
-            gate = jnp.array(1.0)
         dW = perceptron_rule_backward(x, y, y_hat, self.threshold, gate)
         zero_update = jax.tree.map(jnp.zeros_like, self)
         new_self: Self = eqx.tree_at(lambda m: m.W, zero_update, dW)
