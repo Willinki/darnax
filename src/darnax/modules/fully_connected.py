@@ -222,3 +222,62 @@ class FrozenFullyConnected(FullyConnected):
         """
         zero_update: Self = jax.tree.map(jnp.zeros_like, self)
         return zero_update
+
+
+class Wback(FullyConnected):
+    """Fully connected adapter with **frozen** parameters.
+
+    Same forward behavior as :class:`FullyConnected`, but :meth:`backward`
+    returns **zeros** for all leaves. Useful for inference-only deployments
+    or to ablate learning of a particular edge type in a graph.
+    """
+
+    def __call__(self, y: Array, rng: KeyArray | None = None) -> Array:
+        """Compute ``y = (x @ W) * strength`` (broadcast on last dim).
+
+        Parameters
+        ----------
+        y : Array
+            Input tensor with trailing dimension ``in_features``. Leading batch
+            dimensions (e.g., ``(N, ...)``) are supported via standard matmul
+            broadcasting. We expect that ``in_features`` equals the number of classes,
+            and the entries are one-hot encoded (-1/+1).
+        rng : KeyArray or None, optional
+            Ignored; present for signature compatibility.
+
+        Returns
+        -------
+        Array
+            Output tensor with trailing dimension ``out_features``.
+
+        """
+        # rescaled = jnp.where(y > 0, 1.5811, -0.5)  # old codebase scaling: 1.5811 = sqrt(C) / 2
+        # return rescaled @ self.W
+        C = self.W.shape[0]
+        Cr_m1 = (C - 1) ** 0.5
+        a = 1 / 2 * (Cr_m1 / 2 + 1 / Cr_m1)
+        b = 1 / 2 * (Cr_m1 / 2 - 1 / Cr_m1)
+        return (y * a + b) @ self.W
+
+    def backward(self, x: Array, y: Array, y_hat: Array, gate: Array | None = None) -> Self:
+        """Return zero update for all parameters.
+
+        Parameters
+        ----------
+        x : Array
+            Forward input (unused).
+        y : Array
+            Target/supervision (unused).
+        y_hat : Array
+            Prediction/logits (unused).
+        gate : Array
+            Multiplicative gate (unused).
+
+        Returns
+        -------
+        Self
+            PyTree of zeros with the same structure as ``self``.
+
+        """
+        zero_update: Self = jax.tree.map(jnp.zeros_like, self)
+        return zero_update
