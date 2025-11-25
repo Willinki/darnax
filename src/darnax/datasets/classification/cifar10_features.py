@@ -55,7 +55,7 @@ class Cifar10FeaturesSmall(ClassificationDataset):
         batch_size: int = 64,
         linear_projection: int | None = None,
         num_images_per_class: int | None = None,
-        label_mode: Literal["pm1", "ooe", "c-rescale"] = "c-rescale",
+        label_mode: Literal["pm1", "ooe"] = "pm1",
         x_transform: Literal["sign", "identity"] = "identity",
         validation_fraction: float = 0.0,
     ) -> None:
@@ -75,10 +75,9 @@ class Cifar10FeaturesSmall(ClassificationDataset):
         num_images_per_class : int, optional
             If integer, we simple a fixed amount of images per class. If a
             class does not contain enough images, we sample them all.
-        label_mode : Literal["pm1", "ooe", "c-rescale"]
+        label_mode : Literal["pm1", "ooe"]
             if pm1 the positive class is assigned +1, the others -1. if ooe,
-            regular one-hot-encoding. if c-rescale, the positive class is
-            rescaled to C/2, while the negative are rescaled to -0.5.
+            regular one-hot-encoding.
         validation_fraction : float
             If not zero, we sample a random holdout set from training.
         x_transform : Literal["sign", "identity"]
@@ -314,13 +313,11 @@ class Cifar10FeaturesSmall(ClassificationDataset):
     def _encode_labels(self, y: jax.Array) -> jax.Array:
         """Encode labels according to label_mode."""
         one_hot: jax.Array = jax.nn.one_hot(y, self.NUM_CLASSES, dtype=jnp.float32)
-        if self.label_mode == "c-rescale":
-            rescaled_y: jax.Array = one_hot * (self.NUM_CLASSES**0.5 / 2.0) - 0.5
-            return rescaled_y
-        elif self.label_mode == "pm1":
-            rescaled_y_pm1: jax.Array = one_hot * 2.0 - 1.0
-            return rescaled_y_pm1
+        if self.label_mode == "pm1":
+            result = one_hot * 2.0 - 1.0
+            return result
         else:
+            assert self.label_mode == "ooe", f"unknown label_mode: {self.label_mode}"
             return one_hot
 
     def _compute_bounds(self, n: int) -> list[tuple[int, int]]:

@@ -248,8 +248,6 @@ class RecurrentDiscrete(Layer):
         >>> new_params = eqx.tree_at(lambda m: m.J, layer, layer.J + lr * upd.J)
 
         """
-        if gate is None:
-            gate = jnp.array(1.0)
         dJ = perceptron_rule_backward(x, y, y_hat, self.threshold, gate)
         dJ = dJ * self._mask
         zero_update = jax.tree.map(jnp.zeros_like, self)

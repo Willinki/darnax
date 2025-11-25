@@ -251,6 +251,11 @@ class SequentialState(State):
         """Return the readout state."""
         return self[-1]
 
+    @property
+    def representations(self) -> Array:
+        """Return the representations (final hidden layer) state."""
+        return self[-2]
+
     @staticmethod
     def _to_shape_tuple(s: tuple[int, ...] | int) -> tuple[int, ...]:
         """Validate and convert a size spec to a shape tuple.

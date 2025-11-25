@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import logging
+import os
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 import jax
 import jax.numpy as jnp
-from datasets import load_dataset  # type: ignore[import-untyped]
+import numpy as np
+from datasets import config as hf_config  # type: ignore[import-untyped]
+from datasets import load_dataset
 
 from darnax.datasets.classification.interface import ClassificationDataset
 
@@ -28,8 +32,8 @@ class Mnist(ClassificationDataset):
         Output dimension for random projection. If None, uses full 784 dimensions.
     num_images_per_class : int or None, default=None
         Maximum training images per class. If None, uses full training set.
-    label_mode : {"pm1", "ooe", "c-rescale"}, default="c-rescale"
-        Label encoding: "pm1" (±1), "ooe" (one-hot), "c-rescale" (scaled).
+    label_mode : {"pm1", "ooe"}, default="pm1"
+        Label encoding: "pm1" (±1), "ooe" (one-hot).
     x_transform : {"sign", "tanh", "identity"}, default="sign"
         Input transform: "sign" (±1), "tanh", "identity" (no transform).
     validation_fraction : float, default=0.0
@@ -42,13 +46,14 @@ class Mnist(ClassificationDataset):
 
     NUM_CLASSES = 10
     FLAT_DIM = 28 * 28
+    CACHE_SUBDIR = "darnax/mnist"
 
     def __init__(
         self,
         batch_size: int = 64,
         linear_projection: int | None = None,
         num_images_per_class: int | None = None,
-        label_mode: Literal["pm1", "ooe", "c-rescale"] = "c-rescale",
+        label_mode: Literal["pm1", "ooe"] = "pm1",
         x_transform: Literal["sign", "tanh", "identity"] = "sign",
         validation_fraction: float = 0.0,
         flatten: bool = True,
@@ -195,13 +200,22 @@ class Mnist(ClassificationDataset):
             "projected_dim": projected_dim,
         }
 
-    @staticmethod
-    def _load_split(split: str) -> tuple[jax.Array, jax.Array]:
-        """Load MNIST split from HuggingFace datasets."""
-        ds = load_dataset("mnist", split=split, trust_remote_code=True)
-        x_raw = jnp.asarray([jnp.array(im) for im in ds["image"]], dtype=jnp.float32)
-        x: jax.Array = (x_raw / 255.0).astype(jnp.float32)
-        y: jax.Array = jnp.asarray(ds["label"], dtype=jnp.int32)
+    @classmethod
+    def _load_split(cls, split: str) -> tuple[jax.Array, jax.Array]:
+        cache_file = cls._preprocessed_cache_path(split)
+        if cache_file is not None and cache_file.exists():
+            try:
+                with np.load(cache_file, allow_pickle=False) as data:
+                    x_np = data["x"]
+                    y_np = data["y"]
+            except Exception:  # pragma: no cover - fall back when cache is corrupt
+                logger.warning("Failed to read cached MNIST split %s; regenerating.", split)
+                x_np, y_np = cls._generate_and_cache_split(split, cache_file)
+        else:
+            x_np, y_np = cls._generate_and_cache_split(split, cache_file)
+
+        x: jax.Array = jnp.asarray(x_np)
+        y: jax.Array = jnp.asarray(y_np)
         return x, y
 
     @staticmethod
@@ -245,25 +259,47 @@ class Mnist(ClassificationDataset):
     def _encode_labels(self, y: jax.Array) -> jax.Array:
         """Encode labels according to label_mode."""
         one_hot: jax.Array = jax.nn.one_hot(y, self.NUM_CLASSES, dtype=jnp.float32)
-        if self.label_mode == "c-rescale":
-            result: jax.Array = jnp.where(
-                one_hot > 0,
-                jnp.array(self.NUM_CLASSES**0.5 / 2.0, dtype=one_hot.dtype),
-                jnp.array(-0.5, dtype=one_hot.dtype),
-            )
-        elif self.label_mode == "new":
-            result: jax.Array = jnp.where(
-                one_hot > 0,
-                jnp.array(1.0, dtype=one_hot.dtype),
-                jnp.array(-1.0 / (self.NUM_CLASSES - 1), dtype=one_hot.dtype),
-            )
-        elif self.label_mode == "pm1":
+        if self.label_mode == "pm1":
             result = one_hot * 2.0 - 1.0
+            return result
         else:
-            result = one_hot
-        return result
+            assert self.label_mode == "ooe", f"unknown label_mode: {self.label_mode}"
+            return one_hot
 
     def _compute_bounds(self, n: int) -> list[tuple[int, int]]:
         """Compute batch boundaries."""
         n_batches = -(-n // self.batch_size)
         return [(i * self.batch_size, min((i + 1) * self.batch_size, n)) for i in range(n_batches)]
+
+    @classmethod
+    def _generate_and_cache_split(
+        cls, split: str, cache_file: Path | None
+    ) -> tuple[np.ndarray, np.ndarray]:
+        ds = load_dataset("mnist", split=split)
+        ds.set_format(type="numpy", columns=["image", "label"])
+        batch = ds[:]
+        x_np = batch["image"].astype(np.float32) / 255.0
+        y_np = batch["label"].astype(np.int32)
+
+        if cache_file is not None:
+            try:
+                cache_file.parent.mkdir(parents=True, exist_ok=True)
+                tmp_path = cache_file.with_suffix(".tmp.npz")
+                np.savez(tmp_path, x=x_np, y=y_np)
+                os.replace(tmp_path, cache_file)
+            except Exception:  # pragma: no cover - cache failures should not block loading
+                logger.warning("Unable to write MNIST cache for split %s", split)
+
+        return x_np, y_np
+
+    @classmethod
+    def _preprocessed_cache_path(cls, split: str) -> Path | None:
+        base = os.environ.get("DARNAX_DATASET_CACHE")
+        if base is None:
+            base = os.environ.get("HF_DATASETS_CACHE")
+        if base is None:
+            base = getattr(hf_config, "HF_DATASETS_CACHE", None)
+        if base is None:
+            return None
+        cache_root = Path(base) / cls.CACHE_SUBDIR
+        return cache_root / f"{split}.npz"
