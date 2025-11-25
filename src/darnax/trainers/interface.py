@@ -130,7 +130,7 @@ class Trainer(ABC, Generic[OrchestratorT, StateT]):
         )
 
         self.orchestrator, self.state, self.ctx = orch, st, ctx
-        return rng, logs
+        return rng
 
     def eval_step(self, x: Array, y: Array, rng: Array) -> tuple[Array, Mapping[str, Array]]:
         r"""Evaluate on one batch.
