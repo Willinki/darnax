@@ -3,14 +3,12 @@ from collections.abc import Callable, Mapping
 from typing import Any, Generic, TypeVar, cast
 
 import jax.numpy as jnp
+import numpy as np
 from equinox import filter_jit
 from jax import Array
 
 from darnax.orchestrators.interface import AbstractOrchestrator
 from darnax.states.interface import State
-
-import wandb
-import numpy as np
 
 StateT = TypeVar("StateT", bound=State)
 OrchestratorT = TypeVar("OrchestratorT", bound=AbstractOrchestrator[Any])
@@ -91,6 +89,8 @@ class Trainer(ABC, Generic[OrchestratorT, StateT]):
             Target labels.
         rng : Array
             Random key.
+        use_gating : bool
+            If true, we apply gating to the rule with a global scalar.
 
         Returns
         -------
@@ -126,22 +126,22 @@ class Trainer(ABC, Generic[OrchestratorT, StateT]):
         avg_magnitude_win = np.abs(orch.lmap[1][0].W).mean()
         avg_magnitude_J = np.abs(orch.lmap[1][1].J).mean()
         avg_magnitude_wout = np.abs(orch.lmap[2][1].W).mean()
-            
-        logs.update({
-            "fraction_updated/W_in": fraction_updated_win,
-            "fraction_updated/J": fraction_updated_J,
-            "fraction_updated/W_out": fraction_updated_wout,
-            "avg_magnitude/W_in": avg_magnitude_win,
-            "avg_magnitude/J": avg_magnitude_J,
-            "avg_magnitude/W_out": avg_magnitude_wout,
-        })
+
+        logs.update(
+            {
+                "fraction_updated/W_in": fraction_updated_win,
+                "fraction_updated/J": fraction_updated_J,
+                "fraction_updated/W_out": fraction_updated_wout,
+                "avg_magnitude/W_in": avg_magnitude_win,
+                "avg_magnitude/J": avg_magnitude_J,
+                "avg_magnitude/W_out": avg_magnitude_wout,
+            }
+        )
 
         self.orchestrator, self.state, self.ctx = orch, st, ctx
         return rng, logs
 
-    def eval_step(
-        self, x: Array, y: Array, rng: Array
-    ) -> tuple[Array, Mapping[str, Array]]:
+    def eval_step(self, x: Array, y: Array, rng: Array) -> tuple[Array, Mapping[str, Array]]:
         r"""Evaluate on one batch.
 
         Calls the pure, JIT-compiled :meth:`_eval_step_impl`, then rebinds ``state``.
@@ -173,9 +173,7 @@ class Trainer(ABC, Generic[OrchestratorT, StateT]):
             core = type(self)._eval_step_impl
             self._jit_eval = cast("EvalCore[OrchestratorT, StateT]", filter_jit(core))
 
-        rng, st, metrics = self._jit_eval(
-            x, y, rng, self.orchestrator, self.state, self.ctx
-        )
+        rng, st, metrics = self._jit_eval(x, y, rng, self.orchestrator, self.state, self.ctx)
         self.state = st
         return rng, metrics
 
@@ -211,6 +209,8 @@ class Trainer(ABC, Generic[OrchestratorT, StateT]):
             Current mutable state.
         ctx : dict[str, Any]
             Context dict with optimizer, opt_state, counters, and any other requirements.
+        use_gating: bool.
+            If true we apply a scalar gate to the update rule
 
         Returns
         -------

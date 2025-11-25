@@ -106,6 +106,8 @@ class AbstractOrchestrator(eqx.Module, Generic[StateT]):
             If true, we only update internal states (we exclude output state).
             The idea is that somehow the output is clamped and in some learning phases
             updating it is useless.
+        momentum: float. Default: 0.0
+            If true, we do ema on the dynamics.
 
         Returns
         -------

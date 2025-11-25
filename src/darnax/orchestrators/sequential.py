@@ -117,6 +117,8 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
             If true, we only update internal states (we exclude output state (-1)).
             The idea is that somehow the output is clamped and in some learning phases
             updating it is useless. By setting skip_readout=True we avoid the computation.
+        momentum: float. Default: 0.0
+            If true, we do ema on the dynamics states.
 
         Returns
         -------

@@ -2,6 +2,7 @@ from collections.abc import Mapping
 from typing import Any, Generic, TypeVar
 
 import equinox as eqx
+import jax
 import jax.numpy as jnp
 from jax import Array
 from optax import GradientTransformation
@@ -11,10 +12,6 @@ from darnax.states.interface import State
 from darnax.trainers.interface import Trainer
 from darnax.trainers.utils import batch_accuracy, scan_n
 from darnax.utils.typing import PyTree
-
-import jax
-from jax.nn import softmax
-import numpy as np
 
 StateT = TypeVar("StateT", bound=State)
 OrchestratorT = TypeVar("OrchestratorT", bound=AbstractOrchestrator[Any])
@@ -27,14 +24,36 @@ def greedy_iterative_supervision(
     y: Array,
     rng: Array,
 ) -> tuple[StateT, Array]:
+    """Perform greedy iterative supervision.
+
+    Instead of doing dynamics, we simply flip neurons in the state if they are
+    not aligned with the prototype.
+
+    Parameters
+    ----------
+    orchestrator : OrchestratorT
+        Darnax model
+    state : StateT
+        Darnax State
+    y : Array
+        labels batch
+    rng : Array
+        Random key generator
+
+    Returns
+    -------
+    tuple[StateT, Array]
+        Returns a new state and rng key
+
+    """
     k = 0.25
 
-    internal_state = state[1]               # (B, H)
+    internal_state = state[1]  # (B, H)
     B, H = internal_state.shape
-    n_steps = int(H * k)                    # static, ok for jit if H is static
+    n_steps = int(H * k)  # static, ok for jit if H is static
 
     prototypes = orchestrator.lmap[1][2].W.T  # (H, C)
-    correct_class = jnp.argmax(y, axis=-1)    # (B,)
+    correct_class = jnp.argmax(y, axis=-1)  # (B,)
 
     # mask[b, i] = True if spin i in batch b has already been set
     mask0 = jnp.zeros_like(internal_state, dtype=bool)  # (B, H)
@@ -48,10 +67,10 @@ def greedy_iterative_supervision(
         # Compute fields
         fields = orchestrator._compute_messages(orchestrator.lmap[1], state, rng_i)
         inference_local_field = fields[0] + fields[1]  # (B, H)
-        internal_state = state[1]                      # (B, H)
+        internal_state = state[1]  # (B, H)
 
         # Only consider spins that are not yet set: mask them out with +inf
-        abs_field = jnp.abs(inference_local_field)     # (B, H)
+        abs_field = jnp.abs(inference_local_field)  # (B, H)
         masked_abs = jnp.where(mask, jnp.inf, abs_field)
         most_indecisive_idx = jnp.argmin(masked_abs, axis=-1)  # (B,)
 
@@ -59,8 +78,8 @@ def greedy_iterative_supervision(
         # prototypes: (H, C)
         # correct_class: (B,)
         # -> proto_for_cls: (H, B) then (B, H)
-        proto_for_cls = prototypes[:, correct_class]   # (H, B) via advanced indexing
-        proto_for_cls = proto_for_cls.T               # (B, H)
+        proto_for_cls = prototypes[:, correct_class]  # (H, B) via advanced indexing
+        proto_for_cls = proto_for_cls.T  # (B, H)
 
         batch_idx = jnp.arange(B)
         new_values = proto_for_cls[batch_idx, most_indecisive_idx]  # (B,)
@@ -76,7 +95,7 @@ def greedy_iterative_supervision(
 
         return (new_state, mask), None
 
-    (state_final, mask_final), _ = lax.scan(
+    (state_final, mask_final), _ = jax.lax.scan(
         iter_step,
         (state, mask0),
         rngs,
@@ -84,8 +103,6 @@ def greedy_iterative_supervision(
 
     # Return new state and internal_state for convenience
     return state_final, state_final[1]
-
-
 
 
 class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, StateT]):
@@ -197,6 +214,8 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
             Current per-batch state.
         ctx : Mapping[str, Any]
             Read-only context (optimizer, optimizer_state, iteration counts).
+        use_gating: bool.
+            If true we apply a scalar gate to the update rule
 
         Returns
         -------
@@ -228,17 +247,17 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
             momentum=ctx["momentum"],
         )
 
-        state_prediction, rng = orchestrator.predict(state, rng=rng)
-        probas = softmax(state_prediction.readout, axis=-1)
-        gate_1 = (
-            1 - probas[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)]
-        )  # shape (B,)
-        state = state.replace_val(-1, y)
-        logs["phase1/avg_gate"] = gate_1.mean()
-        logs["phase1/std_gate"] = gate_1.std()
-        logs["phase1/median_gate"] = jnp.median(gate_1)
-        logs["phase1/min_gate"] = gate_1.min()
-        logs["phase1/max_gate"] = gate_1.max()
+        # state_prediction, rng = orchestrator.predict(state, rng=rng)
+        # probas = softmax(state_prediction.readout, axis=-1)
+        # gate_1 = (
+        #    1 - probas[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)]
+        # )  # shape (B,)
+        # state = state.replace_val(-1, y)
+        # logs["phase1/avg_gate"] = gate_1.mean()
+        # logs["phase1/std_gate"] = gate_1.std()
+        # logs["phase1/median_gate"] = jnp.median(gate_1)
+        # logs["phase1/min_gate"] = gate_1.min()
+        # logs["phase1/max_gate"] = gate_1.max()
 
         (state, rng), _ = scan_n(
             orchestrator.step,
@@ -247,19 +266,17 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
             filter_messages="all",
             momentum=ctx["momentum"],
         )
-        # state, rng = greedy_iterative_supervision(orchestrator, state, y, rng)
 
-        state_prediction, rng = orchestrator.predict(state, rng=rng)
-        probas = softmax(state_prediction.readout, axis=-1)
-        gate_2 = (
-            1 - probas[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)]
-        )  # shape (B,)
-        state = state.replace_val(-1, y)
-        logs["phase2/avg_gate"] = gate_2.mean()
-        logs["phase2/std_gate"] = gate_2.std()
-        logs["phase2/median_gate"] = jnp.median(gate_2)
-        logs["phase2/min_gate"] = gate_2.min()
-        logs["phase2/max_gate"] = gate_2.max()
+        # state, rng = greedy_iterative_supervision(orchestrator, state, y, rng)
+        # state_prediction, rng = orchestrator.predict(state, rng=rng)
+        # probas = softmax(state_prediction.readout, axis=-1)
+        # gate_2 = 1 - probas[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)]  # shape (B,)
+        # state = state.replace_val(-1, y)
+        # logs["phase2/avg_gate"] = gate_2.mean()
+        # logs["phase2/std_gate"] = gate_2.std()
+        # logs["phase2/median_gate"] = jnp.median(gate_2)
+        # logs["phase2/min_gate"] = gate_2.min()
+        # logs["phase2/max_gate"] = gate_2.max()
 
         (state, rng), _ = scan_n(
             orchestrator.step,
@@ -269,27 +286,26 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
             momentum=ctx["momentum"],
         )
 
-        state_prediction, rng = orchestrator.predict(state, rng=rng)
-        probas = softmax(state_prediction.readout, axis=-1)
-        gate_3 = (
-            1 - probas[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)]
-        )  # shape (B,)
-        probas_masked = probas.at[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)].set(0)
-        gate = 0.5 + (1 - gate_3) - jnp.max(probas_masked, axis=-1)
-        state = state.replace_val(-1, y)
-        logs["phase3/avg_gate"] = gate_3.mean()
-        logs["phase3/std_gate"] = gate_3.std()
-        logs["phase3/median_gate"] = jnp.median(gate_3)
-        logs["phase3/min_gate"] = gate_3.min()
-        logs["phase3/max_gate"] = gate_3.max()
-        logs["final/avg_gate"] = gate.mean()
-        logs["final/std_gate"] = gate.std()
-        logs["final/median_gate"] = jnp.median(gate)
-        logs["final/min_gate"] = gate.min()
-        logs["final/max_gate"] = gate.max()
+        # state_prediction, rng = orchestrator.predict(state, rng=rng)
+        # probas = softmax(state_prediction.readout, axis=-1)
+        # gate_3 = 1 - probas[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)]  # shape (B,)
+        # probas_masked = probas.at[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)].set(0)
+        # gate = 0.5 + (1 - gate_3) - jnp.max(probas_masked, axis=-1)
+        # state = state.replace_val(-1, y)
+        # logs["phase3/avg_gate"] = gate_3.mean()
+        # logs["phase3/std_gate"] = gate_3.std()
+        # logs["phase3/median_gate"] = jnp.median(gate_3)
+        # logs["phase3/min_gate"] = gate_3.min()
+        # logs["phase3/max_gate"] = gate_3.max()
+        # logs["final/avg_gate"] = gate.mean()
+        # logs["final/std_gate"] = gate.std()
+        # logs["final/median_gate"] = jnp.median(gate)
+        # logs["final/min_gate"] = gate.min()
+        # logs["final/max_gate"] = gate.max()
 
         # 3) local/backprop deltas shaped like orchestrator
         # grads = orchestrator.backward(state, rng=rng)
+        gate = jnp.array(1.0)
         gate = gate if use_gating else None
         grads = orchestrator.backward(state, rng=rng, gate=gate)
 

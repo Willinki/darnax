@@ -224,16 +224,16 @@ class SequentialState(State):
         layer_shapes = tuple(arr.shape[1:] for arr in self.states)
 
         # input trailing dims must match input layer shape
-        assert x.shape[1:] == layer_shapes[0], (
-            f"x trailing dims {x.shape[1:]} != input layer shape {layer_shapes[0]}"
-        )
+        assert (
+            x.shape[1:] == layer_shapes[0]
+        ), f"x trailing dims {x.shape[1:]} != input layer shape {layer_shapes[0]}"
 
         if y is not None:
             assert y.ndim >= self.data_min_ndim, f"y must be (B, *C); got {y.shape}"
             assert y.shape[0] == x.shape[0], f"batch mismatch: {x.shape[0]} vs {y.shape[0]}"
-            assert y.shape[1:] == layer_shapes[-1], (
-                f"y trailing dims {y.shape[1:]} != output layer shape {layer_shapes[-1]}"
-            )
+            assert (
+                y.shape[1:] == layer_shapes[-1]
+            ), f"y trailing dims {y.shape[1:]} != output layer shape {layer_shapes[-1]}"
 
         # --- allocate new (B, *size_l) buffers and set endpoints ---
         b = x.shape[0]
@@ -277,9 +277,9 @@ class SequentialState(State):
             assert s > 0, f"size must be positive int; got {s}"
             return (s,)
         elif isinstance(s, tuple):
-            assert len(s) > 0 and all(isinstance(d, int) and d > 0 for d in s), (
-                f"tuple sizes must be positive ints; got {s}"
-            )
+            assert len(s) > 0 and all(
+                isinstance(d, int) and d > 0 for d in s
+            ), f"tuple sizes must be positive ints; got {s}"
             return s
         else:
             raise AssertionError(f"size entries must be int or tuple[int,...]; got {type(s)}")
