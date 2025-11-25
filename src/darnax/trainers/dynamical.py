@@ -321,7 +321,7 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
 
         # 6) return a NEW ctx (pure)
         new_ctx: Ctx = eqx.tree_at(lambda d: d["optimizer_state"], ctx, new_opt_state)
-        return rng, new_orch, state, new_ctx, logs
+        return rng, new_orch, state, new_ctx
 
     @staticmethod
     def _eval_step_impl(
