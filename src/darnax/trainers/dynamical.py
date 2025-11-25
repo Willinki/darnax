@@ -29,12 +29,12 @@ def greedy_iterative_supervision(
     k: float = 0.25,
     vanilla: bool = True,
 ) -> tuple[StateT, Array]:
-    internal_state = state[1]               # (B, H)
+    internal_state = state[1]  # (B, H)
     B, H = internal_state.shape
-    n_steps = int(H * k)                    # static, ok for jit if H is static
+    n_steps = int(H * k)  # static, ok for jit if H is static
 
     prototypes = orchestrator.lmap[1][2].W.T  # (H, C)
-    correct_class = jnp.argmax(y, axis=-1)    # (B,)
+    correct_class = jnp.argmax(y, axis=-1)  # (B,)
     wback_fields_binarized = (y @ prototypes.T > 0).astype(jnp.float32)  # (B, H)
 
     # mask[b, i] = True if spin i in batch b has already been set
@@ -52,10 +52,10 @@ def greedy_iterative_supervision(
         # Compute fields
         fields = orchestrator._compute_messages(orchestrator.lmap[1], state, rng=rng_i)
         inference_local_field = fields[0] + fields[1]  # (B, H)
-        internal_state = state[1]                      # (B, H)
+        internal_state = state[1]  # (B, H)
 
         # Only consider spins that are not yet set: mask them out with +inf
-        abs_field = jnp.abs(inference_local_field)     # (B, H)
+        abs_field = jnp.abs(inference_local_field)  # (B, H)
         masked_abs = jnp.where(mask, jnp.inf, abs_field)
         most_indecisive_idx = jnp.argmin(masked_abs, axis=-1)  # (B,)
 
@@ -65,8 +65,8 @@ def greedy_iterative_supervision(
         # -> proto_for_cls: (H, B) then (B, H)
         batch_idx = jnp.arange(B)
         if vanilla:
-            proto_for_cls = prototypes[:, correct_class]   # (H, B) via advanced indexing
-            proto_for_cls = proto_for_cls.T               # (B, H)
+            proto_for_cls = prototypes[:, correct_class]  # (H, B) via advanced indexing
+            proto_for_cls = proto_for_cls.T  # (B, H)
             new_values = proto_for_cls[batch_idx, most_indecisive_idx]  # (B,)
         else:
             new_values = wback_fields_binarized[batch_idx, most_indecisive_idx]  # (B,)
@@ -90,8 +90,6 @@ def greedy_iterative_supervision(
 
     # Return new state and an advanced RNG key
     return state_final, rng
-
-
 
 
 class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, StateT]):
@@ -240,21 +238,29 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
             filter_messages="forward",
             momentum=ctx["momentum"],
         )
-        state_prediction, rng = orchestrator.predict(state, rng=rng)
-        probas = softmax(state_prediction.readout, axis=-1)
-        gate_1 = (
-            1 - probas[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)]
-        )  # shape (B,)
-        state = state.replace_val(-1, y)
-        logs["phase1/avg_gate"] = gate_1.mean()
-        logs["phase1/std_gate"] = gate_1.std()
-        logs["phase1/median_gate"] = jnp.median(gate_1)
-        logs["phase1/min_gate"] = gate_1.min()
-        logs["phase1/max_gate"] = gate_1.max()
+        hidden = state[1]  # (B, H)
+        prototypes = orchestrator.lmap[1][2].W.T  # (H, C)
+        prototype_norms = jnp.linalg.norm(prototypes, axis=0)  # (C,)
+        overlaps = (hidden / jnp.sqrt(hidden.shape[1])) @ (prototypes / prototype_norms)  # (B, C)
+        overlap_correct_class = overlaps[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)]  # (B,)
+        overlaps_masked = overlaps.at[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)].set(0)
+        max_other_overlap = jnp.max(overlaps_masked, axis=-1)  # (B,)
+        logs["phase1/overlap_correct_avg"] = overlap_correct_class.mean()
+        logs["phase1/overlap_correct_std"] = overlap_correct_class.std()
+        logs["phase1/overlap_correct_median"] = jnp.median(overlap_correct_class)
+        logs["phase1/overlap_correct_min"] = overlap_correct_class.min()
+        logs["phase1/overlap_correct_max"] = overlap_correct_class.max()
+        logs["phase1/overlap_second_avg"] = max_other_overlap.mean()
+        logs["phase1/overlap_second_std"] = max_other_overlap.std()
+        logs["phase1/overlap_second_median"] = jnp.median(max_other_overlap)
+        logs["phase1/overlap_second_min"] = max_other_overlap.min()
+        logs["phase1/overlap_second_max"] = max_other_overlap.max()
 
         # 2.b) supervised phase
         if fake_dynamics:
-            state, rng = greedy_iterative_supervision(orchestrator, state, y, rng, fake_dynamics_k, fake_dynamics_vanilla)
+            state, rng = greedy_iterative_supervision(
+                orchestrator, state, y, rng, fake_dynamics_k, fake_dynamics_vanilla
+            )
         else:
             (state, rng), _ = scan_n(
                 orchestrator.step,
@@ -263,17 +269,23 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
                 filter_messages="all",
                 momentum=ctx["momentum"],
             )
-        state_prediction, rng = orchestrator.predict(state, rng=rng)
-        probas = softmax(state_prediction.readout, axis=-1)
-        gate_2 = (
-            1 - probas[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)]
-        )  # shape (B,)
-        state = state.replace_val(-1, y)
-        logs["phase2/avg_gate"] = gate_2.mean()
-        logs["phase2/std_gate"] = gate_2.std()
-        logs["phase2/median_gate"] = jnp.median(gate_2)
-        logs["phase2/min_gate"] = gate_2.min()
-        logs["phase2/max_gate"] = gate_2.max()
+        hidden = state[1]  # (B, H)
+        prototypes = orchestrator.lmap[1][2].W.T  # (H, C)
+        prototype_norms = jnp.linalg.norm(prototypes, axis=0)  # (C,)
+        overlaps = (hidden / jnp.sqrt(hidden.shape[1])) @ (prototypes / prototype_norms)  # (B, C)
+        overlap_correct_class = overlaps[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)]  # (B,)
+        overlaps_masked = overlaps.at[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)].set(0)
+        max_other_overlap = jnp.max(overlaps_masked, axis=-1)  # (B,)
+        logs["phase2/overlap_correct_avg"] = overlap_correct_class.mean()
+        logs["phase2/overlap_correct_std"] = overlap_correct_class.std()
+        logs["phase2/overlap_correct_median"] = jnp.median(overlap_correct_class)
+        logs["phase2/overlap_correct_min"] = overlap_correct_class.min()
+        logs["phase2/overlap_correct_max"] = overlap_correct_class.max()
+        logs["phase2/overlap_second_avg"] = max_other_overlap.mean()
+        logs["phase2/overlap_second_std"] = max_other_overlap.std()
+        logs["phase2/overlap_second_median"] = jnp.median(max_other_overlap)
+        logs["phase2/overlap_second_min"] = max_other_overlap.min()
+        logs["phase2/overlap_second_max"] = max_other_overlap.max()
 
         # 2.c) final free phase
         if double_dynamics:
@@ -284,33 +296,28 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
                 filter_messages="forward",
                 momentum=ctx["momentum"],
             )
-            state_prediction, rng = orchestrator.predict(state, rng=rng)
-            probas = softmax(state_prediction.readout, axis=-1)
-            gate_3 = (
-                1 - probas[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)]
-            )  # shape (B,)
-            state = state.replace_val(-1, y)
-            logs["phase3/avg_gate"] = gate_3.mean()
-            logs["phase3/std_gate"] = gate_3.std()
-            logs["phase3/median_gate"] = jnp.median(gate_3)
-            logs["phase3/min_gate"] = gate_3.min()
-            logs["phase3/max_gate"] = gate_3.max()
-            gate_final = gate_3
-        else:
-            gate_final = gate_2
-
-        # 2.d) gating
-        probas_masked = probas.at[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)].set(0)
-        gate = gating_shift + (1 - gate_final) - jnp.max(probas_masked, axis=-1)
-        logs["final/avg_gate"] = gate.mean()
-        logs["final/std_gate"] = gate.std()
-        logs["final/median_gate"] = jnp.median(gate)
-        logs["final/min_gate"] = gate.min()
-        logs["final/max_gate"] = gate.max()
+            hidden = state[1]  # (B, H)
+            prototypes = orchestrator.lmap[1][2].W.T  # (H, C)
+            prototype_norms = jnp.linalg.norm(prototypes, axis=0)  # (C,)
+            overlaps = (hidden / jnp.sqrt(hidden.shape[1])) @ (
+                prototypes / prototype_norms
+            )  # (B, C)
+            overlap_correct_class = overlaps[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)]  # (B,)
+            overlaps_masked = overlaps.at[jnp.arange(y.shape[0]), jnp.argmax(y, axis=-1)].set(0)
+            max_other_overlap = jnp.max(overlaps_masked, axis=-1)  # (B,)
+            logs["phase3/overlap_correct_avg"] = overlap_correct_class.mean()
+            logs["phase3/overlap_correct_std"] = overlap_correct_class.std()
+            logs["phase3/overlap_correct_median"] = jnp.median(overlap_correct_class)
+            logs["phase3/overlap_correct_min"] = overlap_correct_class.min()
+            logs["phase3/overlap_correct_max"] = overlap_correct_class.max()
+            logs["phase3/overlap_second_avg"] = max_other_overlap.mean()
+            logs["phase3/overlap_second_std"] = max_other_overlap.std()
+            logs["phase3/overlap_second_median"] = jnp.median(max_other_overlap)
+            logs["phase3/overlap_second_min"] = max_other_overlap.min()
+            logs["phase3/overlap_second_max"] = max_other_overlap.max()
 
         # 3) local/backprop deltas shaped like orchestrator
-        gate = gate if use_gating else jnp.array(1.0)
-        grads = orchestrator.backward(state, rng=rng, gate=gate)
+        grads = orchestrator.backward(state, rng=rng, gate=None)
 
         # 4) filter trainable leaves
         params = eqx.filter(orchestrator, eqx.is_inexact_array)
