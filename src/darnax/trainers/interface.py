@@ -77,7 +77,18 @@ class Trainer(ABC, Generic[OrchestratorT, StateT]):
         self._jit_train: TrainCore[OrchestratorT, StateT] | None = None
         self._jit_eval: EvalCore[OrchestratorT, StateT] | None = None
 
-    def train_step(self, x: Array, y: Array, rng: Array, use_gating: bool = False, gating_shift: float = 1.0, fake_dynamics: bool = False, fake_dynamics_k: float = 0.25, fake_dynamics_vanilla: bool = True, double_dynamics: bool = True) -> Array:
+    def train_step(
+        self,
+        x: Array,
+        y: Array,
+        rng: Array,
+        use_gating: bool = False,
+        gating_shift: float = 1.0,
+        fake_dynamics: bool = False,
+        fake_dynamics_k: float = 0.25,
+        fake_dynamics_vanilla: bool = True,
+        double_dynamics: bool = True,
+    ) -> Array:
         r"""Run one training step.
 
         Calls the pure, JIT-compiled :meth:`_train_step_impl`, then rebinds
@@ -110,7 +121,18 @@ class Trainer(ABC, Generic[OrchestratorT, StateT]):
             self._jit_train = cast("TrainCore[OrchestratorT, StateT]", filter_jit(core))
 
         rng, orch, st, ctx, logs = self._jit_train(
-            x, y, rng, self.orchestrator, self.state, self.ctx, use_gating=use_gating, gating_shift=gating_shift, fake_dynamics=fake_dynamics, fake_dynamics_k=fake_dynamics_k, fake_dynamics_vanilla=fake_dynamics_vanilla, double_dynamics=double_dynamics,
+            x,
+            y,
+            rng,
+            self.orchestrator,
+            self.state,
+            self.ctx,
+            use_gating=use_gating,
+            gating_shift=gating_shift,
+            fake_dynamics=fake_dynamics,
+            fake_dynamics_k=fake_dynamics_k,
+            fake_dynamics_vanilla=fake_dynamics_vanilla,
+            double_dynamics=double_dynamics,
         )
 
         fraction_updated_win = (
@@ -122,19 +144,27 @@ class Trainer(ABC, Generic[OrchestratorT, StateT]):
         fraction_updated_wout = (
             np.abs(self.orchestrator.lmap[2][1].W - orch.lmap[2][1].W) > 0.0001
         ).mean()
+        fraction_updated_wback = (
+            np.abs(self.orchestrator.lmap[1][2].W - orch.lmap[1][2].W) > 0.0001
+        ).mean()
 
         avg_magnitude_win = np.abs(orch.lmap[1][0].W).mean()
         avg_magnitude_J = np.abs(orch.lmap[1][1].J).mean()
         avg_magnitude_wout = np.abs(orch.lmap[2][1].W).mean()
-            
-        logs.update({
-            "fraction_updated/W_in": fraction_updated_win,
-            "fraction_updated/J": fraction_updated_J,
-            "fraction_updated/W_out": fraction_updated_wout,
-            "avg_magnitude/W_in": avg_magnitude_win,
-            "avg_magnitude/J": avg_magnitude_J,
-            "avg_magnitude/W_out": avg_magnitude_wout,
-        })
+        avg_magnitude_wback = np.abs(orch.lmap[1][2].W).mean()
+
+        logs.update(
+            {
+                "fraction_updated/W_in": fraction_updated_win,
+                "fraction_updated/J": fraction_updated_J,
+                "fraction_updated/W_out": fraction_updated_wout,
+                "fraction_updated/W_back": fraction_updated_wback,
+                "avg_magnitude/W_in": avg_magnitude_win,
+                "avg_magnitude/J": avg_magnitude_J,
+                "avg_magnitude/W_out": avg_magnitude_wout,
+                "avg_magnitude/W_back": avg_magnitude_wback,
+            }
+        )
 
         self.orchestrator, self.state, self.ctx = orch, st, ctx
         return rng, logs

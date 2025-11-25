@@ -225,6 +225,20 @@ class FrozenFullyConnected(FullyConnected):
 
 
 class Wback(FullyConnected):
+    learnable: bool
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        strength: float | ArrayLike,
+        threshold: float | ArrayLike,
+        key: Array,
+        dtype: DTypeLike = jnp.float32,
+        learnable: bool = True,
+    ):
+        super().__init__(in_features, out_features, strength, threshold, key, dtype)
+        self.learnable = learnable
 
     def __call__(self, y: Array, rng: KeyArray | None = None) -> Array:
         """Compute ``y = (x @ W) * strength`` (broadcast on last dim).
@@ -273,8 +287,14 @@ class Wback(FullyConnected):
             PyTree of zeros with the same structure as ``self``.
 
         """
-        zero_update: Self = jax.tree.map(jnp.zeros_like, self)
-        return zero_update
+        if not self.learnable:
+            zero_update: Self = jax.tree.map(jnp.zeros_like, self)
+            return zero_update
+        else:
+            dW = perceptron_rule_backward(x, y, y_hat, self.threshold, gate)
+            zero_update = jax.tree.map(jnp.zeros_like, self)
+            new_self: Self = eqx.tree_at(lambda m: m.W, zero_update, dW)
+            return new_self
     
 class Wout(FullyConnected):
     use_crossentropy: bool
