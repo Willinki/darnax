@@ -119,7 +119,7 @@ class Trainer(ABC, Generic[OrchestratorT, StateT]):
             core = type(self)._train_step_impl
             self._jit_train = cast("TrainCore[OrchestratorT, StateT]", filter_jit(core))
 
-        rng, orch, st, ctx, logs = self._jit_train(
+        rng, orch, st, ctx = self._jit_train(
             x,
             y,
             rng,
