@@ -305,9 +305,7 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
 
         # 3) local/backprop deltas shaped like orchestrator
         # grads = orchestrator.backward(state, rng=rng)
-        gate = jnp.array(1.0)
-        gate = gate if use_gating else None
-        grads = orchestrator.backward(state, rng=rng, gate=gate)
+        grads = orchestrator.backward(state, rng=rng)
 
         # 4) filter trainable leaves
         params = eqx.filter(orchestrator, eqx.is_inexact_array)
