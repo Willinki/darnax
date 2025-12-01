@@ -226,6 +226,39 @@ class FrozenFullyConnected(FullyConnected):
         return zero_update
 
 
+class SparseFullyConnected(FullyConnected):
+    _mask: Array
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        strength: float | ArrayLike,
+        threshold: float | ArrayLike,
+        sparsity: float,
+        key: Array,
+        dtype: DTypeLike = jnp.float32,
+    ):
+        self.strength = self._set_shape(strength, out_features, dtype)
+        self.threshold = self._set_shape(threshold, out_features, dtype)
+        key_w, key_mask = jax.random.split(key)
+        mask = jax.random.bernoulli(key_mask, p=1.0 - sparsity, shape=(in_features, out_features))
+        W = (
+            jax.random.normal(key_w, shape=(in_features, out_features), dtype=dtype)
+            * self.strength
+            / jnp.sqrt(in_features * (1 - sparsity))
+        )
+        self._mask = mask
+        self.W = W * mask
+
+    def backward(self, x: Array, y: Array, y_hat: Array, gate: Array | None = None) -> Self:
+        dW = perceptron_rule_backward(x, y, y_hat, self.threshold, gate)
+        dW = dW * self._mask
+        zero_update = jax.tree.map(jnp.zeros_like, self)
+        new_self: Self = eqx.tree_at(lambda m: m.W, zero_update, dW)
+        return new_self
+
+
 class Wback(FullyConnected):
     """Fully connected adapter with **frozen** parameters.
 
@@ -283,3 +316,34 @@ class Wback(FullyConnected):
         """
         zero_update: Self = jax.tree.map(jnp.zeros_like, self)
         return zero_update
+
+
+class Wout(FullyConnected):
+    use_crossentropy: bool
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        strength: float | ArrayLike,
+        threshold: float | ArrayLike,
+        key: Array,
+        dtype: DTypeLike = jnp.float32,
+    ):
+        super().__init__(in_features, out_features, strength, threshold, key, dtype)
+
+    def backward(self, x: Array, y: Array, y_hat: Array, gate: Any | None = None) -> Self:
+        if self.use_crossentropy:
+            # local gradient of cross-entropy loss with softmax
+            # assuming y in {-1, +1}
+            B = y_hat.shape[0]
+            H = self.W.shape[0]
+            probs = jax.nn.softmax(y_hat, axis=-1)  # B, C
+            dL_dz = probs - (y + 1) / 2  # B, C
+            dL_dW = x.T @ dL_dz / B  # H, C
+            dW = dL_dW / (H**0.5)  # same convention as perceptron rule
+        else:
+            dW = perceptron_rule_backward(x, y, y_hat, self.threshold, gate)
+        zero_update = jax.tree.map(jnp.zeros_like, self)
+        new_self: Self = eqx.tree_at(lambda m: m.W, zero_update, dW)
+        return new_self
