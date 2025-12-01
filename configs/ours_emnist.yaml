@@ -1,0 +1,69 @@
+defaults:
+  - override hydra/launcher: submitit_slurm
+
+epochs: 20
+
+optimizer:
+  learning_rate_wout: 0.025
+  learning_rate_j: 0.02
+  learning_rate_win: 0.3
+  weight_decay_win: 0.0
+  weight_decay_wout: 0.02
+  weight_decay_j: 0.01
+
+data:
+  name: general_mnist
+  kwargs:
+    batch_size: 16
+    num_images_per_class: null
+    x_transform: sign
+    linear_projection: 100
+    label_mode: pm1
+
+trainer:
+  name: dynamical
+  kwargs:
+    warmup_n_iter: 1
+    train_clamped_n_iter: ${trainer.kwargs.eval_n_iter}
+    train_free_n_iter: ${trainer.kwargs.eval_n_iter}
+    eval_n_iter: 5
+
+model:
+  kwargs:
+    seed: 99
+    dim_data: 100
+    dim_hidden: 100
+    num_labels: 10
+    strength_forth: 5.0
+    strength_back: 2.75
+    threshold_j: 1.4
+    threshold_in: 1.6
+    threshold_out: 7.0
+    threshold_back: 0.0
+    j_d: 0.9
+    sparsity: 0.99
+    sparsity_win: 0.9
+
+wandb:
+  enabled: true
+  entity: mattia-scardecchia
+  project: darnax-new-benchmarks-v2
+  run_name: "prova"
+  mode: online
+  tags:
+    - prova
+  dir: /scratch/ms16518/logs/milano/wandb
+  save_code: true
+  reinit: false
+
+master_seed: 44
+
+torch_clf:
+  enabled: true
+  optimizer: sgd
+  epochs: 20
+  lr: 0.005
+  batch_size: 16
+  weight_decay: 0.0
+  log_prefix: torch_clf
+  use_bias: false

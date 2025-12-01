@@ -30,8 +30,8 @@ class Cifar10(ClassificationDataset):
         Output dimension for random projection. If None, uses full 3072 dimensions.
     num_images_per_class : int or None, default=None
         Maximum training images per class. If None, uses full training set.
-    label_mode : {"pm1", "ooe", "c-rescale"}, default="c-rescale"
-        Label encoding: "pm1" (±1), "ooe" (one-hot), "c-rescale" (scaled).
+    label_mode : {"pm1", "ooe"}, default="pm1"
+        Label encoding: "pm1" (±1), "ooe" (one-hot).
     x_transform : {"sign", "tanh", "identity"}, default="sign"
         Input transform: "sign" (±1), "tanh", "identity" (no transform).
     validation_fraction : float, default=0.0
@@ -53,7 +53,7 @@ class Cifar10(ClassificationDataset):
         batch_size: int = 64,
         linear_projection: int | None = 100,
         num_images_per_class: int | None = None,
-        label_mode: Literal["pm1", "ooe", "c-rescale"] = "c-rescale",
+        label_mode: Literal["pm1", "ooe"] = "pm1",
         x_transform: Literal["sign", "tanh", "identity"] = "sign",
         validation_fraction: float = 0.0,
     ) -> None:
@@ -278,13 +278,11 @@ class Cifar10(ClassificationDataset):
     def _encode_labels(self, y: jax.Array) -> jax.Array:
         """Encode labels according to label_mode."""
         one_hot: jax.Array = jax.nn.one_hot(y, self.NUM_CLASSES, dtype=jnp.float32)
-        if self.label_mode == "c-rescale":
-            result: jax.Array = one_hot * (self.NUM_CLASSES**0.5 / 2.0) - 0.5
-            return result
-        elif self.label_mode == "pm1":
+        if self.label_mode == "pm1":
             result = one_hot * 2.0 - 1.0
             return result
         else:
+            assert self.label_mode == "ooe", f"unknown label_mode: {self.label_mode}"
             return one_hot
 
     def _compute_bounds(self, n: int) -> list[tuple[int, int]]:
