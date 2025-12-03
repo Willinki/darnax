@@ -11,11 +11,12 @@
 # ---
 
 # %% [markdown]
-# # 09 - Sparsity, learning rate maps and weight decay.
+# # 09 — Sparsity, learning rate maps and weight decay.
 #
 # This notebook-as-a-script trains a sparse recurrent model with darnax on MNIST.
 #
 # We show how to:
+#
 # - build a sparse recurrent architecture,
 # - train it with SGD using different learning rates per module,
 # - apply custom weight decay on sparse weight matrices.
@@ -123,6 +124,7 @@ PARAMS: dict[str, Any] = {
 ## 3. Building the sparse recurrent model
 
 We construct a `SequentialOrchestrator` with:
+
 - sparse input adapter (`SparseFullyConnected`),
 - sparse recurrent core (`SparseRecurrentDiscrete`),
 - dense, fixed, feedback
@@ -149,6 +151,7 @@ def build_model(
     """Build a sparse recurrent model with input, recurrent, output modules.
 
     The model has:
+
     - a sparse input adapter ``SparseFullyConnected``,
     - a sparse recurrent core ``SparseRecurrentDiscrete``,
     - a feedback adapter
@@ -296,6 +299,7 @@ def make_lr_map_v2(
 ## 5. Custom sparse-aware weight decay
 
 We apply exponential decay to:
+
 - input weights ``W_in``,
 - recurrent weights ``J`` (respecting the sparsity mask),
 - output weights ``W_out``.
