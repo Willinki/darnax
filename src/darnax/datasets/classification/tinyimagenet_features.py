@@ -1,7 +1,7 @@
-"""CIFAR-10 (precomputed features, small) dataset for darnax.
+"""Tinyimagenet (precomputed features) dataset for darnax.
 
-Loads standardized 512-D features from Hugging Face:
-    repo = "willinki/cifar10-features-s"
+Loads standardized 2048-D features from Hugging Face:
+    repo = "willinki/tinyimagenet-features-mlpinput"
 
 Split semantics (HF naming quirk):
     - "train"       → training (optionally split into train/valid via `validation_fraction`)
@@ -46,21 +46,21 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class Cifar10FeaturesSmall(ClassificationDataset):
+class TinyImagenetFeatures(ClassificationDataset):
     """CIFAR-10 features dataset (512-D, standardized)."""
 
-    NUM_CLASSES = 10
-    FEAT_DIM = 512
+    NUM_CLASSES = 200
+    FEAT_DIM = 2048
     SHAPE_DIM = 2
-    HF_REPO = "willinki/cifar10-features-s"
-    CACHE_SUBDIR = "darnax/cifar10_features_small"
+    HF_REPO = "willinki/tinyimagenet-features-mlpinput"
+    CACHE_SUBDIR = "darnax/tinyimagenet-features"
 
     def __init__(
         self,
         batch_size: int = 64,
         linear_projection: int | None = None,
         num_images_per_class: int | None = None,
-        label_mode: Literal["pm1", "ooe"] = "pm1",
+        label_mode: Literal["pm1", "ooe", "c-rescale"] = "c-rescale",
         x_transform: Literal["sign", "identity"] = "identity",
         validation_fraction: float = 0.0,
     ) -> None:
@@ -80,9 +80,10 @@ class Cifar10FeaturesSmall(ClassificationDataset):
         num_images_per_class : int, optional
             If integer, we simple a fixed amount of images per class. If a
             class does not contain enough images, we sample them all.
-        label_mode : Literal["pm1", "ooe"]
+        label_mode : Literal["pm1", "ooe", "c-rescale"]
             if pm1 the positive class is assigned +1, the others -1. if ooe,
-            regular one-hot-encoding.
+            regular one-hot-encoding. if c-rescale, the positive class is
+            rescaled to C/2, while the negative are rescaled to -0.5.
         validation_fraction : float
             If not zero, we sample a random holdout set from training.
         x_transform : Literal["sign", "identity"]
@@ -314,11 +315,13 @@ class Cifar10FeaturesSmall(ClassificationDataset):
     def _encode_labels(self, y: jax.Array) -> jax.Array:
         """Encode labels according to label_mode."""
         one_hot: jax.Array = jax.nn.one_hot(y, self.NUM_CLASSES, dtype=jnp.float32)
-        if self.label_mode == "pm1":
-            result = one_hot * 2.0 - 1.0
-            return result
+        if self.label_mode == "c-rescale":
+            rescaled_y: jax.Array = one_hot * (self.NUM_CLASSES**0.5 / 2.0) - 0.5
+            return rescaled_y
+        elif self.label_mode == "pm1":
+            rescaled_y_pm1: jax.Array = one_hot * 2.0 - 1.0
+            return rescaled_y_pm1
         else:
-            assert self.label_mode == "ooe", f"unknown label_mode: {self.label_mode}"
             return one_hot
 
     def _compute_bounds(self, n: int) -> list[tuple[int, int]]:
@@ -379,22 +382,3 @@ class Cifar10FeaturesSmall(ClassificationDataset):
             return None
         cache_root = Path(base) / cls.CACHE_SUBDIR
         return cache_root / f"{split}.npz"
-
-
-# ---- Large variant remains trivial ----------------------------------------
-
-
-class Cifar10FeaturesLarge(Cifar10FeaturesSmall):
-    """Same contract as Small, but 4096-D features from a different HF repo."""
-
-    FEAT_DIM = 4096
-    HF_REPO = "willinki/cifar10-features-l"
-    CACHE_SUBDIR = "darnax/cifar10_features_large"
-
-
-class Cifar10FeaturesVit(Cifar10FeaturesSmall):
-    """Instead of extracting from VGG11, we extract from a vision transformer."""
-
-    FEAT_DIM = 192
-    HF_REPO = "willinki/cifar10-features-vit"
-    CACHE_SUBDIR = "darnax/cifar10_features_vit"
