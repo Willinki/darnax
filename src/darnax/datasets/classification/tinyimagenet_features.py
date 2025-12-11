@@ -50,9 +50,9 @@ class TinyImagenetFeatures(ClassificationDataset):
     """CIFAR-10 features dataset (512-D, standardized)."""
 
     NUM_CLASSES = 200
-    FEAT_DIM = 2048
+    FEAT_DIM = 512
     SHAPE_DIM = 2
-    HF_REPO = "willinki/tinyimagenet-features-mlpinput"
+    HF_REPO = "willinki/tinyimagenet-features"
     CACHE_SUBDIR = "darnax/tinyimagenet-features"
 
     def __init__(
