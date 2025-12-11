@@ -52,7 +52,7 @@ class TinyImagenetFeatures(ClassificationDataset):
     NUM_CLASSES = 200
     FEAT_DIM = 2048
     SHAPE_DIM = 2
-    HF_REPO = "willinki/tinyimagenet-features-mlpinput"
+    HF_REPO = "willinki/tinyimagenet-features"
     CACHE_SUBDIR = "darnax/tinyimagenet-features"
 
     def __init__(
