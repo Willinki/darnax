@@ -58,7 +58,6 @@ class Mnist(ClassificationDataset):
         validation_fraction: float = 0.0,
         flatten: bool = True,
         shuffle: bool = True,
-        shuffle_each_epoch: bool = False,
     ) -> None:
         """Initialize MNIST dataset configuration."""
         if not (linear_projection is None or isinstance(linear_projection, int)):
@@ -78,7 +77,6 @@ class Mnist(ClassificationDataset):
         self.validation_fraction = validation_fraction
         self.flatten = bool(flatten)
         self.shuffle = bool(shuffle)
-        self.shuffle_each_epoch = bool(shuffle_each_epoch)
 
         self.input_dim: int | None = None
         self.num_classes: int = self.NUM_CLASSES
@@ -136,13 +134,9 @@ class Mnist(ClassificationDataset):
         y_te = self._encode_labels(y_te_all)
         y_va = self._encode_labels(y_va) if y_va is not None else None
 
-        if self.shuffle and not self.shuffle_each_epoch:
-            perm = jax.random.permutation(key_shuf, x_tr.shape[0])
-            self.x_train, self.y_train = x_tr[perm], y_tr[perm]
-            self._train_epoch_key = None
-        else:
-            self.x_train, self.y_train = x_tr, y_tr
-            self._train_epoch_key = key_shuf if self.shuffle and self.shuffle_each_epoch else None
+        # Training data can be reshuffled each epoch during iteration.
+        self.x_train, self.y_train = x_tr, y_tr
+        self._train_epoch_key = key_shuf if self.shuffle else None
         self.x_test, self.y_test = x_te, y_te
         if x_va is not None and y_va is not None:
             self.x_valid, self.y_valid = x_va, y_va
@@ -162,7 +156,7 @@ class Mnist(ClassificationDataset):
         """Iterate over training batches."""
         if self.x_train is None or self.y_train is None:
             raise RuntimeError("Dataset not built. Call `build()` first.")
-        if self.shuffle and self.shuffle_each_epoch:
+        if self.shuffle:
             if self._train_epoch_key is None:
                 raise RuntimeError("Training shuffle requested but dataset has no shuffle key.")
             key_epoch, key_next = jax.random.split(self._train_epoch_key)

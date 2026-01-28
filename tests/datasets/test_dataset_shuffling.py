@@ -23,10 +23,10 @@ def test_shuffle_disabled_preserves_order() -> None:
     assert jnp.array_equal(ys[:, 0], jnp.arange(n, dtype=jnp.float32))
 
 
-def test_shuffle_each_epoch_changes_order_deterministically() -> None:
+def test_shuffle_changes_order_each_epoch_deterministically() -> None:
     n = 40
 
-    ds1 = Mnist(batch_size=5, linear_projection=None, flatten=True, shuffle=True, shuffle_each_epoch=True)
+    ds1 = Mnist(batch_size=5, linear_projection=None, flatten=True, shuffle=True)
     ds1.x_train = jnp.arange(n, dtype=jnp.float32).reshape(n, 1)
     ds1.y_train = jnp.arange(n, dtype=jnp.float32).reshape(n, 1)
     ds1._train_bounds = ds1._compute_bounds(n)
@@ -42,7 +42,7 @@ def test_shuffle_each_epoch_changes_order_deterministically() -> None:
     assert not jnp.array_equal(xs1_e1[:, 0], xs1_e2[:, 0])
 
     # Determinism check: a fresh dataset with the same seed should match epoch 1.
-    ds2 = Mnist(batch_size=5, linear_projection=None, flatten=True, shuffle=True, shuffle_each_epoch=True)
+    ds2 = Mnist(batch_size=5, linear_projection=None, flatten=True, shuffle=True)
     ds2.x_train = jnp.arange(n, dtype=jnp.float32).reshape(n, 1)
     ds2.y_train = jnp.arange(n, dtype=jnp.float32).reshape(n, 1)
     ds2._train_bounds = ds2._compute_bounds(n)
