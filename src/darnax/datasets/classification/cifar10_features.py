@@ -63,6 +63,8 @@ class Cifar10FeaturesSmall(ClassificationDataset):
         label_mode: Literal["pm1", "ooe", "c-rescale"] = "c-rescale",
         x_transform: Literal["sign", "identity"] = "identity",
         validation_fraction: float = 0.0,
+        shuffle: bool = True,
+        shuffle_each_epoch: bool = False,
     ) -> None:
         """Initilize Cifar10Features data.
 
@@ -115,6 +117,8 @@ class Cifar10FeaturesSmall(ClassificationDataset):
         self.label_mode = label_mode
         self.validation_fraction = validation_fraction
         self.x_transform = x_transform
+        self.shuffle = bool(shuffle)
+        self.shuffle_each_epoch = bool(shuffle_each_epoch)
 
         self.input_dim: int | None = None
         self.num_classes: int = self.NUM_CLASSES
@@ -129,6 +133,7 @@ class Cifar10FeaturesSmall(ClassificationDataset):
         self._train_bounds: list[tuple[int, int]] = []
         self._valid_bounds: list[tuple[int, int]] = []
         self._test_bounds: list[tuple[int, int]] = []
+        self._train_epoch_key: jax.Array | None = None
 
     # ----------------------------- Public API -----------------------------
 
@@ -181,9 +186,14 @@ class Cifar10FeaturesSmall(ClassificationDataset):
         y_te_enc = self._encode_labels(y_te_all)
         y_va_enc = self._encode_labels(y_va) if y_va is not None else None
 
-        # Shuffle training set for iteration.
-        perm = jax.random.permutation(key_shuf, x_tr.shape[0])
-        self.x_train, self.y_train = x_tr[perm], y_tr_enc[perm]
+        # Shuffle training set for iteration (optional) and/or per-epoch shuffle.
+        if self.shuffle and not self.shuffle_each_epoch:
+            perm = jax.random.permutation(key_shuf, x_tr.shape[0])
+            self.x_train, self.y_train = x_tr[perm], y_tr_enc[perm]
+            self._train_epoch_key = None
+        else:
+            self.x_train, self.y_train = x_tr, y_tr_enc
+            self._train_epoch_key = key_shuf if self.shuffle and self.shuffle_each_epoch else None
 
         # Test and (optional) validation.
         self.x_test, self.y_test = x_te, y_te_enc
@@ -208,8 +218,18 @@ class Cifar10FeaturesSmall(ClassificationDataset):
         """Iterate over training batches."""
         if self.x_train is None or self.y_train is None:
             raise RuntimeError("Dataset not built. Call `build()` first.")
-        for lo, hi in self._train_bounds:
-            yield self.x_train[lo:hi], self.y_train[lo:hi]
+        if self.shuffle and self.shuffle_each_epoch:
+            if self._train_epoch_key is None:
+                raise RuntimeError("Training shuffle requested but dataset has no shuffle key.")
+            key_epoch, key_next = jax.random.split(self._train_epoch_key)
+            self._train_epoch_key = key_next
+            perm = jax.random.permutation(key_epoch, self.x_train.shape[0])
+            for lo, hi in self._train_bounds:
+                idx = perm[lo:hi]
+                yield self.x_train[idx], self.y_train[idx]
+        else:
+            for lo, hi in self._train_bounds:
+                yield self.x_train[lo:hi], self.y_train[lo:hi]
 
     def iter_test(self) -> Iterator[tuple[jax.Array, jax.Array]]:
         """Iterate over test batches (HF 'validation' split)."""
