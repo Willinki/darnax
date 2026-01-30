@@ -36,6 +36,8 @@ class Cifar10(ClassificationDataset):
         Input transform: "sign" (±1), "tanh", "identity" (no transform).
     validation_fraction : float, default=0.0
         Fraction of training data for validation (0.0 to 1.0).
+    rescale : bool, default=True
+        If True, rescale pixel values from [0, 255] to [0, 1].
 
     References
     ----------
@@ -57,6 +59,7 @@ class Cifar10(ClassificationDataset):
         x_transform: Literal["sign", "tanh", "identity"] = "sign",
         validation_fraction: float = 0.0,
         shuffle: bool = True,
+        rescale: bool = True,
     ) -> None:
         """Initialize CIFAR-10 dataset configuration."""
         if not (linear_projection is None or isinstance(linear_projection, int)):
@@ -75,6 +78,7 @@ class Cifar10(ClassificationDataset):
         self.x_transform = x_transform
         self.validation_fraction = validation_fraction
         self.shuffle = bool(shuffle)
+        self.rescale = bool(rescale)
 
         self.input_dim: int | None = None
         self.num_classes: int = self.NUM_CLASSES
@@ -227,7 +231,7 @@ class Cifar10(ClassificationDataset):
         ds = load_dataset("cifar10", split=split)
         ds.set_format(type="numpy", columns=["img", "label"])
 
-        x_np: np.ndarray = ds[:]["img"].astype(np.float32) / 255.0
+        x_np: np.ndarray = ds[:]["img"].astype(np.uint8)
         y_np: np.ndarray = ds[:]["label"].astype(np.int32)
 
         if cache_file is not None:
@@ -253,7 +257,7 @@ class Cifar10(ClassificationDataset):
             return None
 
         cache_root = Path(base) / cls.CACHE_SUBDIR
-        return cache_root / f"{split}.npz"
+        return cache_root / f"{split}_raw.npz"
 
     @classmethod
     def _subsample_per_class(
@@ -277,6 +281,11 @@ class Cifar10(ClassificationDataset):
 
     def _preprocess(self, w: jax.Array | None, x: jax.Array) -> jax.Array:
         """Flatten, project, and transform inputs."""
+        # Convert to float and optionally rescale from [0, 255] to [0, 1].
+        x = x.astype(jnp.float32)
+        if self.rescale:
+            x = x / 255.0
+
         x = jnp.reshape(x, (x.shape[0], -1))
         if w is not None:
             x = (x @ w.T).astype(jnp.float32)
