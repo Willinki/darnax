@@ -221,7 +221,8 @@ class Cifar10(ClassificationDataset):
         else:
             x_np, y_np = cls._generate_and_cache_split(split, cache_file)
 
-        x = jnp.asarray(x_np)
+        # Cast to float32 for consistent dtype (cache may be uint8 or float32)
+        x = jnp.asarray(x_np, dtype=jnp.float32)
         y = jnp.asarray(y_np)
         return x, y
 
@@ -233,13 +234,14 @@ class Cifar10(ClassificationDataset):
         ds = load_dataset("cifar10", split=split)
         ds.set_format(type="numpy", columns=["img", "label"])
 
-        x_np: np.ndarray = ds[:]["img"].astype(np.float32)
+        x_np: np.ndarray = ds[:]["img"].astype(np.uint8)
         y_np: np.ndarray = ds[:]["label"].astype(np.int32)
 
         if cache_file is not None:
             try:
                 cache_file.parent.mkdir(parents=True, exist_ok=True)
                 tmp_path = cache_file.with_suffix(".tmp.npz")
+                # Cache as uint8 for disk efficiency (~4x smaller than float32)
                 np.savez(tmp_path, x=x_np, y=y_np)
                 os.replace(tmp_path, cache_file)
             except Exception:  # pragma: no cover - cache failures should not break loading

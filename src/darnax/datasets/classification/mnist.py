@@ -234,7 +234,8 @@ class Mnist(ClassificationDataset):
         else:
             x_np, y_np = cls._generate_and_cache_split(split, cache_file)
 
-        x: jax.Array = jnp.asarray(x_np)
+        # Cast to float32 for consistent dtype (cache may be uint8 or float32)
+        x: jax.Array = jnp.asarray(x_np, dtype=jnp.float32)
         y: jax.Array = jnp.asarray(y_np)
         return x, y
 
@@ -301,13 +302,14 @@ class Mnist(ClassificationDataset):
         ds = load_dataset("mnist", split=split)
         ds.set_format(type="numpy", columns=["image", "label"])
         batch = ds[:]
-        x_np = batch["image"].astype(np.float32)
+        x_np = batch["image"].astype(np.uint8)
         y_np = batch["label"].astype(np.int32)
 
         if cache_file is not None:
             try:
                 cache_file.parent.mkdir(parents=True, exist_ok=True)
                 tmp_path = cache_file.with_suffix(".tmp.npz")
+                # Cache as uint8 for disk efficiency (~4x smaller than float32)
                 np.savez(tmp_path, x=x_np, y=y_np)
                 os.replace(tmp_path, cache_file)
             except Exception:  # pragma: no cover - cache failures should not block loading
