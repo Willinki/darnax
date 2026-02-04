@@ -67,3 +67,37 @@ def test_cifar_build_and_spec_and_iterators():
     assert len(list(ds.iter_test())) >= 0
     if ds.x_valid is not None:
         assert len(list(ds.iter_valid())) >= 0
+
+
+def test_cifar10_features_rescaling_default_no_change():
+    """Default rescaling for features should not change data (DEFAULT_RESCALING=None)."""
+    ds = Cifar10FeaturesSmall(batch_size=4, rescaling="default")
+    x = jnp.array([[0.0, 0.5, 1.0]], dtype=jnp.float32)
+    result = ds._apply_rescaling(x)
+    assert jnp.allclose(result, x)
+
+
+def test_cifar10_features_rescaling_null_no_change():
+    """Null rescaling should not change data."""
+    ds = Cifar10FeaturesSmall(batch_size=4, rescaling="null")
+    x = jnp.array([[0.0, 0.5, 1.0]], dtype=jnp.float32)
+    result = ds._apply_rescaling(x)
+    assert jnp.allclose(result, x)
+
+
+def test_cifar10_features_rescaling_divide255():
+    """divide255 should divide by 255."""
+    ds = Cifar10FeaturesSmall(batch_size=4, rescaling="divide255")
+    x = jnp.array([[0.0, 127.5, 255.0]], dtype=jnp.float32)
+    result = ds._apply_rescaling(x)
+    expected = x / 255.0
+    assert jnp.allclose(result, expected)
+
+
+def test_cifar10_features_rescaling_standardize():
+    """Standardize should produce mean~0, std~1."""
+    ds = Cifar10FeaturesSmall(batch_size=4, rescaling="standardize")
+    x = jax.random.normal(jax.random.PRNGKey(0), (100, 512)) * 3 + 5
+    result = ds._apply_rescaling(x)
+    assert jnp.isclose(result.mean(), 0.0, atol=1e-5)
+    assert jnp.isclose(result.std(), 1.0, atol=1e-5)

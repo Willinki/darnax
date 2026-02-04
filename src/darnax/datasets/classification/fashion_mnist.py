@@ -13,7 +13,7 @@ import numpy as np
 from datasets import config as hf_config  # type: ignore[import-untyped]
 from datasets import load_dataset
 
-from darnax.datasets.classification.interface import ClassificationDataset
+from darnax.datasets.classification.interface import ClassificationDataset, RescalingMode
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -41,12 +41,14 @@ class FashionMnist(ClassificationDataset):
     flatten : bool, default = True
         If True, flatten inputs to (B, 784) and (optionally) apply random projection.
         If False, keep inputs as (B, 28, 28) and disable random projection.
-    rescale : bool, default=True
-        If True, rescale pixel values from [0, 255] to [0, 1].
+    rescaling : {"default", "null", "divide255", "standardize"}, default="default"
+        Rescaling mode: "default" (divide by 255), "null" (no rescaling),
+        "divide255" (divide by 255), "standardize" (mean=0, std=1).
 
     """
 
     NUM_CLASSES = 10
+    DEFAULT_RESCALING: RescalingMode = "divide255"
     FLAT_DIM = 28 * 28
     CACHE_SUBDIR = "darnax/fashion_mnist"
 
@@ -60,7 +62,7 @@ class FashionMnist(ClassificationDataset):
         validation_fraction: float = 0.0,
         flatten: bool = True,
         shuffle: bool = True,
-        rescale: bool = True,
+        rescaling: RescalingMode = "default",
     ) -> None:
         """Initialize Fashion-MNIST dataset configuration."""
         if not (linear_projection is None or isinstance(linear_projection, int)):
@@ -80,7 +82,7 @@ class FashionMnist(ClassificationDataset):
         self.validation_fraction = validation_fraction
         self.flatten = bool(flatten)
         self.shuffle = bool(shuffle)
-        self.rescale = bool(rescale)
+        self.rescaling = rescaling
 
         self.input_dim: int | None = None
         self.num_classes: int = self.NUM_CLASSES
@@ -266,11 +268,7 @@ class FashionMnist(ClassificationDataset):
         return jax.random.normal(key, (out_dim, in_dim), dtype=jnp.float32) / jnp.sqrt(in_dim)
 
     def _preprocess(self, w: jax.Array | None, x: jax.Array) -> jax.Array:
-        # Convert to float and optionally rescale from [0, 255] to [0, 1].
-        x = x.astype(jnp.float32)
-        if self.rescale:
-            x = x / 255.0
-
+        x = self._apply_rescaling(x)
         if self.flatten:
             x = jnp.reshape(x, (x.shape[0], -1))
             if w is not None:
@@ -309,8 +307,7 @@ class FashionMnist(ClassificationDataset):
         ds = load_dataset("fashion_mnist", split=split)
         ds.set_format(type="numpy", columns=["image", "label"])
         batch = ds[:]
-        # Store raw uint8 data; rescaling is done in _preprocess.
-        x_np = batch["image"].astype(np.uint8)
+        x_np = batch["image"].astype(np.float32)
         y_np = batch["label"].astype(np.int32)
 
         if cache_file is not None:

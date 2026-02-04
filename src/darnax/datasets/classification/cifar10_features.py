@@ -38,7 +38,7 @@ import numpy as np
 from datasets import config as hf_config  # type: ignore[import-untyped]
 from datasets import load_dataset
 
-from darnax.datasets.classification.interface import ClassificationDataset
+from darnax.datasets.classification.interface import ClassificationDataset, RescalingMode
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -50,6 +50,7 @@ class Cifar10FeaturesSmall(ClassificationDataset):
     """CIFAR-10 features dataset (512-D, standardized)."""
 
     NUM_CLASSES = 10
+    DEFAULT_RESCALING = None
     FEAT_DIM = 512
     SHAPE_DIM = 2
     HF_REPO = "willinki/cifar10-features-s"
@@ -64,7 +65,7 @@ class Cifar10FeaturesSmall(ClassificationDataset):
         x_transform: Literal["sign", "identity"] = "identity",
         validation_fraction: float = 0.0,
         shuffle: bool = True,
-        rescale: bool = True,
+        rescaling: RescalingMode = "default",
     ) -> None:
         """Initilize Cifar10Features data.
 
@@ -91,9 +92,10 @@ class Cifar10FeaturesSmall(ClassificationDataset):
         x_transform : Literal["sign", "identity"]
             if sign, we binarize features after linear transform. if identity
             this step is skipped.
-        rescale : bool
-            If True, rescale pixel values from [0, 255] to [0, 1]. For precomputed features,
-            this might be a no-op or specific to the feature set, but kept for API consistency.
+        rescaling : RescalingMode
+            Rescaling mode: "default" (no change, features pre-standardized),
+            "null" (no rescaling), "divide255" (divide by 255),
+            "standardize" (mean=0, std=1).
 
         Raises
         ------
@@ -121,7 +123,7 @@ class Cifar10FeaturesSmall(ClassificationDataset):
         self.validation_fraction = validation_fraction
         self.x_transform = x_transform
         self.shuffle = bool(shuffle)
-        self.rescale = bool(rescale)
+        self.rescaling = rescaling
 
         self.input_dim: int | None = None
         self.num_classes: int = self.NUM_CLASSES
@@ -166,6 +168,12 @@ class Cifar10FeaturesSmall(ClassificationDataset):
             y_tr, y_va = y_tr[:-n_valid], y_tr[-n_valid:]
         else:
             x_va, y_va = None, None
+
+        # Apply rescaling.
+        x_tr = self._apply_rescaling(x_tr)
+        x_te_all = self._apply_rescaling(x_te_all)
+        if x_va is not None:
+            x_va = self._apply_rescaling(x_va)
 
         # Optional linear projection with 1/sqrt(in_dim) scaling.
         w = (

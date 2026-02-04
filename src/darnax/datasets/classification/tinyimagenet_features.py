@@ -38,7 +38,7 @@ import numpy as np
 from datasets import config as hf_config  # type: ignore[import-untyped]
 from datasets import load_dataset
 
-from darnax.datasets.classification.interface import ClassificationDataset
+from darnax.datasets.classification.interface import ClassificationDataset, RescalingMode
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -50,6 +50,7 @@ class TinyImagenetFeatures(ClassificationDataset):
     """CIFAR-10 features dataset (512-D, standardized)."""
 
     NUM_CLASSES = 200
+    DEFAULT_RESCALING = None
     FEAT_DIM = 512
     SHAPE_DIM = 2
     HF_REPO = "willinki/tinyimagenet-features"
@@ -63,6 +64,7 @@ class TinyImagenetFeatures(ClassificationDataset):
         label_mode: Literal["pm1", "ooe", "c-rescale"] = "c-rescale",
         x_transform: Literal["sign", "identity"] = "identity",
         validation_fraction: float = 0.0,
+        rescaling: RescalingMode = "default",
     ) -> None:
         """Initilize Cifar10Features data.
 
@@ -89,6 +91,10 @@ class TinyImagenetFeatures(ClassificationDataset):
         x_transform : Literal["sign", "identity"]
             if sign, we binarize features after linear transform. if identity
             this step is skipped.
+        rescaling : RescalingMode
+            Rescaling mode: "default" (no change, features pre-standardized),
+            "null" (no rescaling), "divide255" (divide by 255),
+            "standardize" (mean=0, std=1).
 
         Raises
         ------
@@ -115,6 +121,7 @@ class TinyImagenetFeatures(ClassificationDataset):
         self.label_mode = label_mode
         self.validation_fraction = validation_fraction
         self.x_transform = x_transform
+        self.rescaling = rescaling
 
         self.input_dim: int | None = None
         self.num_classes: int = self.NUM_CLASSES
@@ -158,6 +165,12 @@ class TinyImagenetFeatures(ClassificationDataset):
             y_tr, y_va = y_tr[:-n_valid], y_tr[-n_valid:]
         else:
             x_va, y_va = None, None
+
+        # Apply rescaling.
+        x_tr = self._apply_rescaling(x_tr)
+        x_te_all = self._apply_rescaling(x_te_all)
+        if x_va is not None:
+            x_va = self._apply_rescaling(x_va)
 
         # Optional linear projection with 1/sqrt(in_dim) scaling.
         w = (

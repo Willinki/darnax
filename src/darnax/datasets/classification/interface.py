@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
+
+import jax
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    import jax
+#: Type alias for rescaling modes available to all datasets.
+RescalingMode = Literal["default", "null", "divide255", "standardize"]
 
 
 class ClassificationDataset(ABC):
@@ -60,3 +63,26 @@ class ClassificationDataset(ABC):
     def spec(self) -> dict[str, Any]:
         """Return dataset specification with metadata."""
         pass
+
+    def _apply_rescaling(self, x: jax.Array) -> jax.Array:
+        """Apply rescaling according to rescaling mode.
+
+        Modes
+        -----
+        - "default": Use dataset's DEFAULT_RESCALING class property.
+        - "null": No rescaling applied.
+        - "divide255": Divide by 255 (for uint8 images, maps [0,255] to [0,1]).
+        - "standardize": Zero mean, unit variance.
+        """
+        mode = self.rescaling
+        if mode == "default":
+            mode = self.DEFAULT_RESCALING
+            if mode is None:
+                return x
+        if mode == "null":
+            return x
+        elif mode == "divide255":
+            return x / 255.0
+        elif mode == "standardize":
+            return (x - x.mean()) / x.std()
+        return x
