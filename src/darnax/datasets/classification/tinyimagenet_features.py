@@ -50,7 +50,7 @@ class TinyImagenetFeatures(ClassificationDataset):
     """CIFAR-10 features dataset (512-D, standardized)."""
 
     NUM_CLASSES = 200
-    DEFAULT_RESCALING = None
+    DEFAULT_RESCALING = "null"
     FEAT_DIM = 512
     SHAPE_DIM = 2
     HF_REPO = "willinki/tinyimagenet-features"

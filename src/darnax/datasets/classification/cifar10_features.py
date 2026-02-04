@@ -50,7 +50,7 @@ class Cifar10FeaturesSmall(ClassificationDataset):
     """CIFAR-10 features dataset (512-D, standardized)."""
 
     NUM_CLASSES = 10
-    DEFAULT_RESCALING = None
+    DEFAULT_RESCALING = "null"
     FEAT_DIM = 512
     SHAPE_DIM = 2
     HF_REPO = "willinki/cifar10-features-s"

@@ -233,7 +233,6 @@ class Cifar10(ClassificationDataset):
         ds = load_dataset("cifar10", split=split)
         ds.set_format(type="numpy", columns=["img", "label"])
 
-        x_np: np.ndarray = ds[:]["img"].astype(np.uint8)
         x_np: np.ndarray = ds[:]["img"].astype(np.float32)
         y_np: np.ndarray = ds[:]["label"].astype(np.int32)
 

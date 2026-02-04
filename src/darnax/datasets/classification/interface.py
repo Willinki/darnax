@@ -30,7 +30,18 @@ class ClassificationDataset(ABC):
     ----------------
     - iter_valid() : Validation batch iterator (default raises NotImplementedError)
 
+    Class Attributes
+    ----------------
+    - DEFAULT_RESCALING : RescalingMode | None : Default rescaling for this dataset
+
+    Instance Attributes
+    -------------------
+    - rescaling : RescalingMode : Current rescaling mode
+
     """
+
+    DEFAULT_RESCALING: RescalingMode = "null"
+    rescaling: RescalingMode
 
     @abstractmethod
     def build(self, key: jax.Array) -> jax.Array:
@@ -74,11 +85,7 @@ class ClassificationDataset(ABC):
         - "divide255": Divide by 255 (for uint8 images, maps [0,255] to [0,1]).
         - "standardize": Zero mean, unit variance.
         """
-        mode = self.rescaling
-        if mode == "default":
-            mode = self.DEFAULT_RESCALING
-            if mode is None:
-                return x
+        mode = self.DEFAULT_RESCALING if self.rescaling == "default" else self.rescaling
         if mode == "null":
             return x
         elif mode == "divide255":
