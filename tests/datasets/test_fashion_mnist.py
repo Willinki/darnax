@@ -63,3 +63,38 @@ def test_fashion_build_and_iterators():
     assert len(list(ds.iter_test())) >= 0
     if ds.x_valid is not None:
         assert len(list(ds.iter_valid())) >= 0
+
+
+def test_fashion_rescaling_default_applies_divide255():
+    """Default rescaling for FashionMNIST should divide by 255 (DEFAULT_RESCALING=divide255)."""
+    ds = FashionMnist(batch_size=4, rescaling="default", x_transform="identity")
+    x = jnp.array([[0.0, 127.5, 255.0]], dtype=jnp.float32)
+    result = ds._apply_rescaling(x)
+    expected = x / 255.0
+    assert jnp.allclose(result, expected)
+
+
+def test_fashion_rescaling_null_no_change():
+    """Null rescaling should not change data."""
+    ds = FashionMnist(batch_size=4, rescaling="null", x_transform="identity")
+    x = jnp.array([[0.0, 128.0, 255.0]], dtype=jnp.float32)
+    result = ds._apply_rescaling(x)
+    assert jnp.allclose(result, x)
+
+
+def test_fashion_rescaling_divide255():
+    """divide255 should divide by 255."""
+    ds = FashionMnist(batch_size=4, rescaling="divide255", x_transform="identity")
+    x = jnp.array([[0.0, 127.5, 255.0]], dtype=jnp.float32)
+    result = ds._apply_rescaling(x)
+    expected = x / 255.0
+    assert jnp.allclose(result, expected)
+
+
+def test_fashion_rescaling_standardize():
+    """Standardize should produce mean~0, std~1."""
+    ds = FashionMnist(batch_size=4, rescaling="standardize", x_transform="identity")
+    x = jax.random.normal(jax.random.PRNGKey(0), (100, 784))
+    result = ds._apply_rescaling(x)
+    assert jnp.isclose(result.mean(), 0.0, atol=1e-5)
+    assert jnp.isclose(result.std(), 1.0, atol=1e-5)
