@@ -89,6 +89,8 @@ class Cifar10FeaturesSmall(ClassificationDataset):
             rescaled to C/2, while the negative are rescaled to -0.5.
         validation_fraction : float
             If not zero, we sample a random holdout set from training.
+        shuffle : bool
+            If True, data is shuffled each epoch. If False, data order is preserved.
         x_transform : Literal["sign", "identity"]
             if sign, we binarize features after linear transform. if identity
             this step is skipped.

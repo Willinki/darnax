@@ -14,7 +14,9 @@ def test_mnist_generate_random_projection():
 
 def test_mnist_preprocess_and_encode_labels():
     """Preprocess with sign transform and encode labels in pm1 mode."""
-    ds = Mnist(batch_size=4, linear_projection=None, x_transform="sign", label_mode="pm1", rescaling="null")
+    ds = Mnist(
+        batch_size=4, linear_projection=None, x_transform="sign", label_mode="pm1", rescaling="null"
+    )
     x = jnp.zeros((2, 28, 28), dtype=jnp.float32)
     xp = ds._preprocess(None, x)
     assert xp.shape == (2, Mnist.FLAT_DIM)

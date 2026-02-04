@@ -3,10 +3,10 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Literal
 
-import jax
-
 if TYPE_CHECKING:
     from collections.abc import Iterator
+
+    import jax
 
 #: Type alias for rescaling modes available to all datasets.
 RescalingMode = Literal["default", "null", "divide255", "standardize"]
