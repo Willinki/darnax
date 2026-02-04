@@ -67,7 +67,7 @@ class Cifar10FeaturesSmall(ClassificationDataset):
         shuffle: bool = True,
         rescaling: RescalingMode = "default",
     ) -> None:
-        """Initilize Cifar10Features data.
+        """Initialize Cifar10Features data.
 
         Takes care of downloading the tensors in jax format, sampling with
         equal frequency, sample a validation set and transforming x or y when

@@ -92,4 +92,5 @@ class ClassificationDataset(ABC):
             return x / 255.0
         elif mode == "standardize":
             return (x - x.mean()) / x.std()
-        return x
+        else:
+            raise ValueError(f"Unsupported rescaling mode: {mode!r}")

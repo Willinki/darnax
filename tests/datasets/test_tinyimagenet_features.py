@@ -64,7 +64,7 @@ def test_tinyimagenet_build_and_spec_and_iterators():
 
 
 def test_tinyimagenet_rescaling_default_no_change():
-    """Default rescaling for features should not change data (DEFAULT_RESCALING=None)."""
+    """Default rescaling for features should not change data (DEFAULT_RESCALING="null")."""
     ds = TinyImagenetFeatures(batch_size=4, rescaling="default")
     x = jnp.array([[0.0, 0.5, 1.0]], dtype=jnp.float32)
     result = ds._apply_rescaling(x)

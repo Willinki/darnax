@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 
 
 class TinyImagenetFeatures(ClassificationDataset):
-    """CIFAR-10 features dataset (512-D, standardized)."""
+    """TinyImageNet features dataset (512-D, standardized)."""
 
     NUM_CLASSES = 200
     DEFAULT_RESCALING = "null"
@@ -66,7 +66,7 @@ class TinyImagenetFeatures(ClassificationDataset):
         validation_fraction: float = 0.0,
         rescaling: RescalingMode = "default",
     ) -> None:
-        """Initilize Cifar10Features data.
+        """Initialize Cifar10Features data.
 
         Takes care of downloading the tensors in jax format, sampling with
         equal frequency, sample a validation set and transforming x or y when
