@@ -847,6 +847,24 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#darnax.datasets.classification.cifar10_features.Cifar10FeaturesSmall.shuffle" class="md-nav__link">
+    <span class="md-ellipsis">
+      shuffle
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.datasets.classification.cifar10_features.Cifar10FeaturesSmall.rescale" class="md-nav__link">
+    <span class="md-ellipsis">
+      rescale
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#darnax.datasets.classification.cifar10_features.Cifar10FeaturesSmall.input_dim" class="md-nav__link">
     <span class="md-ellipsis">
       input_dim
@@ -1134,7 +1152,7 @@
 
 
 <h2 id="darnax.datasets.classification.cifar10_features.Cifar10FeaturesSmall" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">Cifar10FeaturesSmall</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">linear_projection</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_images_per_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label_mode</span><span class="o">=</span><span class="s1">&#39;c-rescale&#39;</span><span class="p">,</span> <span class="n">x_transform</span><span class="o">=</span><span class="s1">&#39;identity&#39;</span><span class="p">,</span> <span class="n">validation_fraction</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span></code>
+              <code class="highlight language-python"><span class="n">Cifar10FeaturesSmall</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">linear_projection</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_images_per_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label_mode</span><span class="o">=</span><span class="s1">&#39;c-rescale&#39;</span><span class="p">,</span> <span class="n">x_transform</span><span class="o">=</span><span class="s1">&#39;identity&#39;</span><span class="p">,</span> <span class="n">validation_fraction</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">rescale</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
 
 <a href="#darnax.datasets.classification.cifar10_features.Cifar10FeaturesSmall" class="headerlink" title="Permanent link">&para;</a></h2>
 
@@ -1262,6 +1280,23 @@ this step is skipped.</p>
             </td>
             <td>
                   <code>&#39;identity&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>rescale</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True, rescale pixel values from [0, 255] to [0, 1]. For precomputed features,
+this might be a no-op or specific to the feature set, but kept for API consistency.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
             </td>
           </tr>
       </tbody>
@@ -1539,6 +1574,46 @@ validation_fraction is outside [0.0, 1.0).</p>
 
 
 
+<h3 id="darnax.datasets.classification.cifar10_features.Cifar10FeaturesSmall.shuffle" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">shuffle</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">shuffle</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.datasets.classification.cifar10_features.Cifar10FeaturesSmall.shuffle" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.datasets.classification.cifar10_features.Cifar10FeaturesSmall.rescale" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">rescale</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">rescale</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.datasets.classification.cifar10_features.Cifar10FeaturesSmall.rescale" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
 <h3 id="darnax.datasets.classification.cifar10_features.Cifar10FeaturesSmall.input_dim" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">input_dim</span> <span class="o">=</span> <span class="kc">None</span></code>
 
@@ -1783,14 +1858,14 @@ validation_fraction is outside [0.0, 1.0).</p>
 
 
 <h2 id="darnax.datasets.classification.cifar10_features.Cifar10FeaturesLarge" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">Cifar10FeaturesLarge</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">linear_projection</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_images_per_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label_mode</span><span class="o">=</span><span class="s1">&#39;c-rescale&#39;</span><span class="p">,</span> <span class="n">x_transform</span><span class="o">=</span><span class="s1">&#39;identity&#39;</span><span class="p">,</span> <span class="n">validation_fraction</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span></code>
+              <code class="highlight language-python"><span class="n">Cifar10FeaturesLarge</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">linear_projection</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_images_per_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label_mode</span><span class="o">=</span><span class="s1">&#39;c-rescale&#39;</span><span class="p">,</span> <span class="n">x_transform</span><span class="o">=</span><span class="s1">&#39;identity&#39;</span><span class="p">,</span> <span class="n">validation_fraction</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">rescale</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
 
 <a href="#darnax.datasets.classification.cifar10_features.Cifar10FeaturesLarge" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="Cifar10FeaturesSmall(batch_size=64, linear_projection=None, num_images_per_class=None, label_mode='c-rescale', x_transform='identity', validation_fraction=0.0) (darnax.datasets.classification.cifar10_features.Cifar10FeaturesSmall)" href="#darnax.datasets.classification.cifar10_features.Cifar10FeaturesSmall">Cifar10FeaturesSmall</a></code></p>
+              Bases: <code><a class="autorefs autorefs-internal" title="Cifar10FeaturesSmall(batch_size=64, linear_projection=None, num_images_per_class=None, label_mode='c-rescale', x_transform='identity', validation_fraction=0.0, shuffle=True, rescale=True) (darnax.datasets.classification.cifar10_features.Cifar10FeaturesSmall)" href="#darnax.datasets.classification.cifar10_features.Cifar10FeaturesSmall">Cifar10FeaturesSmall</a></code></p>
 
 
         <p>Same contract as Small, but 4096-D features from a different HF repo.</p>
@@ -1892,14 +1967,14 @@ validation_fraction is outside [0.0, 1.0).</p>
 
 
 <h2 id="darnax.datasets.classification.cifar10_features.Cifar10FeaturesVit" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">Cifar10FeaturesVit</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">linear_projection</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_images_per_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label_mode</span><span class="o">=</span><span class="s1">&#39;c-rescale&#39;</span><span class="p">,</span> <span class="n">x_transform</span><span class="o">=</span><span class="s1">&#39;identity&#39;</span><span class="p">,</span> <span class="n">validation_fraction</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span></code>
+              <code class="highlight language-python"><span class="n">Cifar10FeaturesVit</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">linear_projection</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_images_per_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label_mode</span><span class="o">=</span><span class="s1">&#39;c-rescale&#39;</span><span class="p">,</span> <span class="n">x_transform</span><span class="o">=</span><span class="s1">&#39;identity&#39;</span><span class="p">,</span> <span class="n">validation_fraction</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">rescale</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
 
 <a href="#darnax.datasets.classification.cifar10_features.Cifar10FeaturesVit" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="Cifar10FeaturesSmall(batch_size=64, linear_projection=None, num_images_per_class=None, label_mode='c-rescale', x_transform='identity', validation_fraction=0.0) (darnax.datasets.classification.cifar10_features.Cifar10FeaturesSmall)" href="#darnax.datasets.classification.cifar10_features.Cifar10FeaturesSmall">Cifar10FeaturesSmall</a></code></p>
+              Bases: <code><a class="autorefs autorefs-internal" title="Cifar10FeaturesSmall(batch_size=64, linear_projection=None, num_images_per_class=None, label_mode='c-rescale', x_transform='identity', validation_fraction=0.0, shuffle=True, rescale=True) (darnax.datasets.classification.cifar10_features.Cifar10FeaturesSmall)" href="#darnax.datasets.classification.cifar10_features.Cifar10FeaturesSmall">Cifar10FeaturesSmall</a></code></p>
 
 
         <p>Instead of extracting from VGG11, we extract from a vision transformer.</p>

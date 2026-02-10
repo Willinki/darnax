@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://willinki.github.io/darnax/reference/api/darnax/datasets/classification/cifar10/">
+        <link rel="canonical" href="https://willinki.github.io/darnax/reference/api/darnax/datasets/classification/tinyimagenet_features/">
       
       
       
@@ -20,7 +20,7 @@
     
     
       
-        <title>darnax.datasets.classification.cifar10 - Darnax</title>
+        <title>darnax.datasets.classification.tinyimagenet_features - Darnax</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#darnaxdatasetsclassificationcifar10" class="md-skip">
+        <a href="#darnaxdatasetsclassificationtinyimagenet_features" class="md-skip">
           Skip to content
         </a>
       
@@ -108,7 +108,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              darnax.datasets.classification.cifar10
+              darnax.datasets.classification.tinyimagenet_features
             
           </span>
         </div>
@@ -720,16 +720,16 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features" class="md-nav__link">
     <span class="md-ellipsis">
-      cifar10
+      tinyimagenet_features
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.logger" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.logger" class="md-nav__link">
     <span class="md-ellipsis">
       logger
     </span>
@@ -738,17 +738,17 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures" class="md-nav__link">
     <span class="md-ellipsis">
-      Cifar10
+      TinyImagenetFeatures
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Cifar10">
+    <nav class="md-nav" aria-label="TinyImagenetFeatures">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.NUM_CLASSES" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.NUM_CLASSES" class="md-nav__link">
     <span class="md-ellipsis">
       NUM_CLASSES
     </span>
@@ -757,16 +757,34 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.FLAT_DIM" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.FEAT_DIM" class="md-nav__link">
     <span class="md-ellipsis">
-      FLAT_DIM
+      FEAT_DIM
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.CACHE_SUBDIR" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.SHAPE_DIM" class="md-nav__link">
+    <span class="md-ellipsis">
+      SHAPE_DIM
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.HF_REPO" class="md-nav__link">
+    <span class="md-ellipsis">
+      HF_REPO
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.CACHE_SUBDIR" class="md-nav__link">
     <span class="md-ellipsis">
       CACHE_SUBDIR
     </span>
@@ -775,7 +793,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.batch_size" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.batch_size" class="md-nav__link">
     <span class="md-ellipsis">
       batch_size
     </span>
@@ -784,7 +802,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.linear_projection" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.linear_projection" class="md-nav__link">
     <span class="md-ellipsis">
       linear_projection
     </span>
@@ -793,7 +811,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.num_images_per_class" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.num_images_per_class" class="md-nav__link">
     <span class="md-ellipsis">
       num_images_per_class
     </span>
@@ -802,7 +820,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.label_mode" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.label_mode" class="md-nav__link">
     <span class="md-ellipsis">
       label_mode
     </span>
@@ -811,16 +829,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.x_transform" class="md-nav__link">
-    <span class="md-ellipsis">
-      x_transform
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.validation_fraction" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.validation_fraction" class="md-nav__link">
     <span class="md-ellipsis">
       validation_fraction
     </span>
@@ -829,25 +838,16 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.shuffle" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.x_transform" class="md-nav__link">
     <span class="md-ellipsis">
-      shuffle
+      x_transform
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.rescale" class="md-nav__link">
-    <span class="md-ellipsis">
-      rescale
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.input_dim" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.input_dim" class="md-nav__link">
     <span class="md-ellipsis">
       input_dim
     </span>
@@ -856,7 +856,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.num_classes" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.num_classes" class="md-nav__link">
     <span class="md-ellipsis">
       num_classes
     </span>
@@ -865,7 +865,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.x_train" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.x_train" class="md-nav__link">
     <span class="md-ellipsis">
       x_train
     </span>
@@ -874,7 +874,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.y_train" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.y_train" class="md-nav__link">
     <span class="md-ellipsis">
       y_train
     </span>
@@ -883,7 +883,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.x_valid" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.x_valid" class="md-nav__link">
     <span class="md-ellipsis">
       x_valid
     </span>
@@ -892,7 +892,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.y_valid" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.y_valid" class="md-nav__link">
     <span class="md-ellipsis">
       y_valid
     </span>
@@ -901,7 +901,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.x_test" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.x_test" class="md-nav__link">
     <span class="md-ellipsis">
       x_test
     </span>
@@ -910,7 +910,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.y_test" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.y_test" class="md-nav__link">
     <span class="md-ellipsis">
       y_test
     </span>
@@ -919,7 +919,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.build" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.build" class="md-nav__link">
     <span class="md-ellipsis">
       build
     </span>
@@ -928,7 +928,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.iter_test" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.iter_test" class="md-nav__link">
     <span class="md-ellipsis">
       iter_test
     </span>
@@ -937,7 +937,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.iter_valid" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.iter_valid" class="md-nav__link">
     <span class="md-ellipsis">
       iter_valid
     </span>
@@ -946,7 +946,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#darnax.datasets.classification.cifar10.Cifar10.spec" class="md-nav__link">
+  <a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.spec" class="md-nav__link">
     <span class="md-ellipsis">
       spec
     </span>
@@ -975,15 +975,36 @@
 
 
 
-<h1 id="darnaxdatasetsclassificationcifar10">darnax.datasets.classification.cifar10<a class="headerlink" href="#darnaxdatasetsclassificationcifar10" title="Permanent link">&para;</a></h1>
+<h1 id="darnaxdatasetsclassificationtinyimagenet_features">darnax.datasets.classification.tinyimagenet_features<a class="headerlink" href="#darnaxdatasetsclassificationtinyimagenet_features" title="Permanent link">&para;</a></h1>
 
 
 <div class="doc doc-object doc-module">
 
 
 
-<a id="darnax.datasets.classification.cifar10"></a>
+<a id="darnax.datasets.classification.tinyimagenet_features"></a>
     <div class="doc doc-contents first">
+
+        <p>Tinyimagenet (precomputed features) dataset for darnax.</p>
+<p>Loads standardized 2048-D features from Hugging Face:
+    repo = "willinki/tinyimagenet-features-mlpinput"</p>
+<p>Split semantics (HF naming quirk):
+    - "train"       → training (optionally split into train/valid via <code>validation_fraction</code>)
+    - "validation"  → actually the TEST set for this repo</p>
+<p>Columns:
+    - "x": features, float32 tensor of shape [N, 512]
+    - "y": labels,   int32 tensor of shape [N]</p>
+<p>Options:
+    - Optional uniform-per-class subsampling on the <em>training</em> set.
+    - Optional <strong>linear projection</strong> W ∈ ℝ^{D_out×D_in} with entries ~ N(0,1)/√D_in
+      (variance-preserving when input var≈1).
+    - Optional <strong>x_transform</strong>:
+        * "identity": no change (default)
+        * "sign": binarize to ±1 (0 → −1)</p>
+<p>Post-build shapes:
+    x_train: [N_tr, D_out], y_train: [N_tr, C]
+    x_valid: [N_va, D_out], y_valid: [N_va, C]   (if validation_fraction &gt; 0)
+    x_test:  [N_te, D_out], y_test:  [N_te, C]</p>
 
 
 
@@ -1006,14 +1027,14 @@
 
 
 
-<h2 id="darnax.datasets.classification.cifar10.logger" class="doc doc-heading">
+<h2 id="darnax.datasets.classification.tinyimagenet_features.logger" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
-<a href="#darnax.datasets.classification.cifar10.logger" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#darnax.datasets.classification.tinyimagenet_features.logger" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
     <div class="doc doc-contents ">
@@ -1028,10 +1049,10 @@
 
 
 
-<h2 id="darnax.datasets.classification.cifar10.Cifar10" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">Cifar10</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">linear_projection</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">num_images_per_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label_mode</span><span class="o">=</span><span class="s1">&#39;c-rescale&#39;</span><span class="p">,</span> <span class="n">x_transform</span><span class="o">=</span><span class="s1">&#39;sign&#39;</span><span class="p">,</span> <span class="n">validation_fraction</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">rescale</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+<h2 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures" class="doc doc-heading">
+              <code class="highlight language-python"><span class="n">TinyImagenetFeatures</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">linear_projection</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_images_per_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label_mode</span><span class="o">=</span><span class="s1">&#39;c-rescale&#39;</span><span class="p">,</span> <span class="n">x_transform</span><span class="o">=</span><span class="s1">&#39;identity&#39;</span><span class="p">,</span> <span class="n">validation_fraction</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span></code>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
     <div class="doc doc-contents ">
@@ -1039,34 +1060,153 @@
               Bases: <code><a class="autorefs autorefs-internal" title="ClassificationDataset (darnax.datasets.classification.interface.ClassificationDataset)" href="../interface/#darnax.datasets.classification.interface.ClassificationDataset">ClassificationDataset</a></code></p>
 
 
-        <p>CIFAR-10 dataset with configurable preprocessing.</p>
+        <p>CIFAR-10 features dataset (512-D, standardized).</p>
+
+        <p>Initilize Cifar10Features data.</p>
+<p>Takes care of downloading the tensors in jax format, sampling with
+equal frequency, sample a validation set and transforming x or y when
+requested.</p>
 
 
-<details class="parameters." open>
-  <summary>Parameters.</summary>
-  <p>batch_size : int, default=64
-    Batch size for iterators.
-linear_projection : int or None, default=100
-    Output dimension for random projection. If None, uses full 3072 dimensions.
-num_images_per_class : int or None, default=None
-    Maximum training images per class. If None, uses full training set.
-label_mode : {"pm1", "ooe", "c-rescale"}, default="c-rescale"
-    Label encoding: "pm1" (±1), "ooe" (one-hot), "c-rescale" (scaled).
-x_transform : {"sign", "tanh", "identity"}, default="sign"
-    Input transform: "sign" (±1), "tanh", "identity" (no transform).
-validation_fraction : float, default=0.0
-    Fraction of training data for validation (0.0 to 1.0).
-rescale : bool, default=True
-    If True, rescale pixel values from [0, 255] to [0, 1].</p>
-</details>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>batch_size</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Batch size for the iterators</p>
+              </div>
+            </td>
+            <td>
+                  <code>64</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>linear_projection</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If integer, data is linearly projected to the size. If None, the
+step is skipped.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>num_images_per_class</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If integer, we simple a fixed amount of images per class. If a
+class does not contain enough images, we sample them all.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>label_mode</code>
+            </td>
+            <td>
+                  <code><span title="typing.Literal">Literal</span>[&#39;pm1&#39;, &#39;ooe&#39;, &#39;c-rescale&#39;]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>if pm1 the positive class is assigned +1, the others -1. if ooe,
+regular one-hot-encoding. if c-rescale, the positive class is
+rescaled to C/2, while the negative are rescaled to -0.5.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;c-rescale&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>validation_fraction</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If not zero, we sample a random holdout set from training.</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.0</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>x_transform</code>
+            </td>
+            <td>
+                  <code><span title="typing.Literal">Literal</span>[&#39;sign&#39;, &#39;identity&#39;]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>if sign, we binarize features after linear transform. if identity
+this step is skipped.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;identity&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-<details class="references" open>
-  <summary>References</summary>
-  <div class="highlight"><pre><span></span><code>- https://www.cs.toronto.edu/~kriz/cifar.html
-- https://huggingface.co/datasets/cifar10
-</code></pre></div>
-</details>
-        <p>Initialize CIFAR-10 dataset configuration.</p>
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>if batch_size &lt;= 1, linear_projection is not int &gt;= 1. if
+num_images_per_class is negative or not None. if
+validation_fraction is outside [0.0, 1.0).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
 
@@ -1090,15 +1230,15 @@ rescale : bool, default=True
 
 
 
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.NUM_CLASSES" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">NUM_CLASSES</span> <span class="o">=</span> <span class="mi">10</span></code>
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.NUM_CLASSES" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">NUM_CLASSES</span> <span class="o">=</span> <span class="mi">200</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10.NUM_CLASSES" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.NUM_CLASSES" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -1111,15 +1251,15 @@ rescale : bool, default=True
 
 
 
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.FLAT_DIM" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">FLAT_DIM</span> <span class="o">=</span> <span class="mi">32</span> <span class="o">*</span> <span class="mi">32</span> <span class="o">*</span> <span class="mi">3</span></code>
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.FEAT_DIM" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">FEAT_DIM</span> <span class="o">=</span> <span class="mi">512</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10.FLAT_DIM" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.FEAT_DIM" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -1132,15 +1272,15 @@ rescale : bool, default=True
 
 
 
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.CACHE_SUBDIR" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">CACHE_SUBDIR</span> <span class="o">=</span> <span class="s1">&#39;darnax/cifar10&#39;</span></code>
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.SHAPE_DIM" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">SHAPE_DIM</span> <span class="o">=</span> <span class="mi">2</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10.CACHE_SUBDIR" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.SHAPE_DIM" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -1153,14 +1293,56 @@ rescale : bool, default=True
 
 
 
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.batch_size" class="doc doc-heading">
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.HF_REPO" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">HF_REPO</span> <span class="o">=</span> <span class="s1">&#39;willinki/tinyimagenet-features&#39;</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.HF_REPO" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.CACHE_SUBDIR" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">CACHE_SUBDIR</span> <span class="o">=</span> <span class="s1">&#39;darnax/tinyimagenet-features&#39;</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.CACHE_SUBDIR" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.batch_size" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">batch_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10.batch_size" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.batch_size" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -1173,14 +1355,14 @@ rescale : bool, default=True
 
 
 
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.linear_projection" class="doc doc-heading">
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.linear_projection" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">linear_projection</span> <span class="o">=</span> <span class="n">linear_projection</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10.linear_projection" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.linear_projection" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -1193,14 +1375,14 @@ rescale : bool, default=True
 
 
 
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.num_images_per_class" class="doc doc-heading">
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.num_images_per_class" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">num_images_per_class</span> <span class="o">=</span> <span class="n">num_images_per_class</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10.num_images_per_class" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.num_images_per_class" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -1213,14 +1395,14 @@ rescale : bool, default=True
 
 
 
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.label_mode" class="doc doc-heading">
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.label_mode" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">label_mode</span> <span class="o">=</span> <span class="n">label_mode</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10.label_mode" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.label_mode" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -1233,34 +1415,14 @@ rescale : bool, default=True
 
 
 
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.x_transform" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">x_transform</span> <span class="o">=</span> <span class="n">x_transform</span></code>
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
-  </span>
-
-<a href="#darnax.datasets.classification.cifar10.Cifar10.x_transform" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.validation_fraction" class="doc doc-heading">
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.validation_fraction" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">validation_fraction</span> <span class="o">=</span> <span class="n">validation_fraction</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10.validation_fraction" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.validation_fraction" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -1273,14 +1435,14 @@ rescale : bool, default=True
 
 
 
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.shuffle" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">shuffle</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">shuffle</span><span class="p">)</span></code>
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.x_transform" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">x_transform</span> <span class="o">=</span> <span class="n">x_transform</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10.shuffle" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.x_transform" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -1293,34 +1455,14 @@ rescale : bool, default=True
 
 
 
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.rescale" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">rescale</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">rescale</span><span class="p">)</span></code>
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
-  </span>
-
-<a href="#darnax.datasets.classification.cifar10.Cifar10.rescale" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.input_dim" class="doc doc-heading">
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.input_dim" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">input_dim</span> <span class="o">=</span> <span class="kc">None</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10.input_dim" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.input_dim" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -1333,14 +1475,14 @@ rescale : bool, default=True
 
 
 
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.num_classes" class="doc doc-heading">
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.num_classes" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">num_classes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">NUM_CLASSES</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10.num_classes" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.num_classes" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -1353,14 +1495,14 @@ rescale : bool, default=True
 
 
 
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.x_train" class="doc doc-heading">
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.x_train" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">x_train</span> <span class="o">=</span> <span class="kc">None</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10.x_train" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.x_train" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -1373,14 +1515,14 @@ rescale : bool, default=True
 
 
 
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.y_train" class="doc doc-heading">
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.y_train" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">y_train</span> <span class="o">=</span> <span class="kc">None</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10.y_train" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.y_train" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -1393,14 +1535,14 @@ rescale : bool, default=True
 
 
 
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.x_valid" class="doc doc-heading">
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.x_valid" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">x_valid</span> <span class="o">=</span> <span class="kc">None</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10.x_valid" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.x_valid" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -1413,14 +1555,14 @@ rescale : bool, default=True
 
 
 
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.y_valid" class="doc doc-heading">
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.y_valid" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">y_valid</span> <span class="o">=</span> <span class="kc">None</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10.y_valid" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.y_valid" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -1433,14 +1575,14 @@ rescale : bool, default=True
 
 
 
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.x_test" class="doc doc-heading">
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.x_test" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">x_test</span> <span class="o">=</span> <span class="kc">None</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10.x_test" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.x_test" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -1453,14 +1595,14 @@ rescale : bool, default=True
 
 
 
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.y_test" class="doc doc-heading">
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.y_test" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">y_test</span> <span class="o">=</span> <span class="kc">None</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10.y_test" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.y_test" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -1475,15 +1617,15 @@ rescale : bool, default=True
 <div class="doc doc-object doc-function">
 
 
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.build" class="doc doc-heading">
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.build" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">build</span><span class="p">(</span><span class="n">key</span><span class="p">)</span></code>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10.build" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.build" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
 
-        <p>Load, preprocess, and prepare CIFAR-10 splits.</p>
+        <p>Load, optionally subsample, optionally project, transform, encode labels, split.</p>
 
 
     </div>
@@ -1493,15 +1635,15 @@ rescale : bool, default=True
 <div class="doc doc-object doc-function">
 
 
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.iter_test" class="doc doc-heading">
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.iter_test" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">iter_test</span><span class="p">()</span></code>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10.iter_test" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.iter_test" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
 
-        <p>Iterate over test batches.</p>
+        <p>Iterate over test batches (HF 'validation' split).</p>
 
 
     </div>
@@ -1511,15 +1653,15 @@ rescale : bool, default=True
 <div class="doc doc-object doc-function">
 
 
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.iter_valid" class="doc doc-heading">
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.iter_valid" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">iter_valid</span><span class="p">()</span></code>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10.iter_valid" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.iter_valid" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
 
-        <p>Iterate over validation batches.</p>
+        <p>Iterate over validation batches (holdout from training).</p>
 
 
     </div>
@@ -1529,15 +1671,15 @@ rescale : bool, default=True
 <div class="doc doc-object doc-function">
 
 
-<h3 id="darnax.datasets.classification.cifar10.Cifar10.spec" class="doc doc-heading">
+<h3 id="darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.spec" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">spec</span><span class="p">()</span></code>
 
-<a href="#darnax.datasets.classification.cifar10.Cifar10.spec" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#darnax.datasets.classification.tinyimagenet_features.TinyImagenetFeatures.spec" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
 
-        <p>Return dataset specification.</p>
+        <p>Return dataset specification for model wiring.</p>
 
 
     </div>

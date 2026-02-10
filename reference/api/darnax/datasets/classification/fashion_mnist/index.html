@@ -838,6 +838,24 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#darnax.datasets.classification.fashion_mnist.FashionMnist.shuffle" class="md-nav__link">
+    <span class="md-ellipsis">
+      shuffle
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.datasets.classification.fashion_mnist.FashionMnist.rescale" class="md-nav__link">
+    <span class="md-ellipsis">
+      rescale
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#darnax.datasets.classification.fashion_mnist.FashionMnist.input_dim" class="md-nav__link">
     <span class="md-ellipsis">
       input_dim
@@ -1022,7 +1040,7 @@
 
 
 <h2 id="darnax.datasets.classification.fashion_mnist.FashionMnist" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">FashionMnist</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">linear_projection</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_images_per_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label_mode</span><span class="o">=</span><span class="s1">&#39;c-rescale&#39;</span><span class="p">,</span> <span class="n">x_transform</span><span class="o">=</span><span class="s1">&#39;sign&#39;</span><span class="p">,</span> <span class="n">validation_fraction</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">flatten</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+              <code class="highlight language-python"><span class="n">FashionMnist</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">linear_projection</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_images_per_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label_mode</span><span class="o">=</span><span class="s1">&#39;c-rescale&#39;</span><span class="p">,</span> <span class="n">x_transform</span><span class="o">=</span><span class="s1">&#39;sign&#39;</span><span class="p">,</span> <span class="n">validation_fraction</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">flatten</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">rescale</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
 
 <a href="#darnax.datasets.classification.fashion_mnist.FashionMnist" class="headerlink" title="Permanent link">&para;</a></h2>
 
@@ -1157,6 +1175,22 @@ If False, keep inputs as (B, 28, 28) and disable random projection.</p>
             </td>
             <td>
                   <code>= True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>rescale</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True, rescale pixel values from [0, 255] to [0, 1].</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
             </td>
           </tr>
       </tbody>
@@ -1377,6 +1411,46 @@ If False, keep inputs as (B, 28, 28) and disable random projection.</p>
   </span>
 
 <a href="#darnax.datasets.classification.fashion_mnist.FashionMnist.flatten" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.datasets.classification.fashion_mnist.FashionMnist.shuffle" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">shuffle</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">shuffle</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.datasets.classification.fashion_mnist.FashionMnist.shuffle" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.datasets.classification.fashion_mnist.FashionMnist.rescale" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">rescale</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">rescale</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.datasets.classification.fashion_mnist.FashionMnist.rescale" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">

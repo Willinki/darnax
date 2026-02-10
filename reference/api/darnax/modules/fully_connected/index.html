@@ -766,6 +766,24 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#darnax.modules.fully_connected.FullyConnected.lr" class="md-nav__link">
+    <span class="md-ellipsis">
+      lr
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.fully_connected.FullyConnected.weight_decay" class="md-nav__link">
+    <span class="md-ellipsis">
+      weight_decay
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#darnax.modules.fully_connected.FullyConnected.W" class="md-nav__link">
     <span class="md-ellipsis">
       W
@@ -835,6 +853,24 @@
   <a href="#darnax.modules.fully_connected.SparseFullyConnected.threshold" class="md-nav__link">
     <span class="md-ellipsis">
       threshold
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.fully_connected.SparseFullyConnected.lr" class="md-nav__link">
+    <span class="md-ellipsis">
+      lr
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.fully_connected.SparseFullyConnected.weight_decay" class="md-nav__link">
+    <span class="md-ellipsis">
+      weight_decay
     </span>
   </a>
   
@@ -992,7 +1028,7 @@ steps) but <strong>parameterized</strong> (PyTrees with trainable weights).</p>
 
 
 <h2 id="darnax.modules.fully_connected.FullyConnected" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">FullyConnected</span><span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span> <span class="n">strength</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></code>
+              <code class="highlight language-python"><span class="n">FullyConnected</span><span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span> <span class="n">strength</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span></code>
 
 <a href="#darnax.modules.fully_connected.FullyConnected" class="headerlink" title="Permanent link">&para;</a></h2>
 
@@ -1193,6 +1229,38 @@ margins used by the local update rule.</p>
                   <code><span title="jax.numpy.float32">float32</span></code>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>lr</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Learning rate applied to the update (default: <code>1</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code>1.0</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>weight_decay</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Weight decay coefficient applied to update (default: <code>1</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.0</code>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -1270,6 +1338,46 @@ of the expected length.</p>
   </span>
 
 <a href="#darnax.modules.fully_connected.FullyConnected.threshold" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.modules.fully_connected.FullyConnected.lr" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">lr</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">lr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.modules.fully_connected.FullyConnected.lr" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.modules.fully_connected.FullyConnected.weight_decay" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">weight_decay</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">weight_decay</span> <span class="o">/</span> <span class="n">in_features</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.modules.fully_connected.FullyConnected.weight_decay" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -1442,14 +1550,14 @@ with the stored per-output <code>threshold</code>.</p>
 
 
 <h2 id="darnax.modules.fully_connected.FrozenFullyConnected" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">FrozenFullyConnected</span><span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span> <span class="n">strength</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></code>
+              <code class="highlight language-python"><span class="n">FrozenFullyConnected</span><span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span> <span class="n">strength</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span></code>
 
 <a href="#darnax.modules.fully_connected.FrozenFullyConnected" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="FullyConnected(in_features, out_features, strength, threshold, key, dtype=jnp.float32) (darnax.modules.fully_connected.FullyConnected)" href="#darnax.modules.fully_connected.FullyConnected">FullyConnected</a></code></p>
+              Bases: <code><a class="autorefs autorefs-internal" title="FullyConnected(in_features, out_features, strength, threshold, key, dtype=jnp.float32, *, lr=1.0, weight_decay=0.0) (darnax.modules.fully_connected.FullyConnected)" href="#darnax.modules.fully_connected.FullyConnected">FullyConnected</a></code></p>
 
 
         <p>Fully connected adapter with <strong>frozen</strong> parameters.</p>
@@ -1611,14 +1719,14 @@ or to ablate learning of a particular edge type in a graph.</p>
 
 
 <h2 id="darnax.modules.fully_connected.SparseFullyConnected" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">SparseFullyConnected</span><span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span> <span class="n">strength</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">sparsity</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></code>
+              <code class="highlight language-python"><span class="n">SparseFullyConnected</span><span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span> <span class="n">strength</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">sparsity</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span></code>
 
 <a href="#darnax.modules.fully_connected.SparseFullyConnected" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="FullyConnected(in_features, out_features, strength, threshold, key, dtype=jnp.float32) (darnax.modules.fully_connected.FullyConnected)" href="#darnax.modules.fully_connected.FullyConnected">FullyConnected</a></code></p>
+              Bases: <code><a class="autorefs autorefs-internal" title="FullyConnected(in_features, out_features, strength, threshold, key, dtype=jnp.float32, *, lr=1.0, weight_decay=0.0) (darnax.modules.fully_connected.FullyConnected)" href="#darnax.modules.fully_connected.FullyConnected">FullyConnected</a></code></p>
 
 
         <p>Fully connected adapter with a fixed binary sparsity mask.</p>
@@ -1838,6 +1946,38 @@ of connections.</p>
                   <code><span title="jax.numpy.float32">float32</span></code>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>lr</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Learning rate applied to the update (default: <code>1</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code>1.0</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>weight_decay</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Weight decay coefficient applied to update (default: <code>1</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.0</code>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -1898,6 +2038,46 @@ by the sampled Bernoulli mask.</p>
   </span>
 
 <a href="#darnax.modules.fully_connected.SparseFullyConnected.threshold" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.modules.fully_connected.SparseFullyConnected.lr" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">lr</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">lr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.modules.fully_connected.SparseFullyConnected.lr" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.modules.fully_connected.SparseFullyConnected.weight_decay" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">weight_decay</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">weight_decay</span> <span class="o">*</span> <span class="n">wd_rescaling</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.modules.fully_connected.SparseFullyConnected.weight_decay" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -2074,14 +2254,14 @@ never updated.</p>
 
 
 <h2 id="darnax.modules.fully_connected.FrozenRescaledFullyConnected" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">FrozenRescaledFullyConnected</span><span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span> <span class="n">strength</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></code>
+              <code class="highlight language-python"><span class="n">FrozenRescaledFullyConnected</span><span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span> <span class="n">strength</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span></code>
 
 <a href="#darnax.modules.fully_connected.FrozenRescaledFullyConnected" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="FullyConnected(in_features, out_features, strength, threshold, key, dtype=jnp.float32) (darnax.modules.fully_connected.FullyConnected)" href="#darnax.modules.fully_connected.FullyConnected">FullyConnected</a></code></p>
+              Bases: <code><a class="autorefs autorefs-internal" title="FullyConnected(in_features, out_features, strength, threshold, key, dtype=jnp.float32, *, lr=1.0, weight_decay=0.0) (darnax.modules.fully_connected.FullyConnected)" href="#darnax.modules.fully_connected.FullyConnected">FullyConnected</a></code></p>
 
 
         <p>Fully connected adapter with <strong>frozen</strong> parameters.</p>
@@ -2245,14 +2425,14 @@ where C is the input dimension (usually number of classes).</p>
 
 
 <h2 id="darnax.modules.fully_connected.CEFullyConnected" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">CEFullyConnected</span><span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span> <span class="n">strength</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></code>
+              <code class="highlight language-python"><span class="n">CEFullyConnected</span><span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span> <span class="n">strength</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span></code>
 
 <a href="#darnax.modules.fully_connected.CEFullyConnected" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="FullyConnected(in_features, out_features, strength, threshold, key, dtype=jnp.float32) (darnax.modules.fully_connected.FullyConnected)" href="#darnax.modules.fully_connected.FullyConnected">FullyConnected</a></code></p>
+              Bases: <code><a class="autorefs autorefs-internal" title="FullyConnected(in_features, out_features, strength, threshold, key, dtype=jnp.float32, *, lr=1.0, weight_decay=0.0) (darnax.modules.fully_connected.FullyConnected)" href="#darnax.modules.fully_connected.FullyConnected">FullyConnected</a></code></p>
 
 
         <p>Fully connected adapter with cross-entropy-style local updates.</p>
@@ -2381,6 +2561,38 @@ scaling used in weight initialization.</p>
             </td>
             <td>
                   <code><span title="jax.numpy.float32">float32</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>lr</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Learning rate applied to the update (default: <code>1</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code>1.0</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>weight_decay</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Weight decay coefficient applied to update (default: <code>1</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.0</code>
             </td>
           </tr>
       </tbody>

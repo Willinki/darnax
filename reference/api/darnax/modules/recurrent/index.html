@@ -748,6 +748,24 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#darnax.modules.recurrent.RecurrentDiscrete.lr" class="md-nav__link">
+    <span class="md-ellipsis">
+      lr
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.recurrent.RecurrentDiscrete.weight_decay" class="md-nav__link">
+    <span class="md-ellipsis">
+      weight_decay
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#darnax.modules.recurrent.RecurrentDiscrete.J" class="md-nav__link">
     <span class="md-ellipsis">
       J
@@ -824,6 +842,24 @@
   
     <nav class="md-nav" aria-label="SparseRecurrentDiscrete">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.recurrent.SparseRecurrentDiscrete.lr" class="md-nav__link">
+    <span class="md-ellipsis">
+      lr
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.recurrent.SparseRecurrentDiscrete.weight_decay" class="md-nav__link">
+    <span class="md-ellipsis">
+      weight_decay
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#darnax.modules.recurrent.SparseRecurrentDiscrete.J" class="md-nav__link">
@@ -995,7 +1031,7 @@ darnax.utils.perceptron_rule.perceptron_rule_backward</p>
 
 
 <h2 id="darnax.modules.recurrent.RecurrentDiscrete" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">RecurrentDiscrete</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">j_d</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">strength</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></code>
+              <code class="highlight language-python"><span class="n">RecurrentDiscrete</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">j_d</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">strength</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span></code>
 
 <a href="#darnax.modules.recurrent.RecurrentDiscrete" class="headerlink" title="Permanent link">&para;</a></h2>
 
@@ -1222,6 +1258,38 @@ and ferromagnetic adapters.</p>
                   <code><span title="jax.numpy.float32">float32</span></code>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>lr</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Learning rate applied to the update (default: <code>1</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code>1.0</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>weight_decay</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Weight decay coefficient applied to update (default: <code>0</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.0</code>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -1266,6 +1334,46 @@ length <code>features</code>.</p>
 
 
 
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.modules.recurrent.RecurrentDiscrete.lr" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">lr</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">lr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.modules.recurrent.RecurrentDiscrete.lr" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.modules.recurrent.RecurrentDiscrete.weight_decay" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">weight_decay</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">weight_decay</span> <span class="o">/</span> <span class="n">features</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.modules.recurrent.RecurrentDiscrete.weight_decay" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
 
 <div class="doc doc-object doc-attribute">
 
@@ -1663,7 +1771,7 @@ be a true gradient.</p>
 
 
 <h2 id="darnax.modules.recurrent.SparseRecurrentDiscrete" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">SparseRecurrentDiscrete</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">j_d</span><span class="p">,</span> <span class="n">sparsity</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">strength</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></code>
+              <code class="highlight language-python"><span class="n">SparseRecurrentDiscrete</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">j_d</span><span class="p">,</span> <span class="n">sparsity</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">strength</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span></code>
 
 <a href="#darnax.modules.recurrent.SparseRecurrentDiscrete" class="headerlink" title="Permanent link">&para;</a></h2>
 
@@ -1917,6 +2025,38 @@ and ferromagnetic adapters.</p>
                   <code><span title="jax.numpy.float32">float32</span></code>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>lr</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Learning rate applied to the update (default: <code>1</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code>1.0</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>weight_decay</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Weight decay coefficient applied to update (default: <code>0</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.0</code>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -1961,6 +2101,46 @@ length <code>features</code>.</p>
 
 
 
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.modules.recurrent.SparseRecurrentDiscrete.lr" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">lr</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">lr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.modules.recurrent.SparseRecurrentDiscrete.lr" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.modules.recurrent.SparseRecurrentDiscrete.weight_decay" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">weight_decay</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">weight_decay</span> <span class="o">*</span> <span class="n">wd_rescaling</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.modules.recurrent.SparseRecurrentDiscrete.weight_decay" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
 
 <div class="doc doc-object doc-attribute">
 

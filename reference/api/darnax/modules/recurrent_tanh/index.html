@@ -748,6 +748,24 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#darnax.modules.recurrent_tanh.RecurrentTanh.lr" class="md-nav__link">
+    <span class="md-ellipsis">
+      lr
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.recurrent_tanh.RecurrentTanh.weight_decay" class="md-nav__link">
+    <span class="md-ellipsis">
+      weight_decay
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#darnax.modules.recurrent_tanh.RecurrentTanh.J" class="md-nav__link">
     <span class="md-ellipsis">
       J
@@ -856,6 +874,24 @@
   <a href="#darnax.modules.recurrent_tanh.RecurrentTanhTruncated.strength" class="md-nav__link">
     <span class="md-ellipsis">
       strength
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.recurrent_tanh.RecurrentTanhTruncated.lr" class="md-nav__link">
+    <span class="md-ellipsis">
+      lr
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darnax.modules.recurrent_tanh.RecurrentTanhTruncated.weight_decay" class="md-nav__link">
+    <span class="md-ellipsis">
+      weight_decay
     </span>
   </a>
   
@@ -987,7 +1023,7 @@ darnax.utils.perceptron_rule.perceptron_rule_backward</p>
 
 
 <h2 id="darnax.modules.recurrent_tanh.RecurrentTanh" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">RecurrentTanh</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">j_d</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">strength</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></code>
+              <code class="highlight language-python"><span class="n">RecurrentTanh</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">j_d</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">strength</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span></code>
 
 <a href="#darnax.modules.recurrent_tanh.RecurrentTanh" class="headerlink" title="Permanent link">&para;</a></h2>
 
@@ -1214,6 +1250,38 @@ and ferromagnetic adapters.</p>
                   <code><span title="jax.numpy.float32">float32</span></code>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>lr</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Learning rate applied to the update (default: <code>1</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code>1.0</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>weight_decay</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Weight decay coefficient applied to update (default: <code>0</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.0</code>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -1258,6 +1326,46 @@ length <code>features</code>.</p>
 
 
 
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.modules.recurrent_tanh.RecurrentTanh.lr" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">lr</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">lr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.modules.recurrent_tanh.RecurrentTanh.lr" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.modules.recurrent_tanh.RecurrentTanh.weight_decay" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">weight_decay</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">weight_decay</span> <span class="o">/</span> <span class="n">features</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.modules.recurrent_tanh.RecurrentTanh.weight_decay" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
 
 <div class="doc doc-object doc-attribute">
 
@@ -1654,14 +1762,14 @@ be a true gradient.</p>
 
 
 <h2 id="darnax.modules.recurrent_tanh.RecurrentTanhTruncated" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">RecurrentTanhTruncated</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">j_d</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">strength</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></code>
+              <code class="highlight language-python"><span class="n">RecurrentTanhTruncated</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">j_d</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">strength</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span></code>
 
 <a href="#darnax.modules.recurrent_tanh.RecurrentTanhTruncated" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="RecurrentTanh(features, j_d, tolerance, key, strength=1.0, dtype=jnp.float32) (darnax.modules.recurrent_tanh.RecurrentTanh)" href="#darnax.modules.recurrent_tanh.RecurrentTanh">RecurrentTanh</a></code></p>
+              Bases: <code><a class="autorefs autorefs-internal" title="RecurrentTanh(features, j_d, tolerance, key, strength=1.0, dtype=jnp.float32, *, lr=1.0, weight_decay=0.0) (darnax.modules.recurrent_tanh.RecurrentTanh)" href="#darnax.modules.recurrent_tanh.RecurrentTanh">RecurrentTanh</a></code></p>
 
 
         <p>Continuous [-1, +1] recurrent layer with dense couplings.</p>
@@ -1918,6 +2026,38 @@ and ferromagnetic adapters.</p>
                   <code><span title="jax.numpy.float32">float32</span></code>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>lr</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Learning rate applied to the update (default: <code>1</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code>1.0</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>weight_decay</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Weight decay coefficient applied to update (default: <code>0</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.0</code>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -2035,6 +2175,46 @@ length <code>features</code>.</p>
   </span>
 
 <a href="#darnax.modules.recurrent_tanh.RecurrentTanhTruncated.strength" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.modules.recurrent_tanh.RecurrentTanhTruncated.lr" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">lr</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.modules.recurrent_tanh.RecurrentTanhTruncated.lr" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="darnax.modules.recurrent_tanh.RecurrentTanhTruncated.weight_decay" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">weight_decay</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#darnax.modules.recurrent_tanh.RecurrentTanhTruncated.weight_decay" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
