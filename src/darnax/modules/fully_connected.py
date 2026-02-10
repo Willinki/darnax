@@ -323,7 +323,7 @@ class SparseFullyConnected(FullyConnected):
         self.lr = jnp.asarray(lr, dtype=dtype)
 
         # reproducibility introduces a rescaling
-        wd_rescaling = (0.1**0.5) / (((1 - sparsity) * (1 - in_features)) ** 0.5)
+        wd_rescaling = (0.1**0.5) / (((1 - sparsity) * in_features) ** 0.5)
         self.weight_decay = jnp.asarray(weight_decay * wd_rescaling, dtype=dtype)
 
         key_w, key_mask = jax.random.split(key)

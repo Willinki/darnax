@@ -395,7 +395,7 @@ class SparseRecurrentDiscrete(Layer):
         thresh_vec = self._set_shape(threshold, features, dtype)
         strength_vec = jnp.asarray(strength, dtype=dtype)
         self.lr = jnp.asarray(lr, dtype=dtype)
-        wd_rescaling = (0.01**0.5) / (((1 - sparsity) * (1 - features)) ** 0.5)
+        wd_rescaling = (0.01**0.5) / (((1 - sparsity) * features) ** 0.5)
         self.weight_decay = jnp.asarray(weight_decay * wd_rescaling, dtype=dtype)
 
         diag = jnp.diag_indices(features)
