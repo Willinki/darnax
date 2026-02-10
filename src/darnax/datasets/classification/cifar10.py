@@ -36,6 +36,8 @@ class Cifar10(ClassificationDataset):
         Input transform: "sign" (±1), "tanh", "identity" (no transform).
     validation_fraction : float, default=0.0
         Fraction of training data for validation (0.0 to 1.0).
+    rescale : bool, default=True
+        If True, rescale pixel values from [0, 255] to [0, 1].
 
     References
     ----------
@@ -56,6 +58,8 @@ class Cifar10(ClassificationDataset):
         label_mode: Literal["pm1", "ooe", "c-rescale"] = "c-rescale",
         x_transform: Literal["sign", "tanh", "identity"] = "sign",
         validation_fraction: float = 0.0,
+        shuffle: bool = True,
+        rescale: bool = True,
     ) -> None:
         """Initialize CIFAR-10 dataset configuration."""
         if not (linear_projection is None or isinstance(linear_projection, int)):
@@ -73,6 +77,8 @@ class Cifar10(ClassificationDataset):
         self.label_mode = label_mode
         self.x_transform = x_transform
         self.validation_fraction = validation_fraction
+        self.shuffle = bool(shuffle)
+        self.rescale = bool(rescale)
 
         self.input_dim: int | None = None
         self.num_classes: int = self.NUM_CLASSES
@@ -85,6 +91,7 @@ class Cifar10(ClassificationDataset):
         self._train_bounds: list[tuple[int, int]] = []
         self._valid_bounds: list[tuple[int, int]] = []
         self._test_bounds: list[tuple[int, int]] = []
+        self._train_epoch_key: jax.Array | None = None
 
     def build(self, key: jax.Array) -> jax.Array:
         """Load, preprocess, and prepare CIFAR-10 splits."""
@@ -125,8 +132,9 @@ class Cifar10(ClassificationDataset):
         y_te = self._encode_labels(y_te_all)
         y_va = self._encode_labels(y_va) if y_va is not None else None
 
-        perm = jax.random.permutation(key_shuf, x_tr.shape[0])
-        self.x_train, self.y_train = x_tr[perm], y_tr[perm]
+        # Training data can be reshuffled each epoch during iteration.
+        self.x_train, self.y_train = x_tr, y_tr
+        self._train_epoch_key = key_shuf if self.shuffle else None
         self.x_test, self.y_test = x_te, y_te
         if x_va is not None and y_va is not None:
             self.x_valid, self.y_valid = x_va, y_va
@@ -145,8 +153,18 @@ class Cifar10(ClassificationDataset):
         """Iterate over training batches."""
         if self.x_train is None or self.y_train is None:
             raise RuntimeError("Dataset not built. Call `build()` first.")
-        for lo, hi in self._train_bounds:
-            yield self.x_train[lo:hi], self.y_train[lo:hi]
+        if self.shuffle:
+            if self._train_epoch_key is None:
+                raise RuntimeError("Training shuffle requested but dataset has no shuffle key.")
+            key_epoch, key_next = jax.random.split(self._train_epoch_key)
+            self._train_epoch_key = key_next
+            perm = jax.random.permutation(key_epoch, self.x_train.shape[0])
+            for lo, hi in self._train_bounds:
+                idx = perm[lo:hi]
+                yield self.x_train[idx], self.y_train[idx]
+        else:
+            for lo, hi in self._train_bounds:
+                yield self.x_train[lo:hi], self.y_train[lo:hi]
 
     def iter_test(self) -> Iterator[tuple[jax.Array, jax.Array]]:
         """Iterate over test batches."""
@@ -213,7 +231,7 @@ class Cifar10(ClassificationDataset):
         ds = load_dataset("cifar10", split=split)
         ds.set_format(type="numpy", columns=["img", "label"])
 
-        x_np: np.ndarray = ds[:]["img"].astype(np.float32) / 255.0
+        x_np: np.ndarray = ds[:]["img"].astype(np.uint8)
         y_np: np.ndarray = ds[:]["label"].astype(np.int32)
 
         if cache_file is not None:
@@ -239,7 +257,7 @@ class Cifar10(ClassificationDataset):
             return None
 
         cache_root = Path(base) / cls.CACHE_SUBDIR
-        return cache_root / f"{split}.npz"
+        return cache_root / f"{split}_raw.npz"
 
     @classmethod
     def _subsample_per_class(
@@ -263,6 +281,11 @@ class Cifar10(ClassificationDataset):
 
     def _preprocess(self, w: jax.Array | None, x: jax.Array) -> jax.Array:
         """Flatten, project, and transform inputs."""
+        # Convert to float and optionally rescale from [0, 255] to [0, 1].
+        x = x.astype(jnp.float32)
+        if self.rescale:
+            x = x / 255.0
+
         x = jnp.reshape(x, (x.shape[0], -1))
         if w is not None:
             x = (x @ w.T).astype(jnp.float32)
