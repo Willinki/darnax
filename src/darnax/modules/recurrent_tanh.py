@@ -86,6 +86,8 @@ class RecurrentTanh(Layer):
     tolerance: Array
     strength: Array
     _mask: Array
+    lr: Array
+    weight_decay: Array
 
     def __init__(
         self,
@@ -95,6 +97,9 @@ class RecurrentTanh(Layer):
         key: KeyArray,
         strength: float = 1.0,
         dtype: DTypeLike = jnp.float32,
+        *,
+        lr: float = 1.0,
+        weight_decay: float = 0.0,
     ):
         """Construct the layer parameters.
 
@@ -121,6 +126,10 @@ class RecurrentTanh(Layer):
             and ferromagnetic adapters.
         dtype : DTypeLike, optional
             Parameter dtype, by default ``jnp.float32``.
+        lr: float, optional
+            Learning rate applied to the update (default: ``1``).
+        weight_decay: float, optional
+            Weight decay coefficient applied to update (default: ``0``).
 
         Raises
         ------
@@ -132,6 +141,8 @@ class RecurrentTanh(Layer):
         j_d_vec = self._set_shape(j_d, features, dtype)
         tol_vec = self._set_shape(tolerance, features, dtype)
         strength_vec = jnp.asarray(strength, dtype=dtype)
+        self.lr = jnp.asarray(lr, dtype=dtype)
+        self.weight_decay = jnp.asarray(weight_decay / (features**0.5), dtype=dtype)
 
         J = (
             jax.random.normal(key, shape=(features, features), dtype=dtype)
@@ -254,6 +265,7 @@ class RecurrentTanh(Layer):
         if gate is None:
             gate = jnp.array(1.0)
         dJ = tanh_perceptron_rule_backward(x, y, y_hat, self.tolerance)
+        dJ = self.lr * dJ + self.lr * self.weight_decay * self.J
         dJ = dJ * self._mask
         zero_update = jax.tree.map(jnp.zeros_like, self)
         new_self: Self = eqx.tree_at(lambda m: m.J, zero_update, dJ)
@@ -334,6 +346,8 @@ class RecurrentTanhTruncated(RecurrentTanh):
     threshold: Array
     strength: Array
     _mask: Array
+    lr: Array
+    weight_decay: Array
 
     def __init__(
         self,
@@ -344,6 +358,9 @@ class RecurrentTanhTruncated(RecurrentTanh):
         threshold: ArrayLike,
         strength: float = 1.0,
         dtype: DTypeLike = jnp.float32,
+        *,
+        lr: float = 1.0,
+        weight_decay: float = 0.0,
     ):
         """Construct the layer parameters.
 
@@ -373,6 +390,10 @@ class RecurrentTanhTruncated(RecurrentTanh):
             and ferromagnetic adapters.
         dtype : DTypeLike, optional
             Parameter dtype, by default ``jnp.float32``.
+        lr: float, optional
+            Learning rate applied to the update (default: ``1``).
+        weight_decay: float, optional
+            Weight decay coefficient applied to update (default: ``0``).
 
         Raises
         ------
@@ -382,7 +403,14 @@ class RecurrentTanhTruncated(RecurrentTanh):
 
         """
         super().__init__(
-            features=features, j_d=j_d, tolerance=tolerance, key=key, strength=strength, dtype=dtype
+            features=features,
+            j_d=j_d,
+            tolerance=tolerance,
+            key=key,
+            strength=strength,
+            dtype=dtype,
+            lr=lr,
+            weight_decay=weight_decay,
         )
         threshold_vec = self._set_shape(threshold, features, dtype)
         self.threshold = threshold_vec
@@ -429,6 +457,7 @@ class RecurrentTanhTruncated(RecurrentTanh):
         if gate is None:
             gate = jnp.array(1.0)
         dJ = tanh_truncated_perceptron_rule_backward(x, y, y_hat, self.threshold, self.tolerance)
+        dJ = self.lr * dJ + self.lr * self.weight_decay * self.J
         dJ = dJ * self._mask
         zero_update = jax.tree.map(jnp.zeros_like, self)
         new_self: Self = eqx.tree_at(lambda m: m.J, zero_update, dJ)

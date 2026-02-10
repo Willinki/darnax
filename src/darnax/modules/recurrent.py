@@ -82,6 +82,8 @@ class RecurrentDiscrete(Layer):
     threshold: Array
     strength: Array
     _mask: Array
+    lr: Array
+    weight_decay: Array
 
     def __init__(
         self,
@@ -91,6 +93,9 @@ class RecurrentDiscrete(Layer):
         key: KeyArray,
         strength: float = 1.0,
         dtype: DTypeLike = jnp.float32,
+        *,
+        lr: float = 1.0,
+        weight_decay: float = 0.0,
     ):
         """Construct the layer parameters.
 
@@ -117,6 +122,10 @@ class RecurrentDiscrete(Layer):
             and ferromagnetic adapters.
         dtype : DTypeLike, optional
             Parameter dtype, by default ``jnp.float32``.
+        lr: float, optional
+            Learning rate applied to the update (default: ``1``).
+        weight_decay: float, optional
+            Weight decay coefficient applied to update (default: ``0``).
 
         Raises
         ------
@@ -128,6 +137,8 @@ class RecurrentDiscrete(Layer):
         j_d_vec = self._set_shape(j_d, features, dtype)
         thresh_vec = self._set_shape(threshold, features, dtype)
         strength_vec = jnp.asarray(strength, dtype=dtype)
+        self.lr = jnp.asarray(lr, dtype=dtype)
+        self.weight_decay = jnp.asarray(weight_decay / (features**0.5), dtype=dtype)
 
         J = (
             jax.random.normal(key, shape=(features, features), dtype=dtype)
@@ -251,6 +262,7 @@ class RecurrentDiscrete(Layer):
         if gate is None:
             gate = jnp.array(1.0)
         dJ = perceptron_rule_backward(x, y, y_hat, self.threshold, gate)
+        dJ = self.lr * dJ + self.lr * self.weight_decay * self.J
         dJ = dJ * self._mask
         zero_update = jax.tree.map(jnp.zeros_like, self)
         new_self: Self = eqx.tree_at(lambda m: m.J, zero_update, dJ)
@@ -324,6 +336,8 @@ class SparseRecurrentDiscrete(Layer):
     threshold: Array
     strength: Array
     _mask: Array
+    lr: Array
+    weight_decay: Array
 
     def __init__(
         self,
@@ -334,6 +348,9 @@ class SparseRecurrentDiscrete(Layer):
         key: KeyArray,
         strength: float = 1.0,
         dtype: DTypeLike = jnp.float32,
+        *,
+        lr: float = 1.0,
+        weight_decay: float = 0.0,
     ):
         """Construct the layer parameters.
 
@@ -362,6 +379,10 @@ class SparseRecurrentDiscrete(Layer):
             and ferromagnetic adapters.
         dtype : DTypeLike, optional
             Parameter dtype, by default ``jnp.float32``.
+        lr: float, optional
+            Learning rate applied to the update (default: ``1``).
+        weight_decay: float, optional
+            Weight decay coefficient applied to update (default: ``0``).
 
         Raises
         ------
@@ -373,6 +394,9 @@ class SparseRecurrentDiscrete(Layer):
         j_d_vec = self._set_shape(j_d, features, dtype)
         thresh_vec = self._set_shape(threshold, features, dtype)
         strength_vec = jnp.asarray(strength, dtype=dtype)
+        self.lr = jnp.asarray(lr, dtype=dtype)
+        wd_rescaling = (0.01**0.5) / (((1 - sparsity) * (1 - features)) ** 0.5)
+        self.weight_decay = jnp.asarray(weight_decay * wd_rescaling, dtype=dtype)
 
         diag = jnp.diag_indices(features)
         key_j, key_mask = jax.random.split(key)
@@ -497,6 +521,7 @@ class SparseRecurrentDiscrete(Layer):
 
         """
         dJ = perceptron_rule_backward(x, y, y_hat, self.threshold, gate)
+        dJ = self.lr * dJ + self.lr * self.weight_decay * self.J
         dJ = dJ * self._mask
         zero_update = jax.tree.map(jnp.zeros_like, self)
         new_self: Self = eqx.tree_at(lambda m: m.J, zero_update, dJ)
