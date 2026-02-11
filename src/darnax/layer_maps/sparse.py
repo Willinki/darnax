@@ -270,7 +270,9 @@ class LayerMap:
         return MappingProxyType(self._data[i])
 
     def row_items(
-        self, skip_last: bool = False, subset: Literal["backward", "forward", "all"] = "all"
+        self,
+        skip_last: bool = False,
+        subset: Literal["backward", "forward", "all", "inference"] = "all",
     ) -> Iterable[tuple[int, Mapping[int, AbstractModule]]]:
         """Iterate over rows with deterministic ordering and read-only views.
 
@@ -285,6 +287,8 @@ class LayerMap:
             “feed-forward” scheduling constraint.
             If ``backward``, keep only edges ``(i, j)`` with ``j >= i`` (i.e.,
             upper-triangular including the diagonal).
+            If ``inference``, keep only edges ``(i, j)`` with ``j != last`` (i.e.,
+            everything except last column).
 
 
         Yields
@@ -294,6 +298,7 @@ class LayerMap:
 
         """
         row_keys = list(self._rows)
+        output_idx: int = row_keys[-1]
         if skip_last:
             row_keys = row_keys[:-1]
         for r_idx in row_keys:
@@ -302,6 +307,10 @@ class LayerMap:
                 data = {k: v for k, v in data.items() if k <= r_idx}
             elif subset == "backward":
                 data = {k: v for k, v in data.items() if k >= r_idx}
+            elif subset == "inference":
+                data = {k: v for k, v in data.items() if k != output_idx}
+            else:
+                raise AttributeError
             yield r_idx, MappingProxyType(data)
 
     def edge_items(self) -> Iterable[tuple[tuple[int, int], AbstractModule]]:

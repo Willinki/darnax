@@ -91,7 +91,7 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         state: SequentialState,
         rng: KeyArray,
         *,
-        filter_messages: Literal["all", "forward", "backward"] = "all",
+        filter_messages: Literal["all", "forward", "backward", "inference"] = "all",
         skip_output_state: bool = True,
     ) -> tuple[SequentialState, KeyArray]:
         """Run one forward/update sweep for all receivers **except output**.
@@ -108,10 +108,11 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
             Current global state.
         rng : KeyArray
             PRNG key (split per receiver/sender).
-        filter_messages : Literal["all", "forward", "backward"]. Default: "all"
+        filter_messages : Literal["all", "forward", "backward", "inference"]. Default: "all"
             Only a subset of the messages are sent during the step. If forward,
             only forward messages (lower-triangle and diagonal) are computed.
-            Same for backward. "All" computes all the messages.
+            Same for backward. "All" computes all the messages. If "inference", we remove
+            messages coming from the output.
         skip_output_state : bool. Default: true.
             If true, we only update internal states (we exclude output state (-1)).
             The idea is that somehow the output is clamped and in some learning phases
@@ -158,11 +159,11 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         """
         warnings.warn(
             """step_inference has been deprecated and will be eliminated in
-        future versions. Use step() with filter_messages=\"forward\"""",
+        future versions. Use step() with filter_messages=\"inference\"""",
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.step(state, rng=rng, filter_messages="forward")
+        return self.step(state, rng=rng, filter_messages="inference")
 
     def predict(self, state: SequentialState, rng: KeyArray) -> tuple[SequentialState, KeyArray]:
         """Compute/refresh the **output** buffer ``state[-1]`` from current buffers.
