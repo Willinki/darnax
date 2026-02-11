@@ -1,0 +1,35 @@
+seed: 44
+
+# data / task
+in_channels: 1          # 1 for MNIST/FashionMNIST, 3 for CIFAR10
+num_labels: 10
+
+# widths
+n_channels: 128
+n_groups: 128
+
+# input conv (W_in)
+conv_kernel_size: 3
+conv_threshold: 1.9
+conv_strength: 3.0
+conv_padding_mode: reflect
+
+# conv recurrent block (J_conv)
+conv_rec_kernel_size: 3
+conv_rec_threshold: 1.9
+conv_rec_j_d: 0.9
+conv_rec_padding_mode: reflect
+
+# pooling / unpooling
+pool_strength: 3.0
+unpool_strength: 3.5
+
+# fully-connected recurrent core (J_ff)
+ff_rec_threshold: 1.9
+ff_rec_j_d: 0.9
+
+# output + feedback
+out_threshold: 7.0
+out_strength: 1.0
+back_threshold: 7.0
+back_strength: 3.5
