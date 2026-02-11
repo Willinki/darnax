@@ -28,6 +28,8 @@ class Conv2D(Adapter):
 
     kernel: Array
     threshold: Array
+    lr: Array
+    weight_decay: Array
     strength: float = eqx.field(static=True)
     in_channels: int = eqx.field(static=True)
     out_channels: int = eqx.field(static=True)
@@ -46,6 +48,9 @@ class Conv2D(Adapter):
         stride: int | tuple[int, int] = 1,
         padding_mode: str | Callable[..., str] | None = None,
         dtype: DTypeLike = jnp.float32,
+        *,
+        lr: float = 1.0,
+        weight_decay: float = 0.0,
     ):
         """Save properties and init kernel."""
         self.in_channels = int(in_channels)
@@ -54,6 +59,10 @@ class Conv2D(Adapter):
         self.kernel_size = fetch_tuple_from_arg(kernel_size)
         self.padding_mode = padding_mode
         self.threshold = jnp.asarray(threshold, dtype=dtype)  # scalar for simplicity
+        self.lr = jnp.asarray(lr, dtype=dtype)
+
+        wd_rescale = self.kernel_size[0] * self.kernel_size[1] * self.in_channels
+        self.weight_decay = jnp.asarray(weight_decay / (wd_rescale**0.5))
         self.strength = strength
 
         key, init_key = jax.random.split(key)
@@ -75,6 +84,7 @@ class Conv2D(Adapter):
         dW = conv_backward_with_threshold(
             x, y, y_hat, self.threshold, self.kernel_size, self.stride, self.padding_mode
         )
+        dW = self.lr * dW + self.weight_decay * self.W
         # zero-update tree with same structure (use tree_map from jax)
         zero_update = jax.tree_util.tree_map(jnp.zeros_like, self, is_leaf=eqx.is_inexact_array)
         new_self: Self = eqx.tree_at(lambda m: m.kernel, zero_update, dW)
@@ -94,6 +104,8 @@ class Conv2DRecurrentDiscrete(Layer):
     kernel: Array
     threshold: Array
     j_d: Array
+    lr: Array
+    weight_decay: Array
 
     channels: int = eqx.field(static=True)
     groups: int = eqx.field(static=True)
@@ -111,6 +123,9 @@ class Conv2DRecurrentDiscrete(Layer):
         key: KeyArray,
         padding_mode: str | Callable[..., str] = "constant",
         dtype: DTypeLike = jnp.float32,
+        *,
+        lr: float,
+        weight_decay: float,
     ):
         self.channels = int(channels)
         self.groups = int(groups)
@@ -148,6 +163,11 @@ class Conv2DRecurrentDiscrete(Layer):
         # We intentionally keep stored kernel constrained entries zero (projected) so they don't drift during learning.
         self.kernel = self._set_jd_constraint(self.kernel)
         self.kernel = self._project_kernel(self.kernel)
+
+        # learning rate and weight decay
+        weight_decay_rescaling = # FILL HERE
+        self.lr = jnp.asarray(lr, dtype=dtype)
+        self.weight_decay = jnp.asarray()
 
     def _central_diag_mask(self) -> Array:
         """Mask (cin_g, cout) with ones exactly at the self-connection positions."""
@@ -224,6 +244,7 @@ class Conv2DRecurrentDiscrete(Layer):
             kernel_shape=(kh, kw),
             strides=(1, 1),
             padding_mode=self.padding_mode,
+            groups=self.groups
         )
 
         # Reshape to (Kh, Kw, G, Cin_g, G, Cout_g)
