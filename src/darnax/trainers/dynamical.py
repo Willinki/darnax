@@ -151,7 +151,7 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
             orchestrator.step, (state, rng), n_iter=ctx["clamped_iter"], filter_messages="all"
         )
         (state, rng), _ = scan_n(
-            orchestrator.step, (state, rng), n_iter=ctx["free_iter"], filter_messages="forward"
+            orchestrator.step, (state, rng), n_iter=ctx["free_iter"], filter_messages="inference"
         )
 
         # 3) local/backprop deltas shaped like orchestrator
@@ -216,10 +216,10 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
 
         # 2) warmup + free eval dynamics
         (state, rng), _ = scan_n(
-            orchestrator.step, (state, rng), n_iter=ctx["warmup_iter"], filter_messages="forward"
+            orchestrator.step, (state, rng), n_iter=ctx["warmup_iter"], filter_messages="inference"
         )
         (state, rng), _ = scan_n(
-            orchestrator.step, (state, rng), n_iter=ctx["eval_iter"], filter_messages="forward"
+            orchestrator.step, (state, rng), n_iter=ctx["eval_iter"], filter_messages="inference"
         )
 
         # 3) prediction
