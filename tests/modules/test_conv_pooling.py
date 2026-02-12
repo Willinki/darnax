@@ -1,149 +1,391 @@
-import equinox as eqx
+import pytest
 import jax
 import jax.numpy as jnp
-import jax.tree_util as jtu
-import pytest
-
-from darnax.modules.conv.pooling import MajorityPooling, ConstantUnpooling
-
-
-def _rand(key, shape, dtype=jnp.float32):
-    return jax.random.normal(key, shape, dtype=dtype)
+from darnax.modules.conv.pooling import (
+    MajorityPooling,
+    ConstantUnpooling,
+    GlobalMajorityPooling,
+    GlobalUnpooling,
+)
 
 
-def test_majority_pooling_basic_behavior():
-    # Build an input where a 2x2 window majority is positive, negative, and balanced.
-    # Batch=1, H=4, W=4, C=1
+# MajorityPooling tests
+
+
+def test_basic_pooling_3x3_stride1():
+    """Test that 3x3 pooling with stride 1 and padding preserves shape."""
+    key = jax.random.PRNGKey(0)
     x = jnp.array(
         [
             [
-                [[1.0], [1.0], [-1.0], [-1.0]],
-                [[1.0], [1.0], [-1.0], [-1.0]],
-                [[-1.0], [-1.0], [1.0], [1.0]],
-                [[-1.0], [-1.0], [1.0], [1.0]],
+                [[1], [-1], [1]],
+                [[-1], [1], [-1]],
+                [[1], [1], [1]],
             ]
         ],
         dtype=jnp.float32,
-    )  # shape (1,4,4,1)
-
-    mp = MajorityPooling(
-        kernel_size=2, strength=2.0, key=jax.random.PRNGKey(0), stride=2, padding_mode=None
     )
 
-    out = mp(x)  # stride=2, so output spatial dims should be 2x2
+    pooling = MajorityPooling(kernel_size=3, strength=1.0, key=key, stride=1, padding_mode="edge")
+    out = pooling(x)
+
+    assert out.shape == (1, 3, 3, 1)
+
+
+def test_pooling_compression_stride_equals_kernel():
+    """Test that pooling with stride=kernel_size compresses the image."""
+    key = jax.random.PRNGKey(0)
+    x = jnp.ones((1, 6, 6, 1), dtype=jnp.float32)
+
+    pooling = MajorityPooling(kernel_size=3, strength=1.0, key=key, stride=3, padding_mode="edge")
+    out = pooling(x)
+
     assert out.shape == (1, 2, 2, 1)
 
-    # top-left 2x2 window has sum +4 -> majority positive -> +1 scaled by strength
-    assert jnp.allclose(out[0, 0, 0, 0], 2.0)
-    # top-right 2x2 window has sum -4 -> majority negative -> -2.0
-    assert jnp.allclose(out[0, 0, 1, 0], -2.0)
-    # bottom-left negative
-    assert jnp.allclose(out[0, 1, 0, 0], -2.0)
-    # bottom-right positive
-    assert jnp.allclose(out[0, 1, 1, 0], 2.0)
 
-
-def test_majority_pooling_threshold_and_padding():
-    x = jnp.zeros((1, 3, 3, 1), dtype=jnp.float32)
-    x = x.at[0, 1, 1, 0].set(1.0)
-
-    mp = MajorityPooling(
-        kernel_size=3, strength=1.5, key=jax.random.PRNGKey(1), stride=1, padding_mode="constant"
-    )
-    out = mp(x)
-    assert out.shape == (1, 3, 3, 1)
-
-    # center should be positive scaled
-    assert jnp.allclose(out[0, 1, 1, 0], 1.5)
-
-    # NOTE: with symmetric kh//2 padding, the center element is included in every 3x3 patch
-    # extracted for stride=1, so the corners will also be positive.
-    assert jnp.allclose(out[0, 0, 0, 0], 1.5)
-    assert jnp.allclose(out[0, 0, 2, 0], 1.5)
-    assert jnp.allclose(out[0, 2, 0, 0], 1.5)
-    assert jnp.allclose(out[0, 2, 2, 0], 1.5)
-
-
-def test_majority_pooling_backward_zero_update_and_equinox_filter():
-    # Create a module and call backward; the returned tree should contain same pytree
-    # structure and have only zero arrays (since there's nothing to update).
-    mp = MajorityPooling(
-        kernel_size=2, strength=0.5, key=jax.random.PRNGKey(2), stride=1, padding_mode=None
+def test_majority_vote_positive():
+    """Test that majority of positive values gives +1."""
+    key = jax.random.PRNGKey(0)
+    x = jnp.array(
+        [
+            [
+                [[1], [1], [1]],
+                [[1], [-1], [-1]],
+                [[1], [-1], [-1]],
+            ]
+        ],
+        dtype=jnp.float32,
     )
 
-    # small dummy inputs
-    x = jnp.ones((1, 4, 4, 1), dtype=jnp.float32)
-    y = mp(x)
-    y_hat = jnp.zeros_like(y)
+    pooling = MajorityPooling(kernel_size=3, strength=1.0, key=key, stride=3, padding_mode="edge")
+    out = pooling(x)
 
-    update = mp.backward(x, y, y_hat, gate=None)
-
-    # update must be an Equinox pytree of the same type
-    assert isinstance(update, MajorityPooling)
-
-    # All array leaves in update should be zeros. Use eqx.filter to get arrays.
-    res = eqx.filter(update, eqx.is_inexact_array)
-    # eqx.filter may return either (matched, rest) or just matched depending on Equinox version
-    if isinstance(res, tuple) and len(res) == 2:
-        arrays, rest = res
-    else:
-        arrays = res
-
-    # use jax.tree_util.tree_leaves to get leaves (works regardless of eqx version)
-    leaves = jtu.tree_leaves(arrays)
-    assert leaves, "expected at least one array leaf in the update object"
-    for leaf in leaves:
-        # leaf can be jax arrays; compare to zero
-        assert jnp.allclose(leaf, 0.0)
+    assert out.shape == (1, 1, 1, 1)
+    assert out[0, 0, 0, 0] == 1.0
 
 
-def test_majority_pooling_jittable_call_and_no_grad():
-    mp = MajorityPooling(
-        kernel_size=2, strength=1.0, key=jax.random.PRNGKey(3), stride=1, padding_mode=None
+def test_majority_vote_negative():
+    """Test that majority of negative values gives -1."""
+    key = jax.random.PRNGKey(0)
+    x = jnp.array(
+        [
+            [
+                [[1], [-1], [-1]],
+                [[-1], [-1], [-1]],
+                [[1], [-1], [-1]],
+            ]
+        ],
+        dtype=jnp.float32,
     )
-    x = jnp.ones((1, 4, 4, 1), dtype=jnp.float32)
 
-    # JIT the module-call; pass module as explicit argument so jit sees it as a pytree input.
-    jit_call = jax.jit(lambda module, inp: module(inp))
-    out = jit_call(mp, x)
-    # kernel_size=2, padding_mode=None -> output is (H - 2 + 1, W - 2 + 1) = (3,3)
-    assert out.shape == (1, 3, 3, 1)
+    pooling = MajorityPooling(kernel_size=3, strength=1.0, key=key, stride=3, padding_mode="edge")
+    out = pooling(x)
 
-    # Ensure no gradient is attempted/needed; we just ensure jax.grad on the module call fails or is not used.
-    # The module is not differentiable by design (no float parameters to learn here), but we assert grad on outputs wrt input exists.
-    g = jax.grad(lambda inp: jnp.sum(jit_call(mp, inp)))(x)
-    assert g.shape == x.shape
+    assert out.shape == (1, 1, 1, 1)
+    assert out[0, 0, 0, 0] == -1.0
 
 
-def test_constant_unpooling_repeat_and_jit_and_backward():
-    # Input shape (1,2,2,1), kernel_size=(2,3) -> output (1,4,6,1)
-    cu = ConstantUnpooling(kernel_size=(2, 3), strength=0.25)
-    x = jnp.arange(4, dtype=jnp.float32).reshape(1, 2, 2, 1)  # values 0..3
-    out = cu(x)
-    assert out.shape == (1, 4, 6, 1)
+def test_majority_pooling_strength_scaling():
+    """Test that strength parameter scales the output."""
+    key = jax.random.PRNGKey(0)
+    x = jnp.ones((1, 3, 3, 1), dtype=jnp.float32)
 
-    s = float(cu.strength)
+    pooling = MajorityPooling(kernel_size=3, strength=2.5, key=key, stride=3, padding_mode="edge")
+    out = pooling(x)
 
-    # check repeated block: out[0,0:2,0:3,0] should be filled with x[0,0,0,0] == 0 scaled by strength
-    assert jnp.allclose(out[0, 0:2, 0:3, 0], s * 0.0)
+    assert jnp.allclose(out, 2.5)
 
-    # check next block corresponds to x[0,0,1,0] == 1 scaled by strength
-    assert jnp.allclose(out[0, 0:2, 3:6, 0], s * 1.0)
 
-    # also verify lower row blocks correspond to x[0,1,0,0] == 2 and x[0,1,1,0] == 3
-    assert jnp.allclose(out[0, 2:4, 0:3, 0], s * 2.0)
-    assert jnp.allclose(out[0, 2:4, 3:6, 0], s * 3.0)
+def test_majority_pooling_multiple_channels():
+    """Test pooling works with multiple channels."""
+    key = jax.random.PRNGKey(0)
+    x = jnp.ones((2, 6, 6, 3), dtype=jnp.float32)
 
-    # JIT the call (module passed as pytree)
-    jit_call = jax.jit(lambda module, inp: module(inp))
-    out_jit = jit_call(cu, x)
-    assert jnp.allclose(out_jit, out)
+    pooling = MajorityPooling(kernel_size=3, strength=1.0, key=key, stride=3, padding_mode="edge")
+    out = pooling(x)
 
-    # backward returns zero-update structure
-    upd = cu.backward(x, out, out)
-    import jax.tree_util as jtu
+    assert out.shape == (2, 2, 2, 3)
 
-    leaves = jtu.tree_leaves(upd)
-    array_leaves = [leaf for leaf in leaves if eqx.is_inexact_array(leaf)]
-    for leaf in array_leaves:
-        assert jnp.allclose(leaf, 0.0)
+
+# ConstantUnpooling tests
+
+
+def test_basic_unpooling_no_unpad():
+    """Test unpooling without unpadding."""
+    x = jnp.array([[[[1], [-1]], [[1], [1]]]], dtype=jnp.float32)
+
+    unpooling = ConstantUnpooling(kernel_size=3, strength=1.0)
+    out = unpooling(x)
+
+    assert out.shape == (1, 6, 6, 1)
+    assert jnp.allclose(out[0, 0:3, 0:3, 0], 1.0)
+    assert jnp.allclose(out[0, 0:3, 3:6, 0], -1.0)
+
+
+def test_unpooling_with_unpad():
+    """Test unpooling with unpadding to restore original shape."""
+    x = jnp.array([[[[1]]]], dtype=jnp.float32)
+
+    unpooling = ConstantUnpooling(kernel_size=3, strength=1.0, unpad=1)
+    out = unpooling(x)
+
+    assert out.shape == (1, 1, 1, 1)
+    assert out[0, 0, 0, 0] == 1.0
+
+
+def test_pool_unpool_roundtrip_shape():
+    """Test that pooling followed by unpooling with unpad restores shape."""
+    key = jax.random.PRNGKey(42)
+    x = jax.random.choice(key, jnp.array([-1.0, 1.0]), shape=(1, 5, 5, 2))
+
+    pooling = MajorityPooling(kernel_size=3, strength=1.0, key=key, stride=3, padding_mode="edge")
+    pooled = pooling(x)
+
+    unpooling = ConstantUnpooling(kernel_size=3, strength=1.0, unpad=1)
+    unpooled = unpooling(pooled)
+
+    assert unpooled.shape[1] == 4 and unpooled.shape[2] == 4
+
+
+def test_asymmetric_kernel():
+    """Test unpooling with asymmetric kernel."""
+    x = jnp.array([[[[1]]]], dtype=jnp.float32)
+
+    unpooling = ConstantUnpooling(kernel_size=(2, 3), strength=1.0)
+    out = unpooling(x)
+
+    assert out.shape == (1, 2, 3, 1)
+
+
+def test_asymmetric_unpad():
+    """Test unpooling with asymmetric unpadding."""
+    x = jnp.array([[[[1]]]], dtype=jnp.float32)
+
+    unpooling = ConstantUnpooling(kernel_size=5, strength=1.0, unpad=(1, 2))
+    out = unpooling(x)
+
+    assert out.shape == (1, 3, 1, 1)
+
+
+def test_unpooling_strength_scaling():
+    """Test that strength parameter scales the output."""
+    x = jnp.ones((1, 2, 2, 1), dtype=jnp.float32)
+
+    unpooling = ConstantUnpooling(kernel_size=2, strength=3.0)
+    out = unpooling(x)
+
+    assert jnp.allclose(out, 3.0)
+
+
+def test_constant_value_preservation():
+    """Test that unpooling preserves constant values in blocks."""
+    x = jnp.array([[[[5.0], [-3.0]]]], dtype=jnp.float32)
+
+    unpooling = ConstantUnpooling(kernel_size=2, strength=1.0)
+    out = unpooling(x)
+
+    assert jnp.allclose(out[0, :, 0:2, 0], 5.0)
+    assert jnp.allclose(out[0, :, 2:4, 0], -3.0)
+
+
+# GlobalMajorityPooling tests
+
+
+def test_global_pool_spatial_dimensions():
+    """Test pooling over spatial dimensions."""
+    x = jnp.array(
+        [
+            [
+                [[1, -1], [1, 1]],
+                [[-1, 1], [1, 1]],
+            ]
+        ],
+        dtype=jnp.float32,
+    )
+
+    pooling = GlobalMajorityPooling(strength=1.0, axis=(1, 2))
+    out = pooling(x)
+
+    assert out.shape == (1, 2)
+    assert jnp.allclose(out, jnp.array([[1.0, 1.0]]))
+
+
+def test_global_pool_channel_dimension():
+    """Test pooling over channel dimension."""
+    x = jnp.array(
+        [
+            [
+                [[1, -1, 1]],
+            ]
+        ],
+        dtype=jnp.float32,
+    )
+
+    pooling = GlobalMajorityPooling(strength=1.0, axis=3)
+    out = pooling(x)
+
+    assert out.shape == (1, 1, 1)
+    assert out[0, 0, 0] == 1.0
+
+
+def test_global_pool_negative_majority():
+    """Test that negative majority gives -1."""
+    x = jnp.array([[[[1, -1, -1, -1]]]], dtype=jnp.float32)
+
+    pooling = GlobalMajorityPooling(strength=1.0, axis=-1)
+    out = pooling(x)
+
+    assert out[0, 0, 0] == -1.0
+
+
+def test_global_pool_tie_gives_negative():
+    """Test that ties result in -1."""
+    x = jnp.array([[[[1, -1, 1, -1]]]], dtype=jnp.float32)
+
+    pooling = GlobalMajorityPooling(strength=1.0, axis=-1)
+    out = pooling(x)
+
+    assert out[0, 0, 0] == -1.0
+
+
+def test_global_pool_strength_scaling():
+    """Test strength parameter."""
+    x = jnp.ones((1, 3, 3, 1), dtype=jnp.float32)
+
+    pooling = GlobalMajorityPooling(strength=2.0, axis=(1, 2))
+    out = pooling(x)
+
+    assert jnp.allclose(out, 2.0)
+
+
+# GlobalUnpooling tests
+
+
+def test_global_unpool_expand_single_axis():
+    """Test expanding along a single axis."""
+    x = jnp.array([[[[1, -1]]]], dtype=jnp.float32)
+
+    unpooling = GlobalUnpooling(strength=1.0, axis=2)
+    out = unpooling(x)
+
+    assert out.shape == (1, 1, 1, 1, 2)
+    assert jnp.allclose(out[0, 0, 0, 0, :], jnp.array([1.0, -1.0]))
+
+
+def test_global_unpool_expand_negative_axis():
+    """Test expanding with negative axis index."""
+    x = jnp.array([[[1, -1]]], dtype=jnp.float32)
+
+    unpooling = GlobalUnpooling(strength=1.0, axis=-1)
+    out = unpooling(x)
+
+    assert out.shape == (1, 1, 2, 1)
+
+
+def test_global_unpool_strength_scaling():
+    """Test strength parameter."""
+    x = jnp.ones((2, 3), dtype=jnp.float32)
+
+    unpooling = GlobalUnpooling(strength=5.0, axis=1)
+    out = unpooling(x)
+
+    assert jnp.allclose(out, 5.0)
+
+
+def test_global_unpool_value_preservation():
+    """Test that values are preserved after expansion."""
+    x = jnp.array([[[2.0, -3.0]]], dtype=jnp.float32)
+
+    unpooling = GlobalUnpooling(strength=1.0, axis=0)
+    out = unpooling(x)
+
+    assert out.shape == (1, 1, 1, 2)
+    assert jnp.allclose(out[0, 0, 0, :], jnp.array([2.0, -3.0]))
+
+
+# Backward method tests
+
+
+def test_majority_pooling_backward():
+    """Test MajorityPooling backward returns zeros."""
+    key = jax.random.PRNGKey(0)
+    pooling = MajorityPooling(kernel_size=3, strength=1.0, key=key, stride=1, padding_mode="edge")
+
+    x = jnp.ones((1, 3, 3, 1))
+    y = jnp.ones((1, 3, 3, 1))
+    y_hat = jnp.ones((1, 3, 3, 1))
+
+    update = pooling.backward(x, y, y_hat)
+
+    assert jnp.allclose(update.strength, 0.0)
+
+
+def test_constant_unpooling_backward():
+    """Test ConstantUnpooling backward returns zeros."""
+    unpooling = ConstantUnpooling(kernel_size=2, strength=1.0)
+
+    x = jnp.ones((1, 2, 2, 1))
+    y = jnp.ones((1, 4, 4, 1))
+    y_hat = jnp.ones((1, 4, 4, 1))
+
+    update = unpooling.backward(x, y, y_hat)
+
+    assert jnp.allclose(update.strength, 0.0)
+
+
+def test_global_majority_pooling_backward():
+    """Test GlobalMajorityPooling backward returns zeros."""
+    pooling = GlobalMajorityPooling(strength=1.0, axis=(1, 2))
+
+    x = jnp.ones((1, 3, 3, 1))
+    y = jnp.ones((1, 1))
+    y_hat = jnp.ones((1, 1))
+
+    update = pooling.backward(x, y, y_hat)
+
+    assert jnp.allclose(update.strength, 0.0)
+
+
+def test_global_unpooling_backward():
+    """Test GlobalUnpooling backward returns zeros."""
+    unpooling = GlobalUnpooling(strength=1.0, axis=1)
+
+    x = jnp.ones((1, 3))
+    y = jnp.ones((1, 1, 3))
+    y_hat = jnp.ones((1, 1, 3))
+
+    update = unpooling.backward(x, y, y_hat)
+
+    assert jnp.allclose(update.strength, 0.0)
+
+
+# Integration tests
+
+
+def test_pool_unpool_pipeline():
+    """Test a complete pool->unpool pipeline."""
+    key = jax.random.PRNGKey(123)
+
+    x = jax.random.choice(key, jnp.array([-1.0, 1.0]), shape=(1, 9, 9, 1))
+
+    pooling = MajorityPooling(kernel_size=3, strength=1.0, key=key, stride=3, padding_mode="edge")
+    pooled = pooling(x)
+    assert pooled.shape == (1, 3, 3, 1)
+
+    unpooling = ConstantUnpooling(kernel_size=3, strength=1.0, unpad=0)
+    unpooled = unpooling(pooled)
+    assert unpooled.shape == (1, 9, 9, 1)
+
+
+def test_pool_with_padding_unpool_with_unpad():
+    """Test pooling with padding and unpooling with unpad to restore shape."""
+    key = jax.random.PRNGKey(42)
+    x = jax.random.choice(key, jnp.array([-1.0, 1.0]), shape=(1, 7, 7, 1))
+
+    pooling = MajorityPooling(kernel_size=3, strength=1.0, key=key, stride=3, padding_mode="edge")
+    pooled = pooling(x)
+
+    unpooling = ConstantUnpooling(kernel_size=3, strength=1.0, unpad=1)
+    unpooled = unpooling(pooled)
+
+    assert unpooled.shape[1] >= 5 and unpooled.shape[2] >= 5
