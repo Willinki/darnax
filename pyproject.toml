@@ -64,7 +64,7 @@ select = ["E","F","I","UP","B","D","N","ARG","SIM","PL","TCH"]
 ignore = ["D100","D104","D213","D203","E501","N806","ARG002","E203", "PLR2004"]
 
 [tool.ruff.lint.pylint]
-max-args = 10
+max-args = 11
 
 [tool.black]
 line-length = 100

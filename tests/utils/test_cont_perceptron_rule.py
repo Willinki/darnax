@@ -61,10 +61,10 @@ def test_tanh_rule_broadcasting_tolerance_vector_and_matrix():
     # tol as scalar, vector (K,), and full (n,K) must agree
     dW_scalar = tanh_perceptron_rule_backward(x, y, y_hat, 0.1)
     dW_vec = tanh_perceptron_rule_backward(x, y, y_hat, jnp.array([0.1, 0.1]))
-    dW_full = tanh_perceptron_rule_backward(x, y, y_hat, jnp.array([[0.1, 0.1]]))
+    dw_full = tanh_perceptron_rule_backward(x, y, y_hat, jnp.array([[0.1, 0.1]]))
 
     np.testing.assert_allclose(np.asarray(dW_scalar), np.asarray(dW_vec), rtol=1e-6, atol=1e-7)
-    np.testing.assert_allclose(np.asarray(dW_scalar), np.asarray(dW_full), rtol=1e-6, atol=1e-7)
+    np.testing.assert_allclose(np.asarray(dW_scalar), np.asarray(dw_full), rtol=1e-6, atol=1e-7)
 
 
 def test_tanh_rule_masking_with_large_tolerance_zeroes_updates():
