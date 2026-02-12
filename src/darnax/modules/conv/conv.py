@@ -50,27 +50,26 @@ Examples
 """
 
 import operator
-from typing import Self
 from collections.abc import Callable
+from typing import Self
 
 import equinox as eqx
 import jax
 import jax.numpy as jnp
-from jax import lax
-from jax import Array
-from jax.typing import DTypeLike
+from jax import Array, lax
 from jax.tree_util import tree_reduce
+from jax.typing import DTypeLike
 
-from darnax.modules.interfaces import Adapter, Layer
-from darnax.utils.typing import PyTree
 from darnax.modules.conv.utils import (
-    fetch_tuple_from_arg,
     conv_backward_with_threshold,
+    conv_forward,
     conv_transpose_backward_with_threshold,
     conv_transpose_forward,
-    conv_forward,
+    fetch_tuple_from_arg,
     pad_2d,
 )
+from darnax.modules.interfaces import Adapter, Layer
+from darnax.utils.typing import PyTree
 
 KeyArray = Array
 
@@ -297,8 +296,11 @@ class Conv2D(Adapter):
 
         dW = self.lr * dW + self.weight_decay * decay_scale * self.kernel
 
-        zero_update = jax.tree_util.tree_map(jnp.zeros_like, self, is_leaf=eqx.is_inexact_array)
-        return eqx.tree_at(lambda m: m.kernel, zero_update, dW)
+        zero_update: Self = jax.tree_util.tree_map(
+            jnp.zeros_like, self, is_leaf=eqx.is_inexact_array
+        )
+        update: Self = eqx.tree_at(lambda m: m.kernel, zero_update, dW)
+        return update
 
 
 class Conv2DRecurrentDiscrete(Layer):
@@ -502,8 +504,7 @@ class Conv2DRecurrentDiscrete(Layer):
         return mask.at[local, c].set(1)
 
     def _build_update_mask(self, dtype: DTypeLike) -> Array:
-        """
-        Build mask to block updates to constrained parameters.
+        """Build mask to block updates to constrained parameters.
 
         Returns
         -------
@@ -610,8 +611,7 @@ class Conv2DRecurrentDiscrete(Layer):
         return jnp.sign(x)
 
     def reduce(self, h: PyTree) -> Array:
-        """
-        Reduce a pytree by summing all leaves.
+        """Reduce a pytree by summing all leaves.
 
         Parameters
         ----------
@@ -622,16 +622,17 @@ class Conv2DRecurrentDiscrete(Layer):
         -------
         Array
             Sum of all leaf values.
+
         """
         return jnp.asarray(tree_reduce(operator.add, h))
 
     # ---------- backward ----------
-    def _diag_group_blocks(self, dW_full: Array) -> Array:
+    def _diag_group_blocks(self, dw_full: Array) -> Array:
         """Extract within-group diagonal blocks from full gradient.
 
         Parameters
         ----------
-        dW_full : Array
+        dw_full : Array
             Full gradient of shape (Kh, Kw, Cin, Cout) where
             Cin = channels and Cout = channels.
 
@@ -660,7 +661,7 @@ class Conv2DRecurrentDiscrete(Layer):
         cout_g = self.channels // g
 
         # (kh,kw, Cin, Cout) -> (kh,kw, g, cin_g, g, cout_g)
-        dW6 = dW_full.reshape(kh, kw, g, cin_g, g, cout_g)
+        dW6 = dw_full.reshape(kh, kw, g, cin_g, g, cout_g)
 
         # take diagonal over the two group axes -> (kh,kw, cin_g, cout_g, g)
         diag = jnp.diagonal(dW6, axis1=2, axis2=4)
@@ -707,7 +708,7 @@ class Conv2DRecurrentDiscrete(Layer):
         kh, kw = self.kernel_size
 
         # conv_utils returns (Kh, Kw, Cin, Cout) with normalization by 1/sqrt(N × Ho × Wo)
-        dW_full = conv_backward_with_threshold(
+        dw_full = conv_backward_with_threshold(
             x=x,
             y=y,
             y_hat=y_hat,
@@ -718,7 +719,7 @@ class Conv2DRecurrentDiscrete(Layer):
             padding_mode=self.padding_mode,
         )
 
-        dW = self._diag_group_blocks(dW_full)  # (Kh, Kw, cin_g, Cout)
+        dW = self._diag_group_blocks(dw_full)  # (Kh, Kw, cin_g, Cout)
 
         # Weight decay with same normalization as gradient: 1/sqrt(N × Ho × Wo)
         n, ho, wo, _ = y.shape
@@ -729,8 +730,11 @@ class Conv2DRecurrentDiscrete(Layer):
         # hard constraint: prevent any change to constrained params (includes decay term)
         dW = dW * self.update_mask
 
-        zero_update = jax.tree_util.tree_map(jnp.zeros_like, self, is_leaf=eqx.is_inexact_array)
-        return eqx.tree_at(lambda m: m.kernel, zero_update, dW)
+        zero_update: Self = jax.tree_util.tree_map(
+            jnp.zeros_like, self, is_leaf=eqx.is_inexact_array
+        )
+        update: Self = eqx.tree_at(lambda m: m.kernel, zero_update, dW)
+        return update
 
 
 class Conv2DTranspose(Adapter):
@@ -909,5 +913,8 @@ class Conv2DTranspose(Adapter):
             stride=self.stride,
             padding_mode=self.padding_mode,
         )
-        zero_update = jax.tree_util.tree_map(jnp.zeros_like, self, is_leaf=eqx.is_inexact_array)
-        return eqx.tree_at(lambda m: m.kernel, zero_update, dW)
+        zero_update: Self = jax.tree_util.tree_map(
+            jnp.zeros_like, self, is_leaf=eqx.is_inexact_array
+        )
+        update: Self = eqx.tree_at(lambda m: m.kernel, zero_update, dW)
+        return update

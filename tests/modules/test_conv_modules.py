@@ -1,5 +1,4 @@
-"""
-Tests for convolutional modules with Hebbian learning.
+"""Tests for convolutional modules with Hebbian learning.
 
 These tests verify:
 1. Forward pass shapes and correctness
@@ -11,7 +10,6 @@ These tests verify:
 
 import jax
 import jax.numpy as jnp
-import pytest
 
 from darnax.modules.conv.conv import Conv2D, Conv2DRecurrentDiscrete, Conv2DTranspose
 from darnax.modules.conv.utils import (
@@ -227,7 +225,6 @@ def test_conv2d_weight_decay_scaling():
     # Update should be proportional to kernel (weight decay only)
     # Normalized by 1/sqrt(N * Ho * Wo)
     N, Ho, Wo = y.shape[:3]
-    expected_scale = 1.0 / jnp.sqrt(N * Ho * Wo)
 
     # Check that the update direction aligns with kernel
     kernel_norm = conv.kernel / jnp.linalg.norm(conv.kernel)
@@ -302,9 +299,9 @@ def test_conv2drecurrentdiscrete_jd_constraint_initialization():
     expected_sum = j_d * num_diag_entries
     actual_sum = diagonal_vals.sum()
 
-    assert jnp.allclose(actual_sum, expected_sum), (
-        f"Diagonal sum {actual_sum} != expected {expected_sum}"
-    )
+    assert jnp.allclose(
+        actual_sum, expected_sum
+    ), f"Diagonal sum {actual_sum} != expected {expected_sum}"
 
 
 def test_conv2drecurrentdiscrete_update_mask():
@@ -423,10 +420,10 @@ def test_conv2drecurrentdiscrete_diag_group_blocks():
 
     # Create a dummy full gradient
     kh, kw = conv.kernel_size
-    dW_full = _rand(jax.random.PRNGKey(61), (kh, kw, channels, channels))
+    dw_full = _rand(jax.random.PRNGKey(61), (kh, kw, channels, channels))
 
     # Extract diagonal blocks
-    dW_diag = conv._diag_group_blocks(dW_full)
+    dW_diag = conv._diag_group_blocks(dw_full)
 
     # Should have shape (kh, kw, cin_g, cout)
     cin_g = channels // groups
