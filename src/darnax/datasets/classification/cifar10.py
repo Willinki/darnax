@@ -11,7 +11,7 @@ import numpy as np
 from datasets import config as hf_config  # type: ignore[import-untyped]
 from datasets import load_dataset
 
-from darnax.datasets.classification.interface import ClassificationDataset
+from darnax.datasets.classification.interface import ClassificationDataset, RescalingMode
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -36,8 +36,9 @@ class Cifar10(ClassificationDataset):
         Input transform: "sign" (±1), "tanh", "identity" (no transform).
     validation_fraction : float, default=0.0
         Fraction of training data for validation (0.0 to 1.0).
-    rescale : bool, default=True
-        If True, rescale pixel values from [0, 255] to [0, 1].
+    rescaling : {"default", "null", "divide255", "standardize"}, default="default"
+        Rescaling mode: "default" (divide by 255), "null" (no rescaling),
+        "divide255" (divide by 255), "standardize" (mean=0, std=1).
 
     References
     ----------
@@ -47,6 +48,7 @@ class Cifar10(ClassificationDataset):
     """
 
     NUM_CLASSES = 10
+    DEFAULT_RESCALING: RescalingMode = "divide255"
     FLAT_DIM = 32 * 32 * 3  # CIFAR-10 images are 32x32 RGB
     CACHE_SUBDIR = "darnax/cifar10"
 
@@ -59,7 +61,7 @@ class Cifar10(ClassificationDataset):
         x_transform: Literal["sign", "tanh", "identity"] = "sign",
         validation_fraction: float = 0.0,
         shuffle: bool = True,
-        rescale: bool = True,
+        rescaling: RescalingMode = "default",
     ) -> None:
         """Initialize CIFAR-10 dataset configuration."""
         if not (linear_projection is None or isinstance(linear_projection, int)):
@@ -78,7 +80,7 @@ class Cifar10(ClassificationDataset):
         self.x_transform = x_transform
         self.validation_fraction = validation_fraction
         self.shuffle = bool(shuffle)
-        self.rescale = bool(rescale)
+        self.rescaling = rescaling
 
         self.input_dim: int | None = None
         self.num_classes: int = self.NUM_CLASSES
@@ -219,7 +221,8 @@ class Cifar10(ClassificationDataset):
         else:
             x_np, y_np = cls._generate_and_cache_split(split, cache_file)
 
-        x = jnp.asarray(x_np)
+        # Cast to float32 for consistent dtype (cache may be uint8 or float32)
+        x = jnp.asarray(x_np, dtype=jnp.float32)
         y = jnp.asarray(y_np)
         return x, y
 
@@ -238,6 +241,7 @@ class Cifar10(ClassificationDataset):
             try:
                 cache_file.parent.mkdir(parents=True, exist_ok=True)
                 tmp_path = cache_file.with_suffix(".tmp.npz")
+                # Cache as uint8 for disk efficiency (~4x smaller than float32)
                 np.savez(tmp_path, x=x_np, y=y_np)
                 os.replace(tmp_path, cache_file)
             except Exception:  # pragma: no cover - cache failures should not break loading
@@ -281,11 +285,7 @@ class Cifar10(ClassificationDataset):
 
     def _preprocess(self, w: jax.Array | None, x: jax.Array) -> jax.Array:
         """Flatten, project, and transform inputs."""
-        # Convert to float and optionally rescale from [0, 255] to [0, 1].
-        x = x.astype(jnp.float32)
-        if self.rescale:
-            x = x / 255.0
-
+        x = self._apply_rescaling(x)
         x = jnp.reshape(x, (x.shape[0], -1))
         if w is not None:
             x = (x @ w.T).astype(jnp.float32)

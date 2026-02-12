@@ -14,7 +14,9 @@ def test_mnist_generate_random_projection():
 
 def test_mnist_preprocess_and_encode_labels():
     """Preprocess with sign transform and encode labels in pm1 mode."""
-    ds = Mnist(batch_size=4, linear_projection=None, x_transform="sign", label_mode="pm1")
+    ds = Mnist(
+        batch_size=4, linear_projection=None, x_transform="sign", label_mode="pm1", rescaling="null"
+    )
     x = jnp.zeros((2, 28, 28), dtype=jnp.float32)
     xp = ds._preprocess(None, x)
     assert xp.shape == (2, Mnist.FLAT_DIM)
@@ -82,3 +84,38 @@ def test_mnist_build_iterators_and_spec():
     if ds.x_valid is not None:
         vb = list(ds.iter_valid())
         assert all(x.shape[1] == ds.input_dim for x, _ in vb)
+
+
+def test_mnist_rescaling_default_applies_divide255():
+    """Default rescaling for MNIST should divide by 255 (DEFAULT_RESCALING=divide255)."""
+    ds = Mnist(batch_size=4, rescaling="default", x_transform="identity")
+    x = jnp.array([[0.0, 127.5, 255.0]], dtype=jnp.float32)
+    result = ds._apply_rescaling(x)
+    expected = x / 255.0
+    assert jnp.allclose(result, expected)
+
+
+def test_mnist_rescaling_null_no_change():
+    """Null rescaling should not change data."""
+    ds = Mnist(batch_size=4, rescaling="null", x_transform="identity")
+    x = jnp.array([[0.0, 128.0, 255.0]], dtype=jnp.float32)
+    result = ds._apply_rescaling(x)
+    assert jnp.allclose(result, x)
+
+
+def test_mnist_rescaling_divide255():
+    """divide255 should divide by 255."""
+    ds = Mnist(batch_size=4, rescaling="divide255", x_transform="identity")
+    x = jnp.array([[0.0, 127.5, 255.0]], dtype=jnp.float32)
+    result = ds._apply_rescaling(x)
+    expected = x / 255.0
+    assert jnp.allclose(result, expected)
+
+
+def test_mnist_rescaling_standardize():
+    """Standardize should produce mean~0, std~1."""
+    ds = Mnist(batch_size=4, rescaling="standardize", x_transform="identity")
+    x = jax.random.normal(jax.random.PRNGKey(0), (100, 784))
+    result = ds._apply_rescaling(x)
+    assert jnp.isclose(result.mean(), 0.0, atol=1e-5)
+    assert jnp.isclose(result.std(), 1.0, atol=1e-5)

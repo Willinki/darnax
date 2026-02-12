@@ -133,7 +133,7 @@ We construct a `SequentialOrchestrator` with:
 
 
 # %%
-def build_model(
+def build_model(  # noqa: PLR0913
     seed: int,
     dim_data: int,
     dim_hidden: int,
@@ -286,7 +286,7 @@ def make_lr_map_v2(
     if overrides:
         for (i, j), label in overrides.items():
             labels = eqx.tree_at(
-                lambda m: m.lmap[i][j],
+                lambda m, i=i, j=j: m.lmap[i][j],
                 labels,
                 replace=like(params.lmap[i][j], label),
             )
@@ -506,7 +506,7 @@ This is useful for evaluating representation quality.
 
 
 # %%
-def train_torch_linear_probe(
+def train_torch_linear_probe(  # noqa: PLR0915
     trainer: Any,
     ds: Any,
     cfg: dict[str, Any],
@@ -591,9 +591,9 @@ def train_torch_linear_probe(
         total_loss = 0.0
         correct = 0
         total = 0
-        for xb_t, yb_t in train_loader:
-            xb_t = xb_t.to(device)
-            yb_t = yb_t.to(device)
+        for xb, yb in train_loader:
+            xb_t = xb.to(device)
+            yb_t = yb.to(device)
             optimizer.zero_grad()
             logits = model(xb_t)
             loss = criterion(logits, yb_t)
