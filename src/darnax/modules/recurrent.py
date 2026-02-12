@@ -394,9 +394,7 @@ class SparseRecurrentDiscrete(Layer):
         j_d_vec = self._set_shape(j_d, features, dtype)
         thresh_vec = self._set_shape(threshold, features, dtype)
         strength_vec = jnp.asarray(strength, dtype=dtype)
-        self.lr = jnp.asarray(lr, dtype=dtype)
         wd_rescaling = (0.01**0.5) / (((1 - sparsity) * features) ** 0.5)
-        self.weight_decay = jnp.asarray(weight_decay * wd_rescaling, dtype=dtype)
 
         diag = jnp.diag_indices(features)
         key_j, key_mask = jax.random.split(key)
@@ -414,6 +412,8 @@ class SparseRecurrentDiscrete(Layer):
         self.J_D = j_d_vec
         self.threshold = thresh_vec
         self.strength = strength_vec
+        self.lr = jnp.asarray(lr, dtype=dtype)
+        self.weight_decay = jnp.asarray(weight_decay * wd_rescaling, dtype=dtype)
         self._mask = mask
 
     def activation(self, x: Array) -> Array:
