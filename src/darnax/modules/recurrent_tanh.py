@@ -98,7 +98,7 @@ class RecurrentTanh(Layer):
         strength: float = 1.0,
         dtype: DTypeLike = jnp.float32,
         *,
-        lr: float = 1.0,
+        lr: float | None = None,
         weight_decay: float = 0.0,
     ):
         """Construct the layer parameters.
@@ -141,7 +141,7 @@ class RecurrentTanh(Layer):
         j_d_vec = self._set_shape(j_d, features, dtype)
         tol_vec = self._set_shape(tolerance, features, dtype)
         strength_vec = jnp.asarray(strength, dtype=dtype)
-        self.lr = jnp.asarray(lr, dtype=dtype)
+        self.lr = jnp.asarray(1.0 if lr is None else lr, dtype=dtype)
         self.weight_decay = jnp.asarray(weight_decay / (features**0.5), dtype=dtype)
 
         J = (
@@ -265,8 +265,8 @@ class RecurrentTanh(Layer):
         if gate is None:
             gate = jnp.array(1.0)
         dJ = tanh_perceptron_rule_backward(x, y, y_hat, self.tolerance)
-        dJ = self.lr * dJ + self.lr * self.weight_decay * self.J
         dJ = dJ * self._mask
+        dJ = self.lr * dJ + self.lr * self.weight_decay * self.J
         zero_update = jax.tree.map(jnp.zeros_like, self)
         new_self: Self = eqx.tree_at(lambda m: m.J, zero_update, dJ)
         return new_self
@@ -359,7 +359,7 @@ class RecurrentTanhTruncated(RecurrentTanh):
         strength: float = 1.0,
         dtype: DTypeLike = jnp.float32,
         *,
-        lr: float = 1.0,
+        lr: float | None = None,
         weight_decay: float = 0.0,
     ):
         """Construct the layer parameters.
@@ -457,8 +457,8 @@ class RecurrentTanhTruncated(RecurrentTanh):
         if gate is None:
             gate = jnp.array(1.0)
         dJ = tanh_truncated_perceptron_rule_backward(x, y, y_hat, self.threshold, self.tolerance)
-        dJ = self.lr * dJ + self.lr * self.weight_decay * self.J
         dJ = dJ * self._mask
+        dJ = self.lr * dJ + self.lr * self.weight_decay * self.J
         zero_update = jax.tree.map(jnp.zeros_like, self)
         new_self: Self = eqx.tree_at(lambda m: m.J, zero_update, dJ)
         return new_self

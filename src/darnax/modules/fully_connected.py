@@ -280,7 +280,7 @@ class SparseFullyConnected(FullyConnected):
         key: Array,
         dtype: DTypeLike = jnp.float32,
         *,
-        lr: float = 1.0,
+        lr: float | None = None,
         weight_decay: float = 0.0,
     ):
         """Initialize sparse mask and masked weight matrix.
@@ -320,7 +320,9 @@ class SparseFullyConnected(FullyConnected):
         """
         self.strength = self._set_shape(strength, out_features, dtype)
         self.threshold = self._set_shape(threshold, out_features, dtype)
-        self.lr = jnp.asarray(lr, dtype=dtype)
+        self.lr = jnp.asarray(
+            1.0 if lr is None else lr * (0.1**0.5) / (1 - sparsity) ** 0.5, dtype=dtype
+        )
 
         # reproducibility introduces a rescaling
         wd_rescaling = (0.1**0.5) / (((1 - sparsity) * in_features) ** 0.5)
@@ -372,8 +374,8 @@ class SparseFullyConnected(FullyConnected):
 
         """
         grad = perceptron_rule_backward(x, y, y_hat, self.threshold, gate)
+        grad = grad * self._mask
         dW = self.lr * grad + self.weight_decay * self.lr * self.W
-        dW = dW * self._mask
         zero_update = jax.tree.map(jnp.zeros_like, self)
         new_self: Self = eqx.tree_at(lambda m: m.W, zero_update, dW)
         return new_self
