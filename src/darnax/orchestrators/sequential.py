@@ -195,7 +195,7 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         state: SequentialState,
         rng: KeyArray,
         *,
-        filter_messages: Literal["all", "forward", "backward"] = "forward",
+        filter_messages: Literal["all", "forward", "backward", "inference"] = "inference",
         target_state: SequentialState | None = None,
         gate: jax.Array | None = None,
     ) -> Self:
