@@ -305,7 +305,7 @@ class LayerMap:
             data = self._data[r_idx]
             if subset == "all":
                 pass
-            if subset == "forward":
+            elif subset == "forward":
                 data = {k: v for k, v in data.items() if k <= r_idx}
             elif subset == "backward":
                 data = {k: v for k, v in data.items() if k >= r_idx}
