@@ -11,6 +11,7 @@ def _flatten_batches(batches: list[tuple[jax.Array, jax.Array]]) -> tuple[jax.Ar
 
 
 def test_shuffle_disabled_preserves_order() -> None:
+    """Test that disabling shuffle preserves the original data order."""
     ds = Mnist(batch_size=4, linear_projection=None, flatten=True, shuffle=False)
 
     n = 20
@@ -24,6 +25,7 @@ def test_shuffle_disabled_preserves_order() -> None:
 
 
 def test_shuffle_changes_order_each_epoch_deterministically() -> None:
+    """Test that shuffle changes order each epoch but remains deterministic with same seed."""
     n = 40
 
     ds1 = Mnist(batch_size=5, linear_projection=None, flatten=True, shuffle=True)
