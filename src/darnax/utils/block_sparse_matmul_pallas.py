@@ -42,7 +42,7 @@ import jax
 import jax.experimental.pallas as pl
 import jax.numpy as jnp
 
-from darnax.block_sparse_matmul import (  # noqa: F401 — re-export
+from darnax.utils.block_sparse_matmul import (  # noqa: F401 — re-export
     BlockSparseMatrix,
     make_block_sparse,
 )

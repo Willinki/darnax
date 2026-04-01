@@ -11,8 +11,8 @@ import jax
 import jax.numpy as jnp
 import pytest
 
-from darnax.block_sparse_matmul import block_sparse_matvec, make_block_sparse
-from darnax.block_sparse_matmul_pallas import block_sparse_matvec_pallas
+from darnax.utils.block_sparse_matmul import block_sparse_matvec, make_block_sparse
+from darnax.utils.block_sparse_matmul_pallas import block_sparse_matvec_pallas
 
 KEY = jax.random.key(0)
 
