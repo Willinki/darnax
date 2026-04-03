@@ -21,7 +21,7 @@ import warnings
 import jax
 import pytest
 
-from darnax.block_sparse_matmul import block_sparse_matvec, make_block_sparse
+from darnax.utils.block_sparse_matmul import block_sparse_matvec, make_block_sparse
 from darnax.utils.sparse_matmul import to_sparse
 
 # ---------- Parameter grid ----------
