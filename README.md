@@ -3,6 +3,7 @@
 
 [![Documentation](https://img.shields.io/badge/docs-online-brightgreen.svg)](https://dbadalotti.com/darnax)
 [![arXiv](https://img.shields.io/badge/arXiv-2509.05041-b31b1b.svg)](https://arxiv.org/abs/2509.05041)
+[![DOI](https://zenodo.org/badge/1010992563.svg)](https://doi.org/10.5281/zenodo.19496649)
 
 **Deep Asymmetric Recurrent Networks in JAX.**
 
